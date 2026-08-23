@@ -32,7 +32,15 @@ pub fn get_app_dir_path(app: AppHandle) -> Result<String, String> {
 #[tauri::command]
 #[specta::specta]
 pub fn get_app_settings(app: AppHandle) -> Result<AppSettings, String> {
-    Ok(get_settings(&app))
+    let mut settings = get_settings(&app);
+    for (provider_id, value) in settings.post_process_api_keys.iter_mut() {
+        settings.post_process_api_key_configured.insert(
+            provider_id.clone(),
+            crate::credential_store::configured(provider_id, Some(value)),
+        );
+        value.clear();
+    }
+    Ok(settings)
 }
 
 #[tauri::command]

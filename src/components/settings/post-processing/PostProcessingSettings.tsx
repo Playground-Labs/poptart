@@ -13,6 +13,7 @@ import {
 import { Button } from "../../ui/Button";
 import { ResetButton } from "../../ui/ResetButton";
 import { Input } from "../../ui/Input";
+import { ToggleSwitch } from "../../ui/ToggleSwitch";
 
 import { ProviderSelect } from "../PostProcessingSettingsApi/ProviderSelect";
 import { BaseUrlField } from "../PostProcessingSettingsApi/BaseUrlField";
@@ -82,10 +83,13 @@ const PostProcessingSettingsApiComponent: React.FC = () => {
           >
             <div className="flex items-center gap-2">
               <ApiKeyField
-                value={state.apiKey}
+                configured={state.apiKeyConfigured}
                 onBlur={state.handleApiKeyChange}
                 placeholder={t(
                   "settings.postProcessing.api.apiKey.placeholder",
+                )}
+                configuredPlaceholder={t(
+                  "settings.postProcessing.api.apiKey.configuredPlaceholder",
                 )}
                 disabled={state.isApiKeyUpdating}
                 className="min-w-[320px]"
@@ -423,6 +427,51 @@ export const PostProcessingSettingsPrompts = React.memo(
 );
 PostProcessingSettingsPrompts.displayName = "PostProcessingSettingsPrompts";
 
+const CleanupPolicySettings: React.FC = () => {
+  const { t } = useTranslation();
+  const { getSetting, updateSetting, isUpdating } = useSettings();
+  const cleanupLevel = getSetting("cleanup_level") ?? "light";
+
+  return (
+    <>
+      <SettingContainer
+        title={t("settings.postProcessing.cleanup.level.title")}
+        description={t(
+          `settings.postProcessing.cleanup.level.descriptions.${cleanupLevel}`,
+        )}
+        descriptionMode="inline"
+        layout="horizontal"
+        grouped={true}
+      >
+        <Dropdown
+          selectedValue={cleanupLevel}
+          options={(["off", "light", "polish"] as const).map((level) => ({
+            value: level,
+            label: t(`settings.postProcessing.cleanup.level.options.${level}`),
+          }))}
+          onSelect={(level) =>
+            updateSetting("cleanup_level", level as typeof cleanupLevel)
+          }
+          disabled={isUpdating("cleanup_level")}
+        />
+      </SettingContainer>
+      <ToggleSwitch
+        checked={getSetting("share_context_with_remote") ?? false}
+        onChange={(enabled) =>
+          updateSetting("share_context_with_remote", enabled)
+        }
+        isUpdating={isUpdating("share_context_with_remote")}
+        label={t("settings.postProcessing.cleanup.remoteContext.title")}
+        description={t(
+          "settings.postProcessing.cleanup.remoteContext.description",
+        )}
+        descriptionMode="inline"
+        grouped={true}
+      />
+    </>
+  );
+};
+
 export const PostProcessingSettings: React.FC = () => {
   const { t } = useTranslation();
 
@@ -430,6 +479,10 @@ export const PostProcessingSettings: React.FC = () => {
     // The post-processing hotkey lives with the other shortcuts under
     // Dictation; this section is provider and prompt configuration only.
     <div className="w-full space-y-6">
+      <SettingsGroup title={t("settings.postProcessing.cleanup.title")}>
+        <CleanupPolicySettings />
+      </SettingsGroup>
+
       <SettingsGroup title={t("settings.postProcessing.api.title")}>
         <PostProcessingSettingsApi />
       </SettingsGroup>

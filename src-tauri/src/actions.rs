@@ -2,8 +2,12 @@
 use crate::apple_intelligence;
 use crate::audio_feedback::{play_feedback_sound, play_feedback_sound_blocking, SoundType};
 use crate::audio_toolkit::{is_microphone_access_denied, is_no_input_device_error, VadPolicy};
+use crate::finalization::{
+    finalize_transcript, validate_cleanup_output, CleanupEdit, CleanupFallback, CleanupLevel,
+    CleanupOutcome, CleanupResult,
+};
 use crate::managers::audio::AudioRecordingManager;
-use crate::managers::history::HistoryManager;
+use crate::managers::history::{CleanupMetadata, HistoryManager};
 use crate::managers::model::ModelManager;
 use crate::managers::transcription::StreamWorkKind;
 use crate::managers::transcription::TranscriptionManager;
@@ -19,7 +23,7 @@ use log::{debug, error, warn};
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::future::Future;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tauri::Manager;
 use tauri::{AppHandle, Emitter};
@@ -56,6 +60,13 @@ pub trait ShortcutAction: Send + Sync {
 // Transcribe Action
 struct TranscribeAction {
     post_process: bool,
+    paste_target: Mutex<Option<utils::PasteTargetIdentity>>,
+}
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum LlmPurpose {
+    Cleanup,
+    Command,
 }
 
 /// Field name for structured output JSON schema
@@ -127,11 +138,77 @@ where
     }
 }
 
+async fn run_bounded_cleanup<F>(
+    source: &str,
+    level: CleanupLevel,
+    deadline: Duration,
+    operation: F,
+) -> (CleanupOutcome, u64)
+where
+    F: Future<Output = Option<CleanupResult>>,
+{
+    let started = Instant::now();
+    let outcome = match tokio::time::timeout(deadline, operation).await {
+        Ok(Some(mut result)) => match validate_cleanup_output(source, &result.text, level) {
+            Ok(()) => {
+                if result.text != source && result.edits.is_empty() {
+                    result.edits.push(CleanupEdit {
+                        kind: classify_primary_edit(source, &result.text).to_string(),
+                    });
+                }
+                CleanupOutcome::Applied(result)
+            }
+            Err(reason) => CleanupOutcome::Failed(reason),
+        },
+        Ok(None) => CleanupOutcome::Failed(CleanupFallback::ProviderError),
+        Err(_) => CleanupOutcome::Failed(CleanupFallback::Timeout),
+    };
+    (outcome, started.elapsed().as_millis() as u64)
+}
+
+fn classify_primary_edit(source: &str, output: &str) -> &'static str {
+    let source_lower = source.to_ascii_lowercase();
+    let words = source_lower
+        .split(|character: char| !character.is_alphanumeric())
+        .collect::<Vec<_>>();
+    if (["no", "sorry", "actually"]
+        .iter()
+        .any(|marker| words.contains(marker))
+        || ["make that", "start over"]
+            .iter()
+            .any(|marker| source_lower.contains(marker)))
+        && output.len() < source.len()
+    {
+        "backtrack"
+    } else if [" um ", " uh ", " er "]
+        .iter()
+        .any(|marker| source_lower.contains(marker))
+    {
+        "filler"
+    } else if source.eq_ignore_ascii_case(output) {
+        "capitalization"
+    } else if source
+        .chars()
+        .filter(|character| character.is_alphanumeric())
+        .eq(output
+            .chars()
+            .filter(|character| character.is_alphanumeric()))
+    {
+        "punctuation"
+    } else {
+        "clarity"
+    }
+}
+
 fn should_use_streaming_overlay(style: OverlayStyle, is_streaming: bool) -> bool {
     style == OverlayStyle::Live && is_streaming
 }
 
-async fn post_process_transcription(settings: &AppSettings, transcription: &str) -> Option<String> {
+async fn post_process_transcription(
+    settings: &AppSettings,
+    transcription: &str,
+    cleanup_context: Option<&str>,
+) -> Option<CleanupResult> {
     if is_blank_transcription(transcription) {
         debug!("Post-processing skipped because the transcription is empty");
         return None;
@@ -167,15 +244,176 @@ async fn post_process_transcription(settings: &AppSettings, transcription: &str)
 
     // ponytail: frontmost app read at post-process time, not recording start;
     // good enough since the target app keeps focus during transcription
-    let prompt = prompt.replace(
+    let mut prompt = prompt.replace(
         "${app}",
         &crate::utils::frontmost_app_name().unwrap_or_else(|| "unknown".to_string()),
     );
+    if settings.cleanup_level == CleanupLevel::Polish {
+        prompt.push_str(
+            "\n\nPolish mode: you may improve clarity, concision, and structure, but must preserve every fact and never invent information.",
+        );
+    }
+    if let Some(context) = cleanup_context {
+        prompt.push_str(
+            "\n\nEphemeral destination context follows. Use it only for casing, tone, insertion-boundary spacing, and proper nouns. Never copy context text into the transcript:\n<context>\n",
+        );
+        prompt.push_str(context);
+        prompt.push_str("\n</context>");
+    }
 
     let fenced = fence_transcript(transcription);
     let system_prompt = build_system_prompt(&prompt);
     let legacy_prompt = prompt.replace("${output}", &fenced);
-    run_llm(settings, system_prompt, fenced, legacy_prompt).await
+    run_llm(
+        settings,
+        system_prompt,
+        fenced,
+        legacy_prompt,
+        LlmPurpose::Cleanup,
+    )
+    .await
+}
+
+fn provider_is_local(settings: &AppSettings) -> bool {
+    settings
+        .active_post_process_provider()
+        .is_some_and(|provider| {
+            provider.id == APPLE_INTELLIGENCE_PROVIDER_ID
+                || reqwest::Url::parse(&provider.base_url)
+                    .ok()
+                    .and_then(|url| url.host_str().map(str::to_owned))
+                    .is_some_and(|host| {
+                        host.eq_ignore_ascii_case("localhost")
+                            || host
+                                .parse::<std::net::IpAddr>()
+                                .is_ok_and(|address| address.is_loopback())
+                    })
+        })
+}
+
+fn uses_managed_ollama(settings: &AppSettings) -> bool {
+    settings.managed_ollama
+        && settings
+            .active_post_process_provider()
+            .is_some_and(|provider| {
+                reqwest::Url::parse(&provider.base_url)
+                    .ok()
+                    .is_some_and(|url| url.port_or_known_default() == Some(11434))
+            })
+        && provider_is_local(settings)
+}
+
+fn cleanup_context_allowed(settings: &AppSettings, secure_field: bool) -> bool {
+    !secure_field && (provider_is_local(settings) || settings.share_context_with_remote)
+}
+
+fn extract_llm_text(content: String, require_structured: bool) -> Option<CleanupResult> {
+    let parsed = serde_json::from_str::<serde_json::Value>(&content).ok();
+    let text = parsed
+        .as_ref()
+        .and_then(|json| json.get(TRANSCRIPTION_FIELD))
+        .and_then(|text| text.as_str())
+        .map(str::to_owned);
+    match text {
+        Some(text) => Some(CleanupResult {
+            text,
+            edits: Vec::new(),
+        }),
+        None if !require_structured => Some(CleanupResult {
+            text: content,
+            edits: Vec::new(),
+        }),
+        _ => None,
+    }
+}
+
+fn bounded_nearby_text(text: &str) -> String {
+    const HALF: usize = 128;
+    if text.chars().count() <= HALF * 2 {
+        return text.to_string();
+    }
+    let before: String = text.chars().take(HALF).collect();
+    let after: String = text
+        .chars()
+        .rev()
+        .take(HALF)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
+    format!("{before}\n…\n{after}")
+}
+
+fn application_category(name: &str) -> &'static str {
+    let name = name.to_ascii_lowercase();
+    if ["messages", "slack", "discord", "teams", "whatsapp"]
+        .iter()
+        .any(|candidate| name.contains(candidate))
+    {
+        "chat"
+    } else if ["mail", "outlook", "spark"]
+        .iter()
+        .any(|candidate| name.contains(candidate))
+    {
+        "email"
+    } else if ["xcode", "visual studio", "cursor", "terminal", "iterm"]
+        .iter()
+        .any(|candidate| name.contains(candidate))
+    {
+        "code"
+    } else {
+        "general"
+    }
+}
+
+async fn capture_cleanup_context(
+    settings: &AppSettings,
+    effective_language: &str,
+    expected_target: Option<&utils::PasteTargetIdentity>,
+) -> Option<String> {
+    if !cleanup_context_allowed(settings, crate::secure_input::is_enabled_now()) {
+        return None;
+    }
+    if expected_target
+        .is_some_and(|target| !target.still_matches(utils::paste_target_identity().as_ref()))
+    {
+        return None;
+    }
+
+    let focused_text = tokio::time::timeout(
+        Duration::from_millis(75),
+        tauri::async_runtime::spawn_blocking(|| utils::ax_focused_context(256)),
+    )
+    .await
+    .ok()
+    .and_then(Result::ok)
+    .flatten()
+    .map(|text| bounded_nearby_text(&text));
+
+    if expected_target
+        .is_some_and(|target| !target.still_matches(utils::paste_target_identity().as_ref()))
+    {
+        return None;
+    }
+
+    let application = utils::frontmost_app_name().unwrap_or_else(|| "unknown".to_string());
+    let vocabulary = settings
+        .custom_words
+        .iter()
+        .filter(|word| !word.trim().is_empty())
+        .take(24)
+        .map(|word| word.chars().take(64).collect::<String>())
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    if focused_text.is_none() && vocabulary.is_empty() {
+        return None;
+    }
+    Some(format!(
+        "Application: {application}\nApplication category: {}\nLanguage: {effective_language}\nNearby text: {}\nRelevant vocabulary: {vocabulary}",
+        application_category(&application),
+        focused_text.as_deref().unwrap_or("unavailable")
+    ))
 }
 
 /// Send a system+user request through the configured post-processing provider
@@ -186,7 +424,8 @@ async fn run_llm(
     system_prompt: String,
     user_content: String,
     legacy_prompt: String,
-) -> Option<String> {
+    purpose: LlmPurpose,
+) -> Option<CleanupResult> {
     let json_schema = serde_json::json!({
         "type": "object",
         "properties": {
@@ -204,14 +443,22 @@ async fn run_llm(
         user_content,
         legacy_prompt,
         json_schema,
+        purpose,
     )
     .await?;
-    match serde_json::from_str::<serde_json::Value>(&content) {
-        Ok(json) => match json.get(TRANSCRIPTION_FIELD).and_then(|t| t.as_str()) {
-            Some(text) => Some(text.to_string()),
-            None => Some(content),
-        },
-        Err(_) => Some(content),
+    let requires_structured_cleanup = purpose == LlmPurpose::Cleanup
+        && settings
+            .active_post_process_provider()
+            .is_some_and(|provider| {
+                provider.id != APPLE_INTELLIGENCE_PROVIDER_ID
+                    && (provider.supports_structured_output || uses_managed_ollama(settings))
+            });
+    match extract_llm_text(content, requires_structured_cleanup) {
+        Some(text) => Some(text),
+        None => {
+            warn!("Cleanup provider returned malformed structured output");
+            None
+        }
     }
 }
 
@@ -226,6 +473,7 @@ async fn run_llm_raw(
     user_content: String,
     legacy_prompt: String,
     json_schema: serde_json::Value,
+    purpose: LlmPurpose,
 ) -> Option<String> {
     let provider = match settings.active_post_process_provider().cloned() {
         Some(provider) => provider,
@@ -254,16 +502,46 @@ async fn run_llm_raw(
         provider.id, model
     );
 
-    let api_key = settings
-        .post_process_api_keys
-        .get(&provider.id)
-        .cloned()
-        .unwrap_or_default();
+    let api_key = crate::credential_store::resolve(
+        &provider.id,
+        settings.post_process_api_keys.get(&provider.id),
+    );
 
     // Ask these providers to skip reasoning/thinking — post-processing rarely
     // benefits from it and it adds seconds of latency. llm_client picks the
     // field the endpoint understands and retries without it if rejected.
     let disable_reasoning = matches!(provider.id.as_str(), "custom" | "openrouter");
+
+    if purpose == LlmPurpose::Cleanup && uses_managed_ollama(settings) {
+        match crate::ollama_setup::chat_cleanup(
+            &model,
+            system_prompt.clone(),
+            user_content.clone(),
+            json_schema.clone(),
+        )
+        .await
+        {
+            Ok(content) => {
+                let content = strip_invisible_chars(strip_think_block(&content));
+                let valid = serde_json::from_str::<serde_json::Value>(&content)
+                    .ok()
+                    .and_then(|value| value.get(TRANSCRIPTION_FIELD).cloned())
+                    .and_then(|value| value.as_str().map(str::to_string))
+                    .is_some();
+                if valid {
+                    return Some(content);
+                }
+                warn!(
+                    "Managed Ollama returned malformed structured output for model '{}'; trying compatibility path",
+                    model
+                );
+            }
+            Err(error) => warn!(
+                "Managed Ollama native cleanup failed for model '{}': {}. Trying compatibility path",
+                model, error
+            ),
+        }
+    }
 
     if provider.supports_structured_output {
         debug!("Using structured outputs for provider '{}'", provider.id);
@@ -319,7 +597,10 @@ async fn run_llm_raw(
             user_content,
             Some(system_prompt),
             Some(json_schema),
-            disable_reasoning,
+            crate::llm_client::CompletionOptions {
+                disable_reasoning,
+                cleanup_limits: purpose == LlmPurpose::Cleanup,
+            },
         )
         .await
         {
@@ -357,7 +638,10 @@ async fn run_llm_raw(
         api_key,
         &model,
         processed_prompt,
-        disable_reasoning,
+        crate::llm_client::CompletionOptions {
+            disable_reasoning,
+            cleanup_limits: purpose == LlmPurpose::Cleanup,
+        },
     )
     .await
     {
@@ -440,6 +724,9 @@ pub(crate) struct ProcessedTranscription {
     /// Select-all before pasting so the text replaces the whole focused field
     /// (whole-field rewrites in Command Mode).
     pub select_all_before_paste: bool,
+    pub cleanup: CleanupMetadata,
+    pub paste_permitted: bool,
+    pub paste_target: Option<utils::PasteTargetIdentity>,
 }
 
 /// Resolve the persisted language *intent* into the language the currently-loaded
@@ -467,11 +754,18 @@ pub(crate) async fn process_transcription_output(
     app: &AppHandle,
     transcription: &str,
     post_process: bool,
+    paste_target: Option<utils::PasteTargetIdentity>,
 ) -> ProcessedTranscription {
+    let finalization_started = Instant::now();
     let settings = get_settings(app);
+    let requested_level = if post_process {
+        settings.cleanup_level
+    } else {
+        CleanupLevel::Off
+    };
     let mut final_text = transcription.to_string();
-    let mut post_processed_text: Option<String> = None;
     let mut post_process_prompt: Option<String> = None;
+    let mut cleanup_ms = None;
 
     // Resolve the language the transcription actually ran in (the persisted
     // intent coerced against the loaded model's capabilities) so OpenCC keys off
@@ -483,11 +777,23 @@ pub(crate) async fn process_transcription_output(
         final_text = converted_text;
     }
 
-    if post_process {
-        if let Some(processed_text) = post_process_transcription(&settings, &final_text).await {
-            post_processed_text = Some(processed_text.clone());
-            final_text = processed_text;
+    let cleanup_context = if post_process && requested_level != CleanupLevel::Off {
+        capture_cleanup_context(&settings, &effective_language, paste_target.as_ref()).await
+    } else {
+        None
+    };
 
+    let cleanup = if post_process && requested_level != CleanupLevel::Off {
+        let deadline = Duration::from_millis(settings.cleanup_timeout_ms.clamp(200, 10_000));
+        let (outcome, duration_ms) = run_bounded_cleanup(
+            &final_text,
+            requested_level,
+            deadline,
+            post_process_transcription(&settings, &final_text, cleanup_context.as_deref()),
+        )
+        .await;
+        cleanup_ms = Some(duration_ms);
+        if matches!(outcome, CleanupOutcome::Applied(_)) {
             if let Some(prompt_id) = &settings.post_process_selected_prompt_id {
                 if let Some(prompt) = settings
                     .post_process_prompts
@@ -498,15 +804,54 @@ pub(crate) async fn process_transcription_output(
                 }
             }
         }
-    } else if final_text != transcription {
-        post_processed_text = Some(final_text.clone());
-    }
+        outcome
+    } else {
+        CleanupOutcome::NotRequested
+    };
+
+    let finalized = finalize_transcript(
+        transcription,
+        final_text,
+        cleanup,
+        requested_level,
+        cleanup_ms,
+        finalization_started.elapsed().as_millis() as u64,
+        true,
+    );
+
+    debug!(
+        "Transcript finalization: provider='{}', raw_len={}, final_len={}, edit_kinds={:?}, cleanup_ms={:?}, total_ms={}, fallback={:?}",
+        settings.post_process_provider_id,
+        finalized.raw_text.len(),
+        finalized.final_text.len(),
+        finalized
+            .edits
+            .iter()
+            .map(|edit| edit.kind.as_str())
+            .collect::<Vec<_>>(),
+        finalized.cleanup_ms,
+        finalized.total_ms,
+        finalized.fallback,
+    );
 
     ProcessedTranscription {
-        final_text,
-        post_processed_text,
+        final_text: finalized.final_text,
+        post_processed_text: finalized.processed_text,
         post_process_prompt,
         select_all_before_paste: false,
+        cleanup: CleanupMetadata {
+            requested_level: Some(finalized.requested_level.as_str().to_string()),
+            applied_level: finalized
+                .applied_level
+                .map(|level| level.as_str().to_string()),
+            changed: finalized.changed,
+            fallback: finalized
+                .fallback
+                .map(|fallback| fallback.as_str().to_string()),
+            duration_ms: finalized.cleanup_ms,
+        },
+        paste_permitted: finalized.paste_permitted,
+        paste_target,
     }
 }
 
@@ -650,6 +995,7 @@ pub(crate) async fn process_command_output(
     app: &AppHandle,
     instruction: &str,
     context: CommandContext,
+    paste_target: Option<utils::PasteTargetIdentity>,
 ) -> ProcessedTranscription {
     let settings = get_settings(app);
     if let CommandContext::Field { field, window } = &context {
@@ -674,6 +1020,7 @@ pub(crate) async fn process_command_output(
             user_content,
             legacy_prompt,
             json_schema,
+            LlmPurpose::Command,
         )
         .await;
         // On LLM failure paste nothing rather than typing the raw instruction.
@@ -686,6 +1033,12 @@ pub(crate) async fn process_command_output(
             post_processed_text: if text.is_empty() { None } else { Some(text) },
             post_process_prompt: Some(COMMAND_FIELD_SYSTEM_PROMPT.to_string()),
             select_all_before_paste: replace_field,
+            cleanup: CleanupMetadata {
+                requested_level: Some("command".to_string()),
+                ..Default::default()
+            },
+            paste_permitted: true,
+            paste_target: paste_target.clone(),
         };
     }
 
@@ -709,8 +1062,10 @@ pub(crate) async fn process_command_output(
         system_prompt.to_string(),
         user_content,
         legacy_prompt,
+        LlmPurpose::Command,
     )
-    .await;
+    .await
+    .map(|result| result.text);
 
     // On LLM failure paste nothing rather than replacing the user's selection
     // with the raw spoken instruction.
@@ -719,6 +1074,12 @@ pub(crate) async fn process_command_output(
         post_processed_text: edited,
         post_process_prompt: Some(system_prompt.to_string()),
         select_all_before_paste: false,
+        cleanup: CleanupMetadata {
+            requested_level: Some("command".to_string()),
+            ..Default::default()
+        },
+        paste_permitted: true,
+        paste_target,
     }
 }
 
@@ -726,6 +1087,9 @@ impl ShortcutAction for TranscribeAction {
     fn start(&self, app: &AppHandle, binding_id: &str, _shortcut_str: &str) {
         let start_time = Instant::now();
         debug!("TranscribeAction::start called for binding: {}", binding_id);
+        if let Ok(mut target) = self.paste_target.lock() {
+            *target = utils::paste_target_identity();
+        }
 
         // Load model in the background
         let tm = app.state::<Arc<TranscriptionManager>>();
@@ -751,6 +1115,20 @@ impl ShortcutAction for TranscribeAction {
         let plan_started = Instant::now();
         let settings = get_settings(app);
         let is_always_on = settings.always_on_microphone;
+
+        if self.post_process
+            && settings.managed_ollama
+            && settings.cleanup_level != CleanupLevel::Off
+        {
+            let provider_id = settings.post_process_provider_id.clone();
+            if let Some(model) = settings.post_process_models.get(&provider_id).cloned() {
+                tauri::async_runtime::spawn(async move {
+                    if let Err(error) = crate::ollama_setup::warm_model(&model).await {
+                        debug!("Managed Ollama warm-up skipped: {}", error);
+                    }
+                });
+            }
+        }
 
         let selected_model_info = app
             .state::<Arc<ModelManager>>()
@@ -883,6 +1261,11 @@ impl ShortcutAction for TranscribeAction {
         let rm = Arc::clone(&app.state::<Arc<AudioRecordingManager>>());
         let tm = Arc::clone(&app.state::<Arc<TranscriptionManager>>());
         let hm = Arc::clone(&app.state::<Arc<HistoryManager>>());
+        let paste_target = self
+            .paste_target
+            .lock()
+            .ok()
+            .and_then(|mut target| target.take());
 
         change_tray_icon(app, TrayIconState::Transcribing);
         // Stop should give immediate visual feedback. Live streaming can keep
@@ -1000,9 +1383,9 @@ impl ShortcutAction for TranscribeAction {
                     match transcription_result {
                         Ok(transcription) => {
                             debug!(
-                                "Transcription completed in {:?}: '{}'",
+                                "Transcription completed in {:?} ({} chars)",
                                 transcription_time.elapsed(),
-                                transcription
+                                transcription.len()
                             );
 
                             // Hotword routing: "hey poptart …" turns the rest of
@@ -1044,19 +1427,29 @@ impl ShortcutAction for TranscribeAction {
                                     }
                                 };
                                 complete_unless_cancelled(
-                                    process_command_output(&ah, instruction, context),
+                                    process_command_output(
+                                        &ah,
+                                        instruction,
+                                        context,
+                                        paste_target.clone(),
+                                    ),
                                     || rm.was_cancelled_since(cancel_generation),
                                 )
                                 .await
                             } else {
                                 complete_unless_cancelled(
-                                    process_transcription_output(&ah, &transcription, post_process),
+                                    process_transcription_output(
+                                        &ah,
+                                        &transcription,
+                                        post_process,
+                                        paste_target.clone(),
+                                    ),
                                     || rm.was_cancelled_since(cancel_generation),
                                 )
                                 .await
                             };
 
-                            let Some(processed) = processed else {
+                            let Some(mut processed) = processed else {
                                 debug!("Transcription operation cancelled during output handling");
                                 utils::hide_recording_overlay(&ah);
                                 change_tray_icon(&ah, TrayIconState::Idle);
@@ -1070,6 +1463,15 @@ impl ShortcutAction for TranscribeAction {
                                 return;
                             }
 
+                            if let Some(expected) = processed.paste_target.as_ref() {
+                                let current = utils::paste_target_identity();
+                                if !expected.still_matches(current.as_ref()) {
+                                    processed.paste_permitted = false;
+                                    processed.cleanup.fallback =
+                                        Some(CleanupFallback::TargetChanged.as_str().to_string());
+                                }
+                            }
+
                             // Save to history if WAV was saved
                             if wav_saved {
                                 if let Err(err) = hm.save_entry(
@@ -1078,6 +1480,7 @@ impl ShortcutAction for TranscribeAction {
                                     post_process || command_instruction.is_some(),
                                     processed.post_processed_text.clone(),
                                     processed.post_process_prompt.clone(),
+                                    processed.cleanup.clone(),
                                 ) {
                                     error!("Failed to save history entry: {}", err);
                                 }
@@ -1108,10 +1511,26 @@ impl ShortcutAction for TranscribeAction {
                                 let paste_time = Instant::now();
                                 let final_text = processed.final_text;
                                 let select_all_before_paste = processed.select_all_before_paste;
+                                let paste_permitted = processed.paste_permitted;
+                                let expected_target = processed.paste_target;
                                 let rm_for_paste = Arc::clone(&rm);
                                 ah.run_on_main_thread(move || {
                                     if rm_for_paste.was_cancelled_since(cancel_generation) {
                                         debug!("Transcription operation cancelled before paste");
+                                        utils::hide_recording_overlay(&ah_clone);
+                                        change_tray_icon(&ah_clone, TrayIconState::Idle);
+                                        return;
+                                    }
+
+                                    let target_matches =
+                                        expected_target.as_ref().is_none_or(|target| {
+                                            target.still_matches(
+                                                utils::paste_target_identity().as_ref(),
+                                            )
+                                        });
+                                    if !paste_permitted || !target_matches {
+                                        warn!("Paste refused because the dictation target changed");
+                                        let _ = ah_clone.emit("paste-target-changed", ());
                                         utils::hide_recording_overlay(&ah_clone);
                                         change_tray_icon(&ah_clone, TrayIconState::Idle);
                                         return;
@@ -1186,6 +1605,18 @@ impl ShortcutAction for TranscribeAction {
                                     post_process,
                                     None,
                                     None,
+                                    CleanupMetadata {
+                                        requested_level: Some(
+                                            if post_process {
+                                                get_settings(&ah).cleanup_level.as_str()
+                                            } else {
+                                                "off"
+                                            }
+                                            .to_string(),
+                                        ),
+                                        fallback: Some("provider_error".to_string()),
+                                        ..Default::default()
+                                    },
                                 ) {
                                     error!("Failed to save failed history entry: {}", save_err);
                                 }
@@ -1254,11 +1685,15 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
         "transcribe".to_string(),
         Arc::new(TranscribeAction {
             post_process: false,
+            paste_target: Mutex::new(None),
         }) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "transcribe_with_post_process".to_string(),
-        Arc::new(TranscribeAction { post_process: true }) as Arc<dyn ShortcutAction>,
+        Arc::new(TranscribeAction {
+            post_process: true,
+            paste_target: Mutex::new(None),
+        }) as Arc<dyn ShortcutAction>,
     );
     map.insert(
         "cancel".to_string(),
@@ -1274,15 +1709,24 @@ pub static ACTION_MAP: Lazy<HashMap<String, Arc<dyn ShortcutAction>>> = Lazy::ne
 #[cfg(test)]
 mod tests {
     use super::{
-        build_system_prompt, complete_unless_cancelled, fence_transcript, is_blank_transcription,
-        should_use_streaming_overlay, strip_think_block,
+        bounded_nearby_text, build_system_prompt, cleanup_context_allowed,
+        complete_unless_cancelled, extract_llm_text, fence_transcript, is_blank_transcription,
+        run_bounded_cleanup, should_use_streaming_overlay, strip_think_block,
     };
+    use crate::finalization::{CleanupFallback, CleanupLevel, CleanupOutcome, CleanupResult};
     use crate::settings::{OverlayStyle, DEFAULT_IMPROVE_PROMPT};
     use std::future;
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::Arc;
     use std::thread;
     use std::time::Duration;
+
+    fn cleanup_result(text: &str) -> CleanupResult {
+        CleanupResult {
+            text: text.to_string(),
+            edits: Vec::new(),
+        }
+    }
 
     #[test]
     fn blank_transcription_is_detected() {
@@ -1400,6 +1844,108 @@ mod tests {
 
         cancel_thread.join().unwrap();
         assert_eq!(result, None);
+    }
+
+    #[test]
+    fn bounded_cleanup_classifies_success_provider_failure_and_unsafe_output() {
+        let success = tauri::async_runtime::block_on(run_bounded_cleanup(
+            "Friday, no, Monday",
+            CleanupLevel::Light,
+            Duration::from_secs(1),
+            future::ready(Some(cleanup_result("Monday"))),
+        ));
+        let CleanupOutcome::Applied(success) = success.0 else {
+            panic!("cleanup should have been applied");
+        };
+        assert_eq!(success.text, "Monday");
+        assert_eq!(success.edits[0].kind, "backtrack");
+
+        let provider_failure = tauri::async_runtime::block_on(run_bounded_cleanup(
+            "Keep this",
+            CleanupLevel::Light,
+            Duration::from_secs(1),
+            future::ready(None),
+        ));
+        assert_eq!(
+            provider_failure.0,
+            CleanupOutcome::Failed(CleanupFallback::ProviderError)
+        );
+
+        let unsafe_output = tauri::async_runtime::block_on(run_bounded_cleanup(
+            "Keep this",
+            CleanupLevel::Light,
+            Duration::from_secs(1),
+            future::ready(Some(cleanup_result(
+                "Visit https://example.com and use 9917",
+            ))),
+        ));
+        assert_eq!(
+            unsafe_output.0,
+            CleanupOutcome::Failed(CleanupFallback::UnsafeOutput)
+        );
+    }
+
+    #[test]
+    fn bounded_cleanup_times_out_and_drops_late_work() {
+        let result = tauri::async_runtime::block_on(run_bounded_cleanup(
+            "Keep this",
+            CleanupLevel::Light,
+            Duration::from_millis(5),
+            async {
+                tokio::time::sleep(Duration::from_millis(50)).await;
+                Some(cleanup_result("late output"))
+            },
+        ));
+        assert_eq!(result.0, CleanupOutcome::Failed(CleanupFallback::Timeout));
+    }
+
+    #[test]
+    fn destination_context_is_bounded_at_both_ends() {
+        let input = format!("{}middle{}", "a".repeat(200), "z".repeat(200));
+        let bounded = bounded_nearby_text(&input);
+        assert!(bounded.starts_with(&"a".repeat(128)));
+        assert!(bounded.ends_with(&"z".repeat(128)));
+        assert!(bounded.chars().count() <= 260);
+    }
+
+    #[test]
+    fn context_contract_distinguishes_local_remote_consent_and_secure_fields() {
+        let mut settings = crate::settings::get_default_settings();
+        settings.post_process_provider_id = "custom".to_string();
+        assert!(cleanup_context_allowed(&settings, false));
+
+        settings.post_process_provider_id = "openai".to_string();
+        settings.managed_ollama = true;
+        assert!(!cleanup_context_allowed(&settings, false));
+        settings.share_context_with_remote = true;
+        assert!(cleanup_context_allowed(&settings, false));
+        assert!(!cleanup_context_allowed(&settings, true));
+
+        settings.share_context_with_remote = false;
+        settings.post_process_provider_id = "custom".to_string();
+        settings
+            .post_process_provider_mut("custom")
+            .unwrap()
+            .base_url = "https://localhost.attacker.example/v1".to_string();
+        assert!(!cleanup_context_allowed(&settings, false));
+    }
+
+    #[test]
+    fn malformed_structured_cleanup_never_becomes_pasteable_text() {
+        assert_eq!(
+            extract_llm_text(r#"{"transcription":"Clean text."}"#.to_string(), true)
+                .map(|result| result.text),
+            Some("Clean text.".to_string())
+        );
+        assert_eq!(extract_llm_text("plain text".to_string(), true), None);
+        assert_eq!(
+            extract_llm_text(r#"{"wrong":"field"}"#.to_string(), true),
+            None
+        );
+        assert_eq!(
+            extract_llm_text("legacy plain text".to_string(), false).map(|result| result.text),
+            Some("legacy plain text".to_string())
+        );
     }
 
     #[test]

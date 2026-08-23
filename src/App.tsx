@@ -132,6 +132,17 @@ function App() {
     };
   }, [t]);
 
+  useEffect(() => {
+    const unlisten = listen("paste-target-changed", () => {
+      toast.warning(t("errors.pasteTargetChangedTitle"), {
+        description: t("errors.pasteTargetChanged"),
+      });
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, [t]);
+
   // Listen for transcription failures and show a toast.
   // The payload is the backend error message (also logged to handy.log).
   useEffect(() => {
