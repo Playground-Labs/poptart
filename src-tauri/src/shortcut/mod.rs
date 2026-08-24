@@ -670,8 +670,9 @@ pub fn change_overlay_style_setting(app: AppHandle, style: String) -> Result<(),
     // resumes) emitting on the next audio callback.
     crate::overlay::update_overlay_enabled_cache(parsed != OverlayStyle::None);
 
-    // Reposition in case the window needs to re-center for the new style.
-    crate::utils::update_overlay_position(&app);
+    // Re-apply visibility for the idle indicator. Active recording/transcribing
+    // overlays are left alone unless the user disables the overlay entirely.
+    crate::overlay::sync_idle_overlay(&app);
 
     Ok(())
 }

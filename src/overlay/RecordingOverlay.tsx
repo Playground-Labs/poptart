@@ -13,6 +13,7 @@ import i18n, { syncLanguageFromSettings } from "@/i18n";
 import { getLanguageDirection } from "@/lib/utils/rtl";
 
 type OverlayState =
+  | "idle"
   | "recording"
   | "streaming"
   | "transcribing"
@@ -28,8 +29,8 @@ const WAVE_BARS = 21;
 
 const RecordingOverlay: React.FC = () => {
   const { t } = useTranslation();
-  const [isVisible, setIsVisible] = useState(false);
-  const [state, setState] = useState<OverlayState>("recording");
+  const [isVisible, setIsVisible] = useState(true);
+  const [state, setState] = useState<OverlayState>("idle");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // Holds the canvas draw fn so the mic-level event handler can drive it directly.
   // The overlay is a non-activating NSPanel where WebKit throttles rAF to ~0, so
@@ -292,55 +293,58 @@ const RecordingOverlay: React.FC = () => {
     const hasText =
       streamText.committed.length > 0 || streamText.tentative.length > 0;
     const working = phase === "working";
-    // Keep the panel open whenever there's text — even while finalizing — so the
-    // transcript stays put under a working spinner instead of collapsing and
-    // squishing the text mid-stream. Only fall back to the small working pill
-    // when there was no text to preserve.
-    const open = hasText;
-    const collapsed = working && !hasText;
+    if (hasText || working) {
+      // Keep the panel open whenever there's text — even while finalizing — so
+      // the transcript stays put under a working spinner instead of collapsing.
+      // A no-text listening stream falls through to the compact card below so
+      // idle -> listening morphs instead of remounting the Live card.
+      const open = hasText;
+      const collapsed = working && !hasText;
 
-    return (
-      <div dir={direction} className={`ov-stage ${position}`}>
-        <div
-          key={session}
-          className={`scard ${open ? "open" : ""} ${collapsed ? "working" : ""} ${
-            isVisible ? "" : "leaving"
-          }`}
-        >
-          <div className="stext">
-            <div className="stext-clip">
-              <div
-                className={`stext-cap ${overflowing ? "overflowing" : ""}`}
-                ref={capRef}
-                onScroll={handleStreamScroll}
-              >
-                <p>
-                  <span className="committed">
-                    {streamText.committed ? streamText.committed + " " : ""}
-                  </span>
-                  <span className="tentative">{streamText.tentative}</span>
-                  {/* Drop the blinking caret once finalizing — it's no longer
-                      capturing, and a static spinner conveys the work. */}
-                  {!working && <span className="scaret" />}
-                </p>
+      return (
+        <div dir={direction} className={`ov-stage ${position}`}>
+          <div
+            key={session}
+            className={`scard ${open ? "open" : ""} ${collapsed ? "working" : ""} ${
+              isVisible ? "" : "leaving"
+            }`}
+          >
+            <div className="stext">
+              <div className="stext-clip">
+                <div
+                  className={`stext-cap ${overflowing ? "overflowing" : ""}`}
+                  ref={capRef}
+                  onScroll={handleStreamScroll}
+                >
+                  <p>
+                    <span className="committed">
+                      {streamText.committed ? streamText.committed + " " : ""}
+                    </span>
+                    <span className="tentative">{streamText.tentative}</span>
+                    {/* Drop the blinking caret once finalizing — it's no longer
+                        capturing, and a static spinner conveys the work. */}
+                    {!working && <span className="scaret" />}
+                  </p>
+                </div>
               </div>
             </div>
+            {working
+              ? workingRow(
+                  workKind === "polishing"
+                    ? t("overlay.processing")
+                    : t("overlay.transcribing"),
+                )
+              : listeningRow(open)}
           </div>
-          {working
-            ? workingRow(
-                workKind === "polishing"
-                  ? t("overlay.processing")
-                  : t("overlay.transcribing"),
-              )
-            : listeningRow(open)}
         </div>
-      </div>
-    );
+      );
+    }
   }
 
   // ---- Minimal overlay: exactly one row at a time — waveform (recording), a
   // spinner + label (transcribing / processing), or an error label. Never
   // several. The pill animates its width between them.
+  const idle = state === "idle";
   const working = state === "transcribing" || state === "processing";
   const errored = state === "error";
   const workLabel =
@@ -362,7 +366,10 @@ const RecordingOverlay: React.FC = () => {
       className={`ov-stage ${position} ov-fade ${isVisible ? "show" : ""}`}
     >
       <div
-        className={`scard compact ${(working || errored) && isVisible ? "cworking" : ""}`}
+        className={`scard compact ${idle ? "idle" : ""} ${
+          (working || errored) && isVisible ? "cworking" : ""
+        }`}
+        aria-hidden={idle ? "true" : undefined}
       >
         {errored
           ? errorRow
