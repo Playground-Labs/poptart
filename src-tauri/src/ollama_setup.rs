@@ -18,7 +18,7 @@ const OLLAMA_BASE: &str = "http://localhost:11434";
 /// Redirects to the latest ollama-darwin.tgz GitHub release asset.
 const OLLAMA_DOWNLOAD_URL: &str = "https://ollama.com/download/ollama-darwin.tgz";
 /// Must match the default post-process model in settings.rs.
-pub const DEFAULT_MODEL: &str = "qwen3:8b";
+pub const DEFAULT_MODEL: &str = crate::settings::DEFAULT_LOCAL_CLEANUP_MODEL;
 const KEEP_ALIVE: &str = "10m";
 
 #[derive(Debug, Deserialize)]
@@ -49,12 +49,23 @@ fn cleanup_request_body(
     user_content: String,
     schema: serde_json::Value,
 ) -> serde_json::Value {
-    serde_json::json!({
-        "model": model,
-        "messages": [
+    let messages = if model
+        .split(':')
+        .next()
+        .is_some_and(|family| family.eq_ignore_ascii_case("gemma3"))
+    {
+        serde_json::json!([
+            { "role": "user", "content": format!("{system_prompt}\n\n{user_content}") }
+        ])
+    } else {
+        serde_json::json!([
             { "role": "system", "content": system_prompt },
             { "role": "user", "content": user_content }
-        ],
+        ])
+    };
+    serde_json::json!({
+        "model": model,
+        "messages": messages,
         "stream": false,
         "think": false,
         "format": schema,
@@ -221,7 +232,7 @@ pub fn spawn_managed_server(app: &AppHandle) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{cleanup_request_body, duration_ms};
+    use super::{cleanup_request_body, duration_ms, DEFAULT_MODEL};
 
     #[test]
     fn native_cleanup_is_deterministic_bounded_and_kept_warm() {
@@ -237,6 +248,25 @@ mod tests {
         assert_eq!(body["options"]["num_predict"], 512);
         assert_eq!(body["keep_alive"], "10m");
         assert!(body["format"].is_object());
+        assert_eq!(body["messages"].as_array().unwrap().len(), 2);
+        assert_eq!(body["messages"][0]["role"], "system");
+    }
+
+    #[test]
+    fn gemma_cleanup_uses_one_user_turn() {
+        let body = cleanup_request_body(
+            DEFAULT_MODEL,
+            "instructions".to_string(),
+            "<transcript>speech</transcript>".to_string(),
+            serde_json::json!({ "type": "object" }),
+        );
+
+        assert_eq!(body["messages"].as_array().unwrap().len(), 1);
+        assert_eq!(body["messages"][0]["role"], "user");
+        assert_eq!(
+            body["messages"][0]["content"],
+            "instructions\n\n<transcript>speech</transcript>"
+        );
     }
 
     #[test]
