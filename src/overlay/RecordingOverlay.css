@@ -23,6 +23,8 @@
      anchored flush to the screen edge in CSS. Keep overlay.rs in sync when these
      change — shrinking the scale only leaves the window with more slack. */
   --ov-scale: 0.85; /* whole-overlay size knob (1 = the authored px below) */
+  --ov-idle-w: 57px; /* inactive indicator, shown while the app is running */
+  --ov-idle-h: 11px;
   --ov-rest-w: 163px; /* resting compact pill (minimal, recording) -- hugs the
                          141px waveform: + 2x10 row padding + 2x1 card border */
   --ov-pill-w: 163px; /* base width / Live pill before it opens or collapses */
@@ -31,6 +33,7 @@
   --ov-open-w: 448px; /* Live panel, expanded */
   --ov-base-h: 44px; /* control-row height (.sbase) -- taller to host the waveform */
   --ov-cap-max-h: 64px; /* max height of the scrolling live-text region */
+  --ov-morph-ease: cubic-bezier(0.2, 1.35, 0.25, 1);
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -74,7 +77,9 @@
   transition:
     opacity 280ms ease-out,
     transform 280ms ease-out,
-    width 460ms cubic-bezier(0.22, 1, 0.36, 1);
+    width 520ms var(--ov-morph-ease),
+    height 520ms var(--ov-morph-ease),
+    border-radius 520ms var(--ov-morph-ease);
 }
 .ov-stage.top.ov-fade .scard.compact {
   transform: translateY(-100%);
@@ -141,8 +146,9 @@
   /* slide-in plays on mount; morph (width/radius) is a transition */
   animation: scard-slide 280ms ease-out;
   transition:
-    width 460ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-radius 460ms cubic-bezier(0.22, 1, 0.36, 1);
+    width 520ms var(--ov-morph-ease),
+    height 520ms var(--ov-morph-ease),
+    border-radius 520ms var(--ov-morph-ease);
   will-change: transform, width, opacity;
 }
 /* Emerge from the anchored screen edge: the card sits flush against it, so the
@@ -185,7 +191,6 @@
   width: var(--ov-work-w);
   border-radius: 18px;
 }
-
 /* Compact form: two fixed widths so the recording→working change is an animatable
    width transition (intrinsic max-content can't be transitioned, and every label
    is short enough to fit the resting pill, so content-sizing produced no visible
@@ -194,9 +199,30 @@
 .scard.compact {
   animation: none;
   width: var(--ov-rest-w);
+  height: var(--ov-base-h);
 }
 .scard.compact.cworking {
   width: var(--ov-work-w);
+}
+.scard.compact.idle {
+  width: var(--ov-idle-w);
+  height: var(--ov-idle-h);
+  border-radius: calc(var(--ov-idle-h) / 2);
+  border-color: color-mix(in srgb, var(--color-text) 26%, transparent);
+}
+.scard.compact .sbase {
+  opacity: 1;
+  transform: scaleX(1);
+  transition:
+    opacity 180ms ease 90ms,
+    transform 520ms var(--ov-morph-ease);
+}
+.scard.compact.idle .sbase {
+  opacity: 0;
+  transform: scaleX(0.35);
+  transition:
+    opacity 120ms ease,
+    transform 280ms ease;
 }
 
 /* text region — auto-height open via grid-rows trick; region fades as a whole */

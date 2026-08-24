@@ -47,6 +47,8 @@ tauri_panel! {
 // state is ~218 — the slack below covers the unscaled value either way.
 const OVERLAY_WIDTH: f64 = 300.0;
 const OVERLAY_HEIGHT: f64 = 52.0;
+const OVERLAY_IDLE_WIDTH: f64 = 68.0;
+const OVERLAY_IDLE_HEIGHT: f64 = 18.0;
 
 // Sized to the enlarged Live card (--ov-open-w 448 x ~44 row + 64 text cap), plus
 // a little slack.
@@ -55,12 +57,16 @@ const OVERLAY_STREAM_HEIGHT: f64 = 128.0;
 
 /// Overlay window size (logical) for a given UI state.
 fn overlay_dimensions(state: &str) -> (f64, f64) {
-    if state == "streaming" {
+    if state == "idle" {
+        (OVERLAY_IDLE_WIDTH, OVERLAY_IDLE_HEIGHT)
+    } else if state == "streaming" {
         (OVERLAY_STREAM_WIDTH, OVERLAY_STREAM_HEIGHT)
     } else {
         (OVERLAY_WIDTH, OVERLAY_HEIGHT)
     }
 }
+
+static OVERLAY_ACTIVE: AtomicBool = AtomicBool::new(false);
 
 static LAST_MIC_LEVEL_EMIT: AtomicU64 = AtomicU64::new(0);
 const EMIT_THROTTLE_MS: u64 = 33; // ~30 FPS
@@ -365,14 +371,15 @@ fn place_windows_overlay(
     Ok(())
 }
 
-/// Creates the recording overlay window and keeps it hidden by default
+/// Creates the recording overlay window, then shows the idle indicator if enabled.
 #[cfg(not(target_os = "macos"))]
 pub fn create_recording_overlay(app_handle: &AppHandle) {
     // On Linux (Wayland), monitor detection often fails, but we don't need exact coordinates
     // for Layer Shell as we use anchors. On other platforms, we require a monitor.
     #[cfg(not(target_os = "linux"))]
     {
-        let position = calculate_overlay_position(app_handle, OVERLAY_WIDTH, OVERLAY_HEIGHT);
+        let position =
+            calculate_overlay_position(app_handle, OVERLAY_IDLE_WIDTH, OVERLAY_IDLE_HEIGHT);
         if position.is_none() {
             debug!("Failed to determine overlay position, not creating overlay window");
             return;
@@ -388,7 +395,7 @@ pub fn create_recording_overlay(app_handle: &AppHandle) {
     )
     .title("Recording")
     .resizable(false)
-    .inner_size(OVERLAY_WIDTH, OVERLAY_HEIGHT)
+    .inner_size(OVERLAY_IDLE_WIDTH, OVERLAY_IDLE_HEIGHT)
     .shadow(false)
     .maximizable(false)
     .minimizable(false)
@@ -419,7 +426,8 @@ pub fn create_recording_overlay(app_handle: &AppHandle) {
                 }
             }
 
-            debug!("Recording overlay window created successfully (hidden)");
+            debug!("Recording overlay window created successfully");
+            show_idle_overlay(app_handle);
         }
         Err(e) => {
             debug!("Failed to create recording overlay window: {}", e);
@@ -427,10 +435,12 @@ pub fn create_recording_overlay(app_handle: &AppHandle) {
     }
 }
 
-/// Creates the recording overlay panel and keeps it hidden by default (macOS)
+/// Creates the recording overlay panel, then shows the idle indicator if enabled (macOS).
 #[cfg(target_os = "macos")]
 pub fn create_recording_overlay(app_handle: &AppHandle) {
-    if let Some((x, y)) = calculate_overlay_position(app_handle, OVERLAY_WIDTH, OVERLAY_HEIGHT) {
+    if let Some((x, y)) =
+        calculate_overlay_position(app_handle, OVERLAY_IDLE_WIDTH, OVERLAY_IDLE_HEIGHT)
+    {
         // PanelBuilder creates a Tauri window then converts it to NSPanel.
         // The window remains registered, so get_webview_window() still works.
         match PanelBuilder::<_, RecordingOverlayPanel>::new(app_handle, "recording_overlay")
@@ -439,8 +449,8 @@ pub fn create_recording_overlay(app_handle: &AppHandle) {
             .position(tauri::Position::Logical(tauri::LogicalPosition { x, y }))
             .level(PanelLevel::Status)
             .size(tauri::Size::Logical(tauri::LogicalSize {
-                width: OVERLAY_WIDTH,
-                height: OVERLAY_HEIGHT,
+                width: OVERLAY_IDLE_WIDTH,
+                height: OVERLAY_IDLE_HEIGHT,
             }))
             .has_shadow(false)
             .transparent(true)
@@ -457,6 +467,7 @@ pub fn create_recording_overlay(app_handle: &AppHandle) {
         {
             Ok(panel) => {
                 panel.hide();
+                show_idle_overlay(app_handle);
             }
             Err(e) => {
                 log::error!("Failed to create recording overlay panel: {}", e);
@@ -538,6 +549,7 @@ fn show_overlay_state_on_main(app_handle: &AppHandle, state: &str) {
         }
 
         let _ = overlay_window.emit("show-overlay", state);
+        OVERLAY_ACTIVE.store(state != "idle", Ordering::Relaxed);
         log::debug!(
             "overlay '{}': set_size={:?} pos_calc={:?} set_pos={:?} show={:?}",
             state,
@@ -552,6 +564,11 @@ fn show_overlay_state_on_main(app_handle: &AppHandle, state: &str) {
 /// Shows the recording overlay window with fade-in animation
 pub fn show_recording_overlay(app_handle: &AppHandle) {
     show_overlay_state(app_handle, "recording");
+}
+
+/// Shows the inactive overlay indicator while the app is running.
+pub fn show_idle_overlay(app_handle: &AppHandle) {
+    show_overlay_state(app_handle, "idle");
 }
 
 /// Shows the larger streaming overlay that displays live transcription text
@@ -591,7 +608,9 @@ fn update_overlay_position_on_main(app_handle: &AppHandle) {
 
         #[cfg(target_os = "windows")]
         {
-            let state = if WINDOWS_OVERLAY_IS_STREAMING.load(Ordering::Relaxed) {
+            let state = if !OVERLAY_ACTIVE.load(Ordering::Relaxed) {
+                "idle"
+            } else if WINDOWS_OVERLAY_IS_STREAMING.load(Ordering::Relaxed) {
                 "streaming"
             } else {
                 "recording"
@@ -616,19 +635,30 @@ fn update_overlay_position_on_main(app_handle: &AppHandle) {
     }
 }
 
-/// Hides the recording overlay window with fade-out animation
+/// Returns the recording overlay to idle, or hides it when overlays are disabled.
 pub fn hide_recording_overlay(app_handle: &AppHandle) {
-    // Always hide the overlay regardless of settings - if setting was changed while recording,
-    // we still want to hide it properly
+    if settings::get_settings(app_handle).overlay_style != OverlayStyle::None {
+        show_idle_overlay(app_handle);
+        return;
+    }
+
+    hide_overlay_window(app_handle);
+}
+
+fn hide_overlay_window(app_handle: &AppHandle) {
     if let Some(overlay_window) = app_handle.get_webview_window("recording_overlay") {
-        // Emit event to trigger fade-out animation
         let _ = overlay_window.emit("hide-overlay", ());
-        // Hide the window after a short delay to allow animation to complete
-        let window_clone = overlay_window.clone();
-        std::thread::spawn(move || {
-            std::thread::sleep(std::time::Duration::from_millis(300));
-            let _ = window_clone.hide();
-        });
+        let _ = overlay_window.hide();
+    }
+    OVERLAY_ACTIVE.store(false, Ordering::Relaxed);
+}
+
+/// Applies the persisted overlay visibility to the idle indicator.
+pub fn sync_idle_overlay(app_handle: &AppHandle) {
+    if settings::get_settings(app_handle).overlay_style == OverlayStyle::None {
+        hide_overlay_window(app_handle);
+    } else if !OVERLAY_ACTIVE.load(Ordering::Relaxed) {
+        show_idle_overlay(app_handle);
     }
 }
 
