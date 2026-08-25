@@ -145,7 +145,7 @@ The application installs one signed Model Pack during onboarding. That pack cont
 - Capture microphone audio with native AVFoundation facilities and retain it only in bounded memory for the active Dictation.
 - Start recognition incrementally during Recording and keep partial hypotheses internal.
 - Define a Poptart-owned speech-recognition interface and implement FluidAudio as its first adapter.
-- Use the English Parakeet TDT v2 model for MVP recognition.
+- Use FluidAudio Parakeet Unified English 0.6B with its 640 millisecond streaming configuration and int8 encoder for MVP recognition, subject to the physical M1 release gate.
 - Finalize the Raw Transcript after key-up. Do not begin model Cleanup on unstable partial hypotheses.
 - If final recognition misses the watchdog, deliver the latest nonempty usable Recognition Hypothesis without Cleanup.
 - If recognition produces no usable text, insert nothing and return an explicit failure outcome.
@@ -164,7 +164,7 @@ The application installs one signed Model Pack during onboarding. That pack cont
 - Ship a task-specific, four-bit Qwen 3.5 0.8B model. Gemma 3 1B is a development benchmark challenger, not a product option.
 - Ask the model for a versioned, compact Cleanup Edit Plan rather than a regenerated transcript.
 - Represent replacements, deletions, casing changes, and punctuation insertions as operations over stable transcript spans.
-- Use constrained decoding for the edit-plan schema and reject malformed structures.
+- Use greedy generation with a tight output cap and stop marker, parse the edit-plan schema incrementally, and reject malformed structures. MLX Swift LM does not provide a stable built-in grammar decoder.
 - Validate in-bounds and ordered spans, non-overlap, deterministic reservations, Unicode safety, replacement size, total changed proportion, Conservative Cleanup categories, context non-copying, and deterministic applicability.
 - Do not trust model-supplied confidence. Derive acceptance from the plan, validator, deadline, and evaluated behavior.
 - Copy every untouched Raw Transcript span deterministically.
@@ -259,7 +259,7 @@ The application installs one signed Model Pack during onboarding. That pack cont
 - Measure model behavior separately for exact plan correctness, meaning preservation, Personal Vocabulary preservation, context fit, unsafe-edit acceptance, and fallback rate.
 - Include adversarial examples containing prompt injection in Raw Transcript and Target Context, hidden Unicode, control characters, URLs, numbers, context-copy attempts, excessive deletion, overlapping spans, and stylistic rewrites.
 - Add contract tests around FluidAudio for partial/final ordering, cancellation, vocabulary capability reporting, audio release, and error translation.
-- Add contract tests around MLX for local artifact loading, constrained edit-plan decoding, cancellation, warm reuse, memory-pressure unload, and late completion.
+- Add contract tests around MLX for local artifact loading, bounded edit-plan parsing, cancellation, warm reuse, memory-pressure unload, and late completion.
 - Add macOS integration tests for secure-field detection, Accessibility target capture/revalidation, selected-range replacement, nonactivating Indicator behavior, and pasteboard restoration.
 - Add Model Pack integration tests with a local HTTP server for fresh and resumed downloads, valid and invalid ranges, interruption, cancellation, size limits, hash mismatch, manifest-signature failure, incompatible versions, smoke-test failure, atomic activation, and rollback.
 - Add persistence tests proving sensitive values are not present as plaintext, expiry works, individual and bulk deletion work, Keychain key loss makes old records unreadable, and reset recovers a usable empty store.

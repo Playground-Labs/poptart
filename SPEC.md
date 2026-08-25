@@ -127,7 +127,7 @@ Illegal or late transitions are ignored and recorded locally in debug logging wi
 
 ## Recognition
 
-Poptart uses FluidAudio through a Poptart-owned `SpeechRecognizer` protocol and ships the English Parakeet TDT v2 artifact in the Managed Model pack.
+Poptart uses FluidAudio through a Poptart-owned `SpeechRecognizer` protocol and ships the Parakeet Unified English 0.6B artifact with its 640 millisecond streaming configuration and int8 encoder in the Managed Model pack. The artifact remains provisional until it passes the physical M1 recognition and Completion Deadline gates.
 
 Recognition begins during Recording. Audio already accepted by the recognizer may be discarded as soon as it is no longer required for finalization. No audio is persisted to disk. Partials are internal runtime state and never appear in the Indicator or history.
 
