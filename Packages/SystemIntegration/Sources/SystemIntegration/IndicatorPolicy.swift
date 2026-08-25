@@ -1,0 +1,62 @@
+import DictationCore
+import Foundation
+
+public enum IndicatorTone: String, Equatable, Sendable {
+  case neutral
+  case active
+  case warning
+  case success
+  case fallback
+  case failure
+}
+
+public struct IndicatorVisual: Equatable, Sendable {
+  public let tone: IndicatorTone
+  public let audioActivity: Double?
+  public let accessibilityDescription: String
+  public let transcript: String?
+
+  public init(_ state: IndicatorState) {
+    transcript = nil
+    switch state {
+    case .ready:
+      (tone, audioActivity, accessibilityDescription) = (.neutral, nil, "Poptart ready")
+    case .unavailableSecureTarget:
+      (tone, audioActivity, accessibilityDescription) = (
+        .warning, nil, "Dictation unavailable in secure field"
+      )
+    case .recording(let activity):
+      (tone, audioActivity, accessibilityDescription) = (.active, activity, "Recording")
+    case .approachingRecordingLimit(let activity):
+      (tone, audioActivity, accessibilityDescription) = (
+        .warning, activity, "Recording limit approaching"
+      )
+    case .finalizingRecognition:
+      (tone, audioActivity, accessibilityDescription) = (.active, nil, "Finalizing recognition")
+    case .cleaning:
+      (tone, audioActivity, accessibilityDescription) = (.active, nil, "Cleaning dictation")
+    case .delivering:
+      (tone, audioActivity, accessibilityDescription) = (.active, nil, "Delivering dictation")
+    case .success:
+      (tone, audioActivity, accessibilityDescription) = (.success, nil, "Dictation inserted")
+    case .rawTranscriptFallback:
+      (tone, audioActivity, accessibilityDescription) = (.fallback, nil, "Raw transcript inserted")
+    case .oversizedFallback:
+      (tone, audioActivity, accessibilityDescription) = (
+        .fallback, nil, "Deterministic cleanup inserted"
+      )
+    case .recognitionFallback:
+      (tone, audioActivity, accessibilityDescription) = (
+        .fallback, nil, "Recognition hypothesis inserted"
+      )
+    case .copiedBecauseTargetChanged:
+      (tone, audioActivity, accessibilityDescription) = (
+        .fallback, nil, "Target changed; dictation copied"
+      )
+    case .failure:
+      (tone, audioActivity, accessibilityDescription) = (.failure, nil, "Dictation failed")
+    case .cancelled:
+      (tone, audioActivity, accessibilityDescription) = (.neutral, nil, "Dictation cancelled")
+    }
+  }
+}
