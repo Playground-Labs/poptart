@@ -505,14 +505,14 @@ fn default_model() -> String {
     "".to_string()
 }
 
-const CURRENT_SETTINGS_SCHEMA_VERSION: u32 = 3;
+const CURRENT_SETTINGS_SCHEMA_VERSION: u32 = 4;
 
 fn default_settings_schema_version() -> u32 {
     CURRENT_SETTINGS_SCHEMA_VERSION
 }
 
 fn default_cleanup_timeout_ms() -> u64 {
-    1_200
+    1_400
 }
 
 fn default_push_to_talk() -> bool {
@@ -1164,6 +1164,12 @@ fn apply_settings_migrations(
         }
         updated = true;
     }
+    if stored_schema_version < 4 {
+        if settings.cleanup_timeout_ms == 1_200 {
+            settings.cleanup_timeout_ms = default_cleanup_timeout_ms();
+        }
+        updated = true;
+    }
     if stored_schema_version < CURRENT_SETTINGS_SCHEMA_VERSION as u64 {
         settings.settings_schema_version = CURRENT_SETTINGS_SCHEMA_VERSION;
         updated = true;
@@ -1525,6 +1531,26 @@ mod tests {
             custom_settings.post_process_models["custom"],
             "my-local-model"
         );
+    }
+
+    #[test]
+    fn timeout_migration_updates_only_the_previous_default() {
+        let raw = serde_json::json!({
+            "settings_schema_version": 3,
+            "onboarding_completed": false,
+            "whats_new_last_seen_version": default_whats_new_last_seen_version(),
+            "overlay_style": "live"
+        });
+
+        let mut settings = get_default_settings();
+        settings.cleanup_timeout_ms = 1_200;
+        assert!(apply_settings_migrations(&mut settings, &raw));
+        assert_eq!(settings.cleanup_timeout_ms, 1_400);
+
+        let mut custom_settings = get_default_settings();
+        custom_settings.cleanup_timeout_ms = 2_000;
+        assert!(apply_settings_migrations(&mut custom_settings, &raw));
+        assert_eq!(custom_settings.cleanup_timeout_ms, 2_000);
     }
 
     #[cfg(not(target_os = "linux"))]
