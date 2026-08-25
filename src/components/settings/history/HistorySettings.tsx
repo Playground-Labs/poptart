@@ -258,7 +258,7 @@ export const HistorySettings: React.FC = () => {
                 key={entry.id}
                 entry={entry}
                 onToggleSaved={() => toggleSaved(entry.id)}
-                onCopyText={() => copyToClipboard(entry.transcription_text)}
+                onCopyText={copyToClipboard}
                 getAudioUrl={getAudioUrl}
                 deleteAudio={deleteAudioEntry}
                 retryTranscription={retryHistoryEntry}
@@ -297,7 +297,7 @@ export const HistorySettings: React.FC = () => {
 interface HistoryEntryProps {
   entry: HistoryEntry;
   onToggleSaved: () => void;
-  onCopyText: () => void;
+  onCopyText: (text: string) => void;
   getAudioUrl: (fileName: string) => Promise<string | null>;
   deleteAudio: (id: number) => Promise<void>;
   retryTranscription: (id: number) => Promise<void>;
@@ -314,8 +314,24 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
   const { t, i18n } = useTranslation();
   const [showCopied, setShowCopied] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  const cleanedText = entry.post_processed_text?.trim()
+    ? entry.post_processed_text
+    : null;
+  const hasCleanupChange =
+    cleanedText !== null && cleanedText !== entry.transcription_text;
+  const [textVariant, setTextVariant] = useState<"raw" | "cleaned">(
+    hasCleanupChange ? "cleaned" : "raw",
+  );
 
-  const hasTranscription = entry.transcription_text.trim().length > 0;
+  useEffect(() => {
+    setTextVariant(hasCleanupChange ? "cleaned" : "raw");
+  }, [entry.id, hasCleanupChange]);
+
+  const displayedText =
+    textVariant === "cleaned" && cleanedText
+      ? cleanedText
+      : entry.transcription_text;
+  const hasTranscription = displayedText.trim().length > 0;
 
   const handleLoadAudio = useCallback(
     () => getAudioUrl(entry.file_name),
@@ -327,7 +343,7 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
       return;
     }
 
-    onCopyText();
+    onCopyText(displayedText);
     setShowCopied(true);
     setTimeout(() => setShowCopied(false), 2000);
   };
@@ -412,6 +428,48 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
         </div>
       </div>
 
+      {hasCleanupChange && (
+        <div className="flex w-fit rounded-md border border-mid-gray/20 bg-background p-0.5 text-xs">
+          {(["cleaned", "raw"] as const).map((variant) => (
+            <button
+              key={variant}
+              type="button"
+              aria-pressed={textVariant === variant}
+              onClick={() => setTextVariant(variant)}
+              className={`rounded px-2 py-1 transition-colors ${
+                textVariant === variant
+                  ? "bg-logo-primary/10 text-logo-primary"
+                  : "text-text/60 hover:text-text"
+              }`}
+            >
+              {t(`settings.history.${variant}`)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {entry.cleanup_requested_level &&
+        entry.cleanup_requested_level !== "off" && (
+          <div className="flex flex-wrap items-center gap-2 text-xs text-text/60">
+            <span className="rounded-full bg-mid-gray/10 px-2 py-1">
+              {t("settings.history.cleanupLevel", {
+                level: t(
+                  `settings.history.cleanupLevels.${entry.cleanup_applied_level ?? entry.cleanup_requested_level}`,
+                ),
+              })}
+            </span>
+            {entry.cleanup_fallback && (
+              <span className="rounded-full bg-yellow-500/10 px-2 py-1 text-yellow-700 dark:text-yellow-300">
+                {t("settings.history.cleanupFallbacks.label", {
+                  reason: t(
+                    `settings.history.cleanupFallbacks.${entry.cleanup_fallback}`,
+                  ),
+                })}
+              </span>
+            )}
+          </div>
+        )}
+
       <p
         className={`italic text-sm pb-2 ${
           retrying
@@ -437,9 +495,35 @@ const HistoryEntryComponent: React.FC<HistoryEntryProps> = ({
         {retrying
           ? t("settings.history.transcribing")
           : hasTranscription
-            ? entry.transcription_text
+            ? displayedText
             : t("settings.history.transcriptionFailed")}
       </p>
+
+      {hasCleanupChange && (
+        <details className="text-xs text-text/60">
+          <summary className="w-fit cursor-pointer select-none hover:text-text">
+            {t("settings.history.viewChanges")}
+          </summary>
+          <div className="mt-2 grid gap-2 rounded-md border border-mid-gray/20 p-3">
+            <div>
+              <div className="mb-1 font-medium uppercase tracking-wide">
+                {t("settings.history.raw")}
+              </div>
+              <p className="whitespace-pre-wrap break-words line-through decoration-text/30">
+                {entry.transcription_text}
+              </p>
+            </div>
+            <div>
+              <div className="mb-1 font-medium uppercase tracking-wide">
+                {t("settings.history.cleaned")}
+              </div>
+              <p className="whitespace-pre-wrap break-words text-text/90">
+                {cleanedText}
+              </p>
+            </div>
+          </div>
+        </details>
+      )}
 
       <AudioPlayer onLoadRequest={handleLoadAudio} className="w-full" />
     </div>

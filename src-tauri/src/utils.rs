@@ -144,6 +144,27 @@ pub fn frontmost_app_name() -> Option<String> {
     None
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct PasteTargetIdentity {
+    pub(crate) application: String,
+    pub(crate) application_pid: i32,
+    pub(crate) window: Option<String>,
+    pub(crate) element: Option<String>,
+}
+
+impl PasteTargetIdentity {
+    pub(crate) fn still_matches(&self, current: Option<&Self>) -> bool {
+        let Some(current) = current else {
+            return false;
+        };
+        self.application == current.application
+            && self.application_pid == current.application_pid
+            && self.window == current.window
+            && self.element.is_some()
+            && self.element == current.element
+    }
+}
+
 #[cfg(target_os = "macos")]
 fn copy_attr(
     el: &objc2_application_services::AXUIElement,
@@ -175,6 +196,84 @@ fn as_text(v: objc2_core_foundation::CFRetained<objc2_core_foundation::CFType>) 
     }
 }
 
+#[cfg(target_os = "macos")]
+pub(crate) fn paste_target_identity() -> Option<PasteTargetIdentity> {
+    use objc2_app_kit::NSWorkspace;
+    use objc2_application_services::{AXUIElement, AXValue, AXValueType};
+    use std::ffi::c_void;
+    use std::ptr::NonNull;
+
+    #[repr(C)]
+    struct Pair {
+        first: f64,
+        second: f64,
+    }
+
+    fn value_pair(
+        element: &AXUIElement,
+        attribute: &str,
+        value_type: AXValueType,
+    ) -> Option<String> {
+        let value = copy_attr(element, attribute)?.downcast::<AXValue>().ok()?;
+        let mut pair = Pair {
+            first: 0.0,
+            second: 0.0,
+        };
+        let pointer = NonNull::new((&mut pair as *mut Pair).cast::<c_void>())?;
+        unsafe { value.value(value_type, pointer) }
+            .then(|| format!("{:.1},{:.1}", pair.first, pair.second))
+    }
+
+    let application = NSWorkspace::sharedWorkspace().frontmostApplication()?;
+    let application_name = application.localizedName()?.to_string();
+    let application_pid = application.processIdentifier();
+    let app_element = unsafe { AXUIElement::new_application(application_pid) };
+    let _ = unsafe { app_element.set_messaging_timeout(0.05) };
+    let window = copy_attr(&app_element, "AXFocusedWindow")
+        .and_then(|value| value.downcast::<AXUIElement>().ok());
+    let window_title = window
+        .as_ref()
+        .and_then(|window| copy_attr(window, "AXTitle"))
+        .and_then(as_text);
+
+    let system = unsafe { AXUIElement::new_system_wide() };
+    let focused = copy_attr(&system, "AXFocusedUIElement")
+        .and_then(|value| value.downcast::<AXUIElement>().ok());
+    let element = focused.as_ref().and_then(|focused| {
+        copy_attr(focused, "AXIdentifier")
+            .or_else(|| copy_attr(focused, "AXDOMIdentifier"))
+            .and_then(as_text)
+            .or_else(|| {
+                // Many native text controls do not publish an identifier. Use
+                // descriptive attributes plus geometry rather than treating a
+                // missing identifier as a wildcard across every field.
+                let mut attributes = ["AXRole", "AXSubrole", "AXTitle", "AXDescription"]
+                    .into_iter()
+                    .filter_map(|name| copy_attr(focused, name).and_then(as_text))
+                    .collect::<Vec<_>>();
+                if let Some(position) = value_pair(focused, "AXPosition", AXValueType::CGPoint) {
+                    attributes.push(format!("position:{position}"));
+                }
+                if let Some(size) = value_pair(focused, "AXSize", AXValueType::CGSize) {
+                    attributes.push(format!("size:{size}"));
+                }
+                (!attributes.is_empty()).then(|| attributes.join("|"))
+            })
+    });
+
+    Some(PasteTargetIdentity {
+        application: application_name,
+        application_pid,
+        window: window_title,
+        element,
+    })
+}
+
+#[cfg(not(target_os = "macos"))]
+pub(crate) fn paste_target_identity() -> Option<PasteTargetIdentity> {
+    None
+}
+
 /// Selected text and full text value of the focused UI element, read via the
 /// Accessibility API. Uses the same TCC Accessibility grant the app already
 /// requires for shortcuts; any failure (trust revoked, no focused element,
@@ -189,11 +288,72 @@ pub fn ax_focused_texts() -> (Option<String>, Option<String>) {
     else {
         return (None, None);
     };
+    if copy_attr(&focused, "AXRole").and_then(as_text).as_deref() == Some("AXSecureTextField") {
+        return (None, None);
+    }
     let selected = copy_attr(&focused, "AXSelectedText").and_then(as_text);
     // ponytail: no size cap on the field value; truncate if giant text views
     // ever blow the LLM context
     let value = copy_attr(&focused, "AXValue").and_then(as_text);
     (selected, value)
+}
+
+#[cfg(target_os = "macos")]
+pub(crate) fn ax_focused_context(max_chars: usize) -> Option<String> {
+    use objc2_application_services::{AXUIElement, AXValue, AXValueType};
+    use objc2_core_foundation::CFRange;
+    use std::ffi::c_void;
+    use std::ptr::NonNull;
+
+    let system = unsafe { AXUIElement::new_system_wide() };
+    let focused = copy_attr(&system, "AXFocusedUIElement")?
+        .downcast::<AXUIElement>()
+        .ok()?;
+    if copy_attr(&focused, "AXRole").and_then(as_text).as_deref() == Some("AXSecureTextField") {
+        return None;
+    }
+    let text = copy_attr(&focused, "AXValue").and_then(as_text)?;
+    let selected_range = copy_attr(&focused, "AXSelectedTextRange")?
+        .downcast::<AXValue>()
+        .ok()?;
+    let mut range = CFRange {
+        location: 0,
+        length: 0,
+    };
+    let pointer = NonNull::new((&mut range as *mut CFRange).cast::<c_void>())?;
+    if !unsafe { selected_range.value(AXValueType::CFRange, pointer) } || range.location < 0 {
+        return None;
+    }
+
+    let cursor_utf16 = (range.location + range.length.max(0)) as usize;
+    let mut utf16_units = 0usize;
+    let cursor_byte = text
+        .char_indices()
+        .find_map(|(byte, character)| {
+            if utf16_units >= cursor_utf16 {
+                Some(byte)
+            } else {
+                utf16_units += character.len_utf16();
+                None
+            }
+        })
+        .unwrap_or(text.len());
+    let half = max_chars / 2;
+    let before: String = text[..cursor_byte]
+        .chars()
+        .rev()
+        .take(half)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect();
+    let after: String = text[cursor_byte..].chars().take(half).collect();
+    Some(format!("{before}<cursor>{after}"))
+}
+
+#[cfg(not(target_os = "macos"))]
+pub(crate) fn ax_focused_context(_max_chars: usize) -> Option<String> {
+    None
 }
 
 #[cfg(not(target_os = "macos"))]
@@ -336,7 +496,9 @@ pub fn ax_window_text(_max_chars: usize) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{native_machine_is_arm64, tail_chars, IMAGE_FILE_MACHINE_ARM64};
+    use super::{
+        native_machine_is_arm64, tail_chars, PasteTargetIdentity, IMAGE_FILE_MACHINE_ARM64,
+    };
 
     #[test]
     fn tail_chars_passthrough_and_truncation() {
@@ -363,5 +525,40 @@ mod tests {
         assert!(!native_machine_is_arm64(Some(0x8664))); // AMD64
         assert!(!native_machine_is_arm64(Some(0x014c))); // I386
         assert!(!native_machine_is_arm64(None)); // API unavailable or failed
+    }
+
+    #[test]
+    fn paste_target_checks_each_available_component() {
+        let captured = PasteTargetIdentity {
+            application: "Mail".to_string(),
+            application_pid: 100,
+            window: Some("Draft".to_string()),
+            element: Some("body".to_string()),
+        };
+        assert!(captured.still_matches(Some(&captured)));
+
+        for current in [
+            PasteTargetIdentity {
+                application: "Messages".to_string(),
+                ..captured.clone()
+            },
+            PasteTargetIdentity {
+                window: Some("Inbox".to_string()),
+                ..captured.clone()
+            },
+            PasteTargetIdentity {
+                element: Some("subject".to_string()),
+                ..captured.clone()
+            },
+        ] {
+            assert!(!captured.still_matches(Some(&current)));
+        }
+        assert!(!captured.still_matches(None));
+
+        let unsupported = PasteTargetIdentity {
+            element: None,
+            ..captured
+        };
+        assert!(!unsupported.still_matches(Some(&unsupported)));
     }
 }

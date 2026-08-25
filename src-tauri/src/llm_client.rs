@@ -116,8 +116,18 @@ struct ChatCompletionRequest {
     stream: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     response_format: Option<ResponseFormat>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    temperature: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    max_tokens: Option<u32>,
     #[serde(flatten)]
     reasoning: ReasoningParams,
+}
+
+#[derive(Clone, Copy, Default)]
+pub(crate) struct CompletionOptions {
+    pub(crate) disable_reasoning: bool,
+    pub(crate) cleanup_limits: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -177,6 +187,7 @@ fn create_client(provider: &PostProcessProvider, api_key: &str) -> Result<reqwes
     let headers = build_headers(provider, api_key)?;
     reqwest::Client::builder()
         .default_headers(headers)
+        .timeout(std::time::Duration::from_secs(15))
         .build()
         .map_err(|e| report_reqwest_error("Failed to build HTTP client", &e))
 }
@@ -302,18 +313,9 @@ pub async fn send_chat_completion(
     api_key: String,
     model: &str,
     prompt: String,
-    disable_reasoning: bool,
+    options: CompletionOptions,
 ) -> Result<Option<String>, String> {
-    send_chat_completion_with_schema(
-        provider,
-        api_key,
-        model,
-        prompt,
-        None,
-        None,
-        disable_reasoning,
-    )
-    .await
+    send_chat_completion_with_schema(provider, api_key, model, prompt, None, None, options).await
 }
 
 /// Send a chat completion request with structured output support.
@@ -333,7 +335,7 @@ pub async fn send_chat_completion_with_schema(
     user_content: String,
     system_prompt: Option<String>,
     json_schema: Option<Value>,
-    disable_reasoning: bool,
+    options: CompletionOptions,
 ) -> Result<Option<String>, String> {
     let base_url = provider.base_url.trim_end_matches('/');
     let url = format!("{}/chat/completions", base_url);
@@ -373,7 +375,7 @@ pub async fn send_chat_completion_with_schema(
     });
 
     let key = endpoint_key(provider, model);
-    let reasoning = if disable_reasoning && !is_known_rejected(&key) {
+    let reasoning = if options.disable_reasoning && !is_known_rejected(&key) {
         reasoning_disable_params(provider)
     } else {
         ReasoningParams::default()
@@ -384,6 +386,8 @@ pub async fn send_chat_completion_with_schema(
         messages,
         stream: false,
         response_format,
+        temperature: options.cleanup_limits.then_some(0.0),
+        max_tokens: options.cleanup_limits.then_some(512),
         reasoning,
     };
 
@@ -407,12 +411,12 @@ pub async fn send_chat_completion_with_schema(
         && matches!(status.as_u16(), 400 | 422)
         && !request_body.reasoning.is_empty()
     {
-        let error_text = response.text().await.unwrap_or_else(|e| {
-            report_reqwest_error("Failed to read reasoning rejection response", &e)
-        });
+        // Drain the body without logging it: providers often echo prompt text
+        // in validation errors.
+        let _ = response.bytes().await;
         info!(
-            "Endpoint rejected request with reasoning disabled (status {}): {}. Retrying without reasoning fields",
-            status, error_text
+            "Endpoint rejected request with reasoning disabled (status {}). Retrying without reasoning fields",
+            status
         );
 
         request_body.reasoning = ReasoningParams::default();
@@ -440,14 +444,7 @@ pub async fn send_chat_completion_with_schema(
     }
 
     if !status.is_success() {
-        let error_text = response
-            .text()
-            .await
-            .unwrap_or_else(|e| report_reqwest_error("Failed to read API error response", &e));
-        return Err(format!(
-            "API request failed with status {}: {}",
-            status, error_text
-        ));
+        return Err(format!("API request failed with status {}", status));
     }
 
     let completion: ChatCompletionResponse = response
@@ -488,14 +485,7 @@ pub async fn fetch_models(
         sanitized_url(response.url())
     );
     if !status.is_success() {
-        let error_text = response
-            .text()
-            .await
-            .unwrap_or_else(|e| report_reqwest_error("Failed to read model list error", &e));
-        return Err(format!(
-            "Model list request failed ({}): {}",
-            status, error_text
-        ));
+        return Err(format!("Model list request failed ({})", status));
     }
 
     let parsed: serde_json::Value = response
@@ -564,7 +554,7 @@ mod tests {
         }
     }
 
-    fn request_json(reasoning: ReasoningParams) -> Value {
+    fn request_json(reasoning: ReasoningParams, cleanup_limits: bool) -> Value {
         let request = ChatCompletionRequest {
             model: "test-model".to_string(),
             messages: vec![ChatMessage {
@@ -573,6 +563,8 @@ mod tests {
             }],
             stream: false,
             response_format: None,
+            temperature: cleanup_limits.then_some(0.0),
+            max_tokens: cleanup_limits.then_some(512),
             reasoning,
         };
         serde_json::to_value(&request).unwrap()
@@ -664,13 +656,19 @@ mod tests {
 
     #[test]
     fn requests_explicitly_disable_streaming() {
-        let json = request_json(ReasoningParams::default());
+        let json = request_json(ReasoningParams::default(), true);
         assert_eq!(json["stream"], false);
+        assert_eq!(json["temperature"], 0.0);
+        assert_eq!(json["max_tokens"], 512);
+
+        let command = request_json(ReasoningParams::default(), false);
+        assert!(command.get("temperature").is_none());
+        assert!(command.get("max_tokens").is_none());
     }
 
     #[test]
     fn default_reasoning_params_serialize_to_no_fields() {
-        let json = request_json(ReasoningParams::default());
+        let json = request_json(ReasoningParams::default(), true);
         assert!(json.get("reasoning_effort").is_none());
         assert!(json.get("reasoning").is_none());
         assert!(json.get("thinking").is_none());
@@ -679,7 +677,7 @@ mod tests {
     #[test]
     fn custom_provider_uses_top_level_reasoning_effort() {
         let params = reasoning_disable_params(&provider("custom", "http://localhost:11434/v1"));
-        let json = request_json(params);
+        let json = request_json(params, true);
         assert_eq!(json["reasoning_effort"], "none");
         assert!(json.get("reasoning").is_none());
         assert!(json.get("thinking").is_none());
@@ -689,7 +687,7 @@ mod tests {
     fn openrouter_uses_nested_reasoning_object() {
         let params =
             reasoning_disable_params(&provider("openrouter", "https://openrouter.ai/api/v1"));
-        let json = request_json(params);
+        let json = request_json(params, true);
         assert!(json.get("reasoning_effort").is_none());
         assert_eq!(json["reasoning"]["effort"], "none");
         assert_eq!(json["reasoning"]["exclude"], true);
@@ -699,7 +697,7 @@ mod tests {
     #[test]
     fn deepseek_base_url_uses_thinking_disabled() {
         let params = reasoning_disable_params(&provider("custom", "https://api.deepseek.com"));
-        let json = request_json(params);
+        let json = request_json(params, true);
         assert!(json.get("reasoning_effort").is_none());
         assert!(json.get("reasoning").is_none());
         assert_eq!(json["thinking"]["type"], "disabled");

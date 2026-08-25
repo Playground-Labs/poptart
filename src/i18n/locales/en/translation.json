@@ -400,6 +400,26 @@
       "hotkey": {
         "title": "Hotkey"
       },
+      "cleanup": {
+        "title": "Cleanup",
+        "level": {
+          "title": "Editing level",
+          "options": {
+            "off": "Off",
+            "light": "Light",
+            "polish": "Polish"
+          },
+          "descriptions": {
+            "off": "Keep literal dictation and skip AI cleanup.",
+            "light": "Fix mechanics and clear self-corrections without rephrasing for style.",
+            "polish": "Improve clarity, concision, and structure while preserving facts."
+          }
+        },
+        "remoteContext": {
+          "title": "Share nearby text with external providers",
+          "description": "Allow a small amount of text near the cursor to help match casing, tone, and proper nouns. It may contain surrounding application text. Secure fields are always excluded; local AI can use eligible context without this setting."
+        }
+      },
       "api": {
         "title": "API (OpenAI Compatible)",
         "provider": {
@@ -417,7 +437,8 @@
         "apiKey": {
           "title": "API Key",
           "description": "API key for the selected provider.",
-          "placeholder": "sk-..."
+          "placeholder": "sk-...",
+          "configuredPlaceholder": "Configured — enter a new key to replace it"
         },
         "model": {
           "title": "Model",
@@ -456,6 +477,24 @@
       "loading": "Loading history...",
       "empty": "No transcriptions yet. Start recording to build your history!",
       "copyToClipboard": "Copy transcription to clipboard",
+      "raw": "Raw",
+      "cleaned": "Cleaned",
+      "viewChanges": "View changes",
+      "cleanupLevel": "{{level}} cleanup",
+      "cleanupLevels": {
+        "light": "Light",
+        "polish": "Polish",
+        "command": "Command"
+      },
+      "cleanupFallbacks": {
+        "label": "Raw fallback: {{reason}}",
+        "timeout": "cleanup timed out",
+        "provider_error": "provider error",
+        "invalid_output": "invalid output",
+        "unsafe_output": "unsafe output",
+        "cancelled": "cancelled",
+        "target_changed": "target changed"
+      },
       "save": "Save transcription",
       "unsave": "Remove from saved",
       "delete": "Delete entry",
@@ -680,6 +719,8 @@
     "modelLoadFailedUnknown": "unknown model",
     "pasteFailedTitle": "Failed to Paste Text",
     "pasteFailed": "Text could not be pasted into the active application.",
+    "pasteTargetChangedTitle": "Dictation target changed",
+    "pasteTargetChanged": "Automatic paste was skipped to avoid inserting text into the wrong field. The result is still available in History.",
     "transcriptionFailedTitle": "Transcription Failed"
   },
   "appLanguage": {

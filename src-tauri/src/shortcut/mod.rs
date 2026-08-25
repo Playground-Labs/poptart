@@ -21,9 +21,9 @@ use tauri::{AppHandle, Emitter, Manager};
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::settings::APPLE_INTELLIGENCE_DEFAULT_MODEL_ID;
 use crate::settings::{
-    self, get_settings, AutoSubmitKey, ClipboardHandling, KeyboardImplementation, LLMPrompt,
-    OverlayPosition, OverlayStyle, PasteMethod, ShortcutBinding, SoundTheme, Theme, TypingTool,
-    APPLE_INTELLIGENCE_PROVIDER_ID,
+    self, get_settings, AutoSubmitKey, CleanupLevel, ClipboardHandling, KeyboardImplementation,
+    LLMPrompt, OverlayPosition, OverlayStyle, PasteMethod, ShortcutBinding, SoundTheme, Theme,
+    TypingTool, APPLE_INTELLIGENCE_PROVIDER_ID,
 };
 use crate::tray;
 
@@ -1008,6 +1008,33 @@ pub fn change_post_process_enabled_setting(app: AppHandle, enabled: bool) -> Res
 
 #[tauri::command]
 #[specta::specta]
+pub fn change_cleanup_level_setting(app: AppHandle, level: String) -> Result<(), String> {
+    let cleanup_level = match level.as_str() {
+        "off" => CleanupLevel::Off,
+        "light" => CleanupLevel::Light,
+        "polish" => CleanupLevel::Polish,
+        _ => return Err("cleanup level must be off, light, or polish".to_string()),
+    };
+    let mut settings = settings::get_settings(&app);
+    settings.cleanup_level = cleanup_level;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_share_context_with_remote_setting(
+    app: AppHandle,
+    enabled: bool,
+) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.share_context_with_remote = enabled;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn change_experimental_enabled_setting(app: AppHandle, enabled: bool) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
     settings.experimental_enabled = enabled;
@@ -1040,6 +1067,7 @@ pub fn change_post_process_base_url_setting(
     }
 
     provider.base_url = base_url;
+    settings.share_context_with_remote = false;
     settings::write_settings(&app, settings);
     Ok(())
 }
@@ -1068,7 +1096,10 @@ pub fn change_post_process_api_key_setting(
 ) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
     validate_provider_exists(&settings, &provider_id)?;
-    settings.post_process_api_keys.insert(provider_id, api_key);
+    crate::credential_store::set(&provider_id, &api_key)?;
+    settings
+        .post_process_api_keys
+        .insert(provider_id, String::new());
     settings::write_settings(&app, settings);
     Ok(())
 }
@@ -1093,6 +1124,7 @@ pub fn set_post_process_provider(app: AppHandle, provider_id: String) -> Result<
     let mut settings = settings::get_settings(&app);
     validate_provider_exists(&settings, &provider_id)?;
     settings.post_process_provider_id = provider_id;
+    settings.share_context_with_remote = false;
     settings::write_settings(&app, settings);
     Ok(())
 }
@@ -1201,11 +1233,10 @@ pub async fn fetch_post_process_models(
     }
 
     // Get API key
-    let api_key = settings
-        .post_process_api_keys
-        .get(&provider_id)
-        .cloned()
-        .unwrap_or_default();
+    let api_key = crate::credential_store::resolve(
+        &provider_id,
+        settings.post_process_api_keys.get(&provider_id),
+    );
 
     // Skip fetching if no API key for providers that typically need one
     if api_key.trim().is_empty() && provider.id != "custom" {

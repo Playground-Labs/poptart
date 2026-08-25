@@ -18,7 +18,128 @@ const OLLAMA_BASE: &str = "http://localhost:11434";
 /// Redirects to the latest ollama-darwin.tgz GitHub release asset.
 const OLLAMA_DOWNLOAD_URL: &str = "https://ollama.com/download/ollama-darwin.tgz";
 /// Must match the default post-process model in settings.rs.
-pub const DEFAULT_MODEL: &str = "qwen3:8b";
+pub const DEFAULT_MODEL: &str = crate::settings::DEFAULT_LOCAL_CLEANUP_MODEL;
+const KEEP_ALIVE: &str = "10m";
+
+#[derive(Debug, Deserialize)]
+struct OllamaMessage {
+    content: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct OllamaChatResponse {
+    message: OllamaMessage,
+    #[serde(default)]
+    total_duration: u64,
+    #[serde(default)]
+    load_duration: u64,
+    #[serde(default)]
+    prompt_eval_duration: u64,
+    #[serde(default)]
+    eval_duration: u64,
+}
+
+fn duration_ms(nanoseconds: u64) -> u64 {
+    nanoseconds / 1_000_000
+}
+
+fn cleanup_request_body(
+    model: &str,
+    system_prompt: String,
+    user_content: String,
+    schema: serde_json::Value,
+) -> serde_json::Value {
+    let messages = if model
+        .split(':')
+        .next()
+        .is_some_and(|family| family.eq_ignore_ascii_case("gemma3"))
+    {
+        serde_json::json!([
+            { "role": "user", "content": format!("{system_prompt}\n\n{user_content}") }
+        ])
+    } else {
+        serde_json::json!([
+            { "role": "system", "content": system_prompt },
+            { "role": "user", "content": user_content }
+        ])
+    };
+    serde_json::json!({
+        "model": model,
+        "messages": messages,
+        "stream": false,
+        "think": false,
+        "format": schema,
+        "keep_alive": KEEP_ALIVE,
+        "options": {
+            "temperature": 0,
+            "num_predict": 512
+        }
+    })
+}
+
+/// Ask Ollama to load the cleanup model while the user is still speaking.
+/// Failure is intentionally non-fatal; finalization retains its raw fallback.
+pub(crate) async fn warm_model(model: &str) -> Result<(), String> {
+    reqwest::Client::new()
+        .post(format!("{}/api/generate", OLLAMA_BASE))
+        .timeout(std::time::Duration::from_secs(30))
+        .json(&serde_json::json!({
+            "model": model,
+            "prompt": "",
+            "stream": false,
+            "keep_alive": KEEP_ALIVE,
+            "options": { "num_predict": 1 }
+        }))
+        .send()
+        .await
+        .map_err(|error| format!("warm-up request failed: {error}"))?
+        .error_for_status()
+        .map_err(|error| format!("warm-up failed: {error}"))?;
+    debug!(
+        "Managed Ollama model warm-up completed for model '{}'",
+        model
+    );
+    Ok(())
+}
+
+/// Native Ollama cleanup path. It avoids compatibility-layer reasoning fields,
+/// requests deterministic bounded generation, and exposes native timing data.
+pub(crate) async fn chat_cleanup(
+    model: &str,
+    system_prompt: String,
+    user_content: String,
+    schema: serde_json::Value,
+) -> Result<String, String> {
+    let response = reqwest::Client::new()
+        .post(format!("{}/api/chat", OLLAMA_BASE))
+        .json(&cleanup_request_body(
+            model,
+            system_prompt,
+            user_content,
+            schema,
+        ))
+        .send()
+        .await
+        .map_err(|error| format!("native request failed: {error}"))?;
+    let status = response.status();
+    if !status.is_success() {
+        return Err(format!("native request failed with status {status}"));
+    }
+    let response: OllamaChatResponse = response
+        .json()
+        .await
+        .map_err(|_| "native response was malformed".to_string())?;
+    debug!(
+        "Managed Ollama timings: model='{}', load_ms={}, prompt_eval_ms={}, generation_ms={}, total_ms={}, output_len={}",
+        model,
+        duration_ms(response.load_duration),
+        duration_ms(response.prompt_eval_duration),
+        duration_ms(response.eval_duration),
+        duration_ms(response.total_duration),
+        response.message.content.len(),
+    );
+    Ok(response.message.content)
+}
 
 #[derive(Serialize, Type)]
 pub struct AiStatus {
@@ -107,6 +228,51 @@ pub fn spawn_managed_server(app: &AppHandle) -> Result<(), String> {
         .map_err(|e| format!("failed to spawn ollama serve: {e}"))?;
     info!("spawned managed ollama serve from {}", bin.display());
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{cleanup_request_body, duration_ms, DEFAULT_MODEL};
+
+    #[test]
+    fn native_cleanup_is_deterministic_bounded_and_kept_warm() {
+        let body = cleanup_request_body(
+            "qwen3:8b",
+            "system".to_string(),
+            "user".to_string(),
+            serde_json::json!({ "type": "object" }),
+        );
+        assert_eq!(body["think"], false);
+        assert_eq!(body["stream"], false);
+        assert_eq!(body["options"]["temperature"], 0);
+        assert_eq!(body["options"]["num_predict"], 512);
+        assert_eq!(body["keep_alive"], "10m");
+        assert!(body["format"].is_object());
+        assert_eq!(body["messages"].as_array().unwrap().len(), 2);
+        assert_eq!(body["messages"][0]["role"], "system");
+    }
+
+    #[test]
+    fn gemma_cleanup_uses_one_user_turn() {
+        let body = cleanup_request_body(
+            DEFAULT_MODEL,
+            "instructions".to_string(),
+            "<transcript>speech</transcript>".to_string(),
+            serde_json::json!({ "type": "object" }),
+        );
+
+        assert_eq!(body["messages"].as_array().unwrap().len(), 1);
+        assert_eq!(body["messages"][0]["role"], "user");
+        assert_eq!(
+            body["messages"][0]["content"],
+            "instructions\n\n<transcript>speech</transcript>"
+        );
+    }
+
+    #[test]
+    fn native_nanosecond_timings_are_reported_in_milliseconds() {
+        assert_eq!(duration_ms(725_000_000), 725);
+    }
 }
 
 /// At app launch: if we manage the install and no server is up, start it.

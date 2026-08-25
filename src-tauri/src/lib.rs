@@ -8,6 +8,8 @@ mod catalog;
 pub mod cli;
 mod clipboard;
 mod commands;
+mod credential_store;
+mod finalization;
 mod helpers;
 mod input;
 mod llm_client;
@@ -630,6 +632,8 @@ pub fn run(cli_args: CliArgs) {
             shortcut::change_auto_submit_setting,
             shortcut::change_auto_submit_key_setting,
             shortcut::change_post_process_enabled_setting,
+            shortcut::change_cleanup_level_setting,
+            shortcut::change_share_context_with_remote_setting,
             shortcut::change_experimental_enabled_setting,
             shortcut::change_post_process_base_url_setting,
             shortcut::change_post_process_api_key_setting,

@@ -15,6 +15,7 @@
     "format:frontend": "prettier --write .",
     "format:backend": "cd src-tauri && cargo fmt",
     "test:playwright": "playwright test",
+    "evaluate:cleanup": "bun scripts/evaluate-cleanup.ts",
     "test:playwright:ui": "playwright test --ui",
     "check:translations": "bun scripts/check-translations.ts",
     "postinstall": "bun scripts/check-nix-deps.ts"

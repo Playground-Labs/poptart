@@ -398,6 +398,11 @@ mod tests {
             post_processed_text: post_processed.map(|text| text.to_string()),
             post_process_prompt: None,
             post_process_requested: false,
+            cleanup_requested_level: None,
+            cleanup_applied_level: None,
+            cleanup_changed: false,
+            cleanup_fallback: None,
+            cleanup_duration_ms: None,
         }
     }
 
