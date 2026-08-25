@@ -1,0 +1,3 @@
+# Use MLX Swift LM as the Cleanup adapter
+
+Poptart will run its Cleanup Managed Model in-process through MLX Swift LM on Apple Silicon. MLX Swift LM remains a replaceable adapter behind a narrow Poptart-owned Cleanup model interface; Poptart owns prompting, structured output, validation, deadlines, fallback behavior, model distribution, and lifecycle. This gives the MVP access to quantized models and LoRA fine-tuning without coupling the product architecture to MLX. A Core ML adapter remains an implementation alternative if benchmarks show that MLX cannot reliably satisfy the Completion Deadline.

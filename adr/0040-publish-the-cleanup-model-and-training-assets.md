@@ -1,0 +1,3 @@
+# Publish the Cleanup model and training assets
+
+Poptart will publish the exact quantized Cleanup Managed Model weights, training recipe, evaluation harness, and all redistributable training examples alongside the open-source application. Cleanup training data may be manually authored, synthetic, or drawn from clearly licensed public material. User Dictations, Target Context, Personal Vocabulary, and other private product data will never be collected or used for training. Any training input that cannot be redistributed with clear provenance must be excluded from the reproducible public corpus.

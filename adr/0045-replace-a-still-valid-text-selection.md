@@ -1,0 +1,3 @@
+# Replace a still-valid text selection
+
+When Recording begins with editable text selected, Poptart will capture that range as part of the Insertion Target and treat Dictation as replacement input, matching ordinary keyboard behavior. Nearby text may be used as ephemeral Target Context, but the selected content itself is not treated as instructions. Before insertion, Poptart must revalidate the target and selection. A still-valid selection is replaced; stale selection state is never deleted. If the original Insertion Target is no longer focused, Poptart follows the target-change clipboard fallback rather than inserting into a different field.

@@ -1,0 +1,3 @@
+# Enforce the Completion Deadline with a watchdog
+
+Poptart will enforce its 1.5-second Completion Deadline with an app-owned watchdog. At 1.4 seconds after key-up, Poptart cancels unfinished recognition or Cleanup and proceeds with the best safe text available, reserving the final 100 milliseconds for validation and insertion. Cleanup quality never authorizes waiting past the watchdog. A release candidate must complete at least 99% of representative Dictations within 1.5 seconds on the M1 baseline under the documented cold-system benchmark; rare operating-system-wide stalls are reported separately from app-controlled deadline misses.

@@ -1,0 +1,3 @@
+# Use a validated Cleanup Edit Plan
+
+The Cleanup Managed Model will return a compact Cleanup Edit Plan rather than regenerate the full transcript. Plans may propose bounded replacements, deletions, casing changes, and punctuation insertions anchored to stable Raw Transcript spans. Poptart will reject invalid references, overlaps, excessive changes, malformed output, and edits that violate Conservative Cleanup, then apply accepted edits while copying untouched text deterministically. Rejection or timeout inserts the Raw Transcript. This keeps generation cost proportional to proposed corrections, improves auditability, and constrains hallucinated rewrites.

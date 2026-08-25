@@ -1,0 +1,3 @@
+# Fine-tune Qwen 3.5 0.8B for Cleanup
+
+Poptart will ship one task-specific, 4-bit Qwen 3.5 0.8B Cleanup Managed Model for MVP. The model will be fine-tuned for Conservative Cleanup, context-aware mechanics, and constrained output rather than relying on general-purpose prompting. Its Apache 2.0 license is compatible with Poptart's public MIT-licensed codebase. Gemma 3 1B may be used as a development benchmark challenger but will not be installed or exposed as a second product model. The selected artifact must still pass the M1 latency and quality release gates; failing those gates requires revisiting the model decision rather than silently weakening the Completion Deadline.
