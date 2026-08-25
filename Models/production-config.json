@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "releaseStatus": "unreleased",
+  "recognition": {
+    "runtime": "FluidAudio",
+    "runtimeVersion": "0.15.6",
+    "runtimeRevision": "4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b",
+    "model": "FluidInference/parakeet-unified-en-0.6b-coreml",
+    "language": "en",
+    "leftFrames": 70,
+    "chunkFrames": 7,
+    "rightFrames": 1,
+    "encoderPrecision": "int8",
+    "license": "Apache-2.0",
+    "archivePath": "recognition/parakeet-unified-en-0.6b-70_7_1-int8.tar.zst",
+    "byteSize": null,
+    "sha256": null
+  },
+  "cleanup": {
+    "runtime": "MLX Swift LM",
+    "runtimeVersion": "3.31.4",
+    "mlxSwiftVersion": "0.31.4",
+    "tokenizersVersion": "1.3.3",
+    "baseModel": "Qwen/Qwen3.5-0.8B",
+    "baseRevision": "2fc06364715b967f1860aea9cf38778875588b17",
+    "license": "Apache-2.0",
+    "quantization": { "bits": 4, "groupSize": 64, "mode": "affine" },
+    "archivePath": "cleanup/poptart-cleanup-qwen3.5-0.8b-4bit.tar.zst",
+    "byteSize": null,
+    "sha256": null
+  },
+  "releaseMeasurements": {
+    "cleanupTokenCeiling": null,
+    "physicalM1P99Milliseconds": null,
+    "qualityReportSHA256": null
+  }
+}

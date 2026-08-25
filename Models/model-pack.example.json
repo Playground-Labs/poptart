@@ -1,0 +1,27 @@
+{
+  "exampleOnly": true,
+  "note": "Replace every null only with measured or hashed release evidence; this file is intentionally not installable.",
+  "identity": "poptart-model-pack",
+  "version": "0.1.0",
+  "minimumApplicationVersion": "0.1.0",
+  "maximumApplicationVersion": "0.1.0",
+  "cleanupTokenCeiling": null,
+  "artifacts": [
+    {
+      "role": "recognition",
+      "url": "https://downloads.playgroundlabs.com/poptart/UNRELEASED/recognition.tar.zst",
+      "relativePath": "recognition/parakeet-unified-en-0.6b-70_7_1-int8.tar.zst",
+      "byteSize": null,
+      "sha256": null,
+      "license": { "name": "Apache-2.0", "url": "https://www.apache.org/licenses/LICENSE-2.0" }
+    },
+    {
+      "role": "cleanup",
+      "url": "https://downloads.playgroundlabs.com/poptart/UNRELEASED/cleanup.tar.zst",
+      "relativePath": "cleanup/poptart-cleanup-qwen3.5-0.8b-4bit.tar.zst",
+      "byteSize": null,
+      "sha256": null,
+      "license": { "name": "Apache-2.0", "url": "https://www.apache.org/licenses/LICENSE-2.0" }
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playgroundlabs.com/poptart/model-pack.schema.json",
+  "title": "Poptart Model Pack Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["identity", "version", "minimumApplicationVersion", "maximumApplicationVersion", "cleanupTokenCeiling", "artifacts"],
+  "properties": {
+    "identity": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "minimumApplicationVersion": { "type": "string" },
+    "maximumApplicationVersion": { "type": "string" },
+    "cleanupTokenCeiling": { "type": "integer", "minimum": 1 },
+    "artifacts": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "url", "relativePath", "byteSize", "sha256", "license"],
+        "properties": {
+          "role": { "enum": ["recognition", "cleanup"] },
+          "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+          "relativePath": { "type": "string", "pattern": "^(recognition|cleanup)/[^/]+$" },
+          "byteSize": { "type": "integer", "minimum": 1 },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "license": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "url"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "url": { "type": "string", "format": "uri", "pattern": "^https://" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
