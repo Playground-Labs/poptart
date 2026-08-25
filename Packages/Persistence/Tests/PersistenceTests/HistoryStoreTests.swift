@@ -6,6 +6,31 @@ import Testing
 
 @Suite("Encrypted local persistence")
 struct HistoryStoreTests {
+  @Test("Every visible outcome classification survives encrypted history", arguments: DictationOutcome.allCases)
+  func outcomeRoundTrip(outcome: DictationOutcome) async throws {
+    let fixture = try Fixture()
+    let store = try HistoryStore(
+      directory: fixture.directory,
+      keyProvider: InMemoryKeyProvider(),
+      now: { Date(timeIntervalSince1970: 2_000_000) }
+    )
+    let record = DictationRecord(
+      id: UUID(),
+      createdAt: Date(timeIntervalSince1970: 1_999_900.125),
+      rawTranscript: "raw",
+      deliveredText: "delivered",
+      destinationApplication: "com.example.Editor",
+      cleanupChangedText: false,
+      outcome: outcome,
+      timings: .init(recognitionMilliseconds: 1, cleanupMilliseconds: 1, deliveryMilliseconds: 1)
+    )
+
+    try await store.save(record)
+
+    let loaded = try await store.records()
+    #expect(loaded == [record])
+  }
+
   @Test("Dictation Records round-trip while sensitive values stay encrypted at rest")
   func encryptedRoundTrip() async throws {
     let fixture = try Fixture()

@@ -84,6 +84,8 @@ public enum DictationOutcome: String, Codable, CaseIterable, Sendable {
   case emptyRecognition
   case cancelled
   case safetyStop
+  case recordingFailure
+  case deliveryFailure
 }
 
 public struct DictationTimings: Codable, Equatable, Sendable {

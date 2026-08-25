@@ -44,6 +44,7 @@ struct ModelPackInstallerTests {
     #expect(await installer.activePack() == installed)
     #expect(await smokeTester.testedVersions() == ["1.0.0"])
     #expect(await downloader.requests().map(\.resumeOffset) == [0, 0])
+    #expect(try InstalledModelPackRegistry(rootDirectory: fixture.directory).activePack() == installed)
   }
 
   @Test("A bad manifest signature is rejected before the download boundary")
