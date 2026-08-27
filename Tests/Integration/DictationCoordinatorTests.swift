@@ -1,5 +1,7 @@
+import CryptoKit
 import DictationCore
 import Foundation
+import Persistence
 import Testing
 
 @testable import PoptartApplication
@@ -81,6 +83,134 @@ struct DictationCoordinatorTests {
         #expect(await harness.speech.startedCount == 1)
         #expect(await harness.speech.finalizedCount == 1)
     }
+
+    @Test("a terminal Indicator state returns to ready after the presentation interval")
+    func completionPresentationReturnsToReady() async {
+        let harness = Harness(
+            recognition: .final(.init(text: "hello world")),
+            cleanup: .cleaned(.init(
+                text: "Hello, world.",
+                metadata: .init(changed: true, editCount: 2)
+            )),
+            validity: .valid
+        )
+
+        await harness.coordinator.receive(.pressed)
+        await harness.coordinator.receive(.released)
+        await harness.indicator.waitForState(.success)
+        await harness.presentation.waitUntilRequested()
+
+        #expect(await harness.presentation.requestedIntervals
+            == [DictationCoordinator.completionPresentationInterval])
+        #expect(await harness.indicator.states.last == .success)
+
+        await harness.presentation.elapse()
+        await harness.indicator.waitForState(.ready)
+
+        #expect(await harness.indicator.states.last == .ready)
+    }
+
+    @Test("a stale presentation interval cannot return a newer Dictation to ready")
+    func stalePresentationDoesNotClobberNewDictation() async {
+        let harness = Harness(
+            recognition: .final(.init(text: "hello world")),
+            cleanup: .rawTranscriptFallback(.modelUnavailable),
+            validity: .valid
+        )
+
+        await harness.coordinator.receive(.pressed)
+        await harness.coordinator.receive(.released)
+        let completed = await harness.history.nextRecord()
+        await harness.presentation.waitUntilRequested()
+
+        await harness.coordinator.receive(.pressed)
+        #expect(await harness.indicator.states.last == .recording(audioActivity: nil))
+
+        await harness.coordinator.receive(.completionPresentationElapsed(completed.id))
+
+        #expect(await harness.indicator.states.contains(.ready) == false)
+        #expect(await harness.indicator.states.last == .recording(audioActivity: nil))
+    }
+
+    @Test("a target-capture failure returns the Indicator to ready after the presentation interval")
+    func targetCaptureFailureReturnsToReady() async {
+        let harness = Harness(targetBoundary: FailingTargetBoundary())
+
+        await harness.coordinator.receive(.pressed)
+        await harness.indicator.waitForState(.failure(.recording))
+        await harness.presentation.waitUntilRequested()
+
+        #expect(await harness.presentation.requestedIntervals
+            == [DictationCoordinator.completionPresentationInterval])
+        #expect(await harness.indicator.states.last == .failure(.recording))
+
+        await harness.presentation.elapse()
+        await harness.indicator.waitForState(.ready)
+
+        #expect(await harness.indicator.states.last == .ready)
+    }
+
+    @Test("a stale target-capture failure interval cannot return a newer Dictation to ready")
+    func staleTargetCaptureFailureDoesNotClobberNewDictation() async {
+        let target = FailThenSuspendTargetBoundary()
+        let harness = Harness(targetBoundary: target)
+
+        await harness.coordinator.receive(.pressed)
+        await harness.indicator.waitForState(.failure(.recording))
+        await harness.presentation.waitUntilRequested()
+
+        let pressing = Task { await harness.coordinator.receive(.pressed) }
+        await target.waitUntilSecondCaptureRequested()
+        await harness.presentation.elapse()
+        await target.resolveSecondCapture()
+        await pressing.value
+        await harness.indicator.waitForState(.recording(audioActivity: nil))
+
+        let states: [IndicatorState] = await harness.indicator.states
+        #expect(states == [.failure(.recording), .recording(audioActivity: nil)])
+    }
+
+    @Test("a secure-target record intent never reaches encrypted history")
+    func secureTargetRejectionWritesNoHistory() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = try HistoryStore(
+            directory: directory,
+            keyProvider: InMemoryKeyProvider(),
+            now: { Date(timeIntervalSince1970: 1_100) }
+        )
+        let history = EncryptedHistoryBoundary(store: store)
+
+        await history.record(recordIntent(outcome: .secureTargetRejection))
+        #expect(try await store.records().isEmpty)
+
+        await history.record(recordIntent(
+            outcome: .cleanedInsertion(method: .accessibility, recordingEnd: .released)
+        ))
+        #expect(try await store.records().count == 1)
+    }
+}
+
+private func recordIntent(outcome: DictationCore.DictationOutcome) -> DictationRecordIntent {
+    .init(
+        id: .init(),
+        occurredAt: Date(timeIntervalSince1970: 1_000),
+        rawTranscript: nil,
+        deliveredText: nil,
+        cleanupChanged: false,
+        outcome: outcome,
+        timings: .init(finalRecognition: nil, cleanup: nil, delivery: nil, completion: nil),
+        destinationApplicationIdentifier: "com.example.Passwords"
+    )
+}
+
+private struct InMemoryKeyProvider: EncryptionKeyProviding {
+    private let key = SymmetricKey(size: .bits256)
+    func encryptionKey() throws -> SymmetricKey { key }
+    func deleteKey() throws {}
 }
 
 private struct Harness {
@@ -88,6 +218,7 @@ private struct Harness {
     let delivery: FakeDelivery
     let indicator: FakeIndicator
     let history: FakeHistory
+    let presentation: ManualPresentationInterval
     let coordinator: DictationCoordinator
 
     init(
@@ -104,10 +235,12 @@ private struct Harness {
         let delivery = FakeDelivery()
         let indicator = FakeIndicator()
         let history = FakeHistory()
+        let presentation = ManualPresentationInterval()
         self.speech = speech
         self.delivery = delivery
         self.indicator = indicator
         self.history = history
+        self.presentation = presentation
         self.coordinator = DictationCoordinator(
             session: .init(clock: clock),
             target: target,
@@ -118,8 +251,38 @@ private struct Harness {
             history: history,
             deadlines: InertDeadlines(),
             vocabulary: { .init(entries: ["Poptart"]) },
-            wallClock: { Date(timeIntervalSince1970: 1_000) }
+            wallClock: { Date(timeIntervalSince1970: 1_000) },
+            awaitCompletionPresentation: { [presentation] interval in
+                await presentation.wait(interval)
+            }
         )
+    }
+}
+
+/// Stands in for the presentation interval so tests never wait on wall-clock time.
+private actor ManualPresentationInterval {
+    private(set) var requestedIntervals: [Duration] = []
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+    private var requestWaiters: [CheckedContinuation<Void, Never>] = []
+    private var hasElapsed = false
+
+    func wait(_ interval: Duration) async {
+        requestedIntervals.append(interval)
+        requestWaiters.forEach { $0.resume() }
+        requestWaiters.removeAll()
+        guard !hasElapsed else { return }
+        await withCheckedContinuation { waiters.append($0) }
+    }
+
+    func waitUntilRequested() async {
+        if !requestedIntervals.isEmpty { return }
+        await withCheckedContinuation { requestWaiters.append($0) }
+    }
+
+    func elapse() {
+        hasElapsed = true
+        waiters.forEach { $0.resume() }
+        waiters.removeAll()
     }
 }
 
@@ -183,6 +346,41 @@ private actor SuspendedTargetBoundary: InsertionTargetBoundary {
     }
 }
 
+private actor FailingTargetBoundary: InsertionTargetBoundary {
+    func captureTarget(for id: DictationID) -> Result<DictationTargetCapture, TargetCaptureFailure> {
+        .failure(.noEditableTarget)
+    }
+    func revalidateTarget(_ request: TargetRevalidationRequest) -> TargetValidity { .valid }
+}
+
+/// Fails the first capture, then suspends the second so a fresh Dictation stays mid-press.
+private actor FailThenSuspendTargetBoundary: InsertionTargetBoundary {
+    private var captureCount = 0
+    private var captureContinuation: CheckedContinuation<
+        Result<DictationTargetCapture, TargetCaptureFailure>, Never
+    >?
+    private var requestWaiters: [CheckedContinuation<Void, Never>] = []
+    private var secondRequested = false
+
+    func captureTarget(for id: DictationID) async -> Result<DictationTargetCapture, TargetCaptureFailure> {
+        captureCount += 1
+        guard captureCount > 1 else { return .failure(.noEditableTarget) }
+        secondRequested = true
+        requestWaiters.forEach { $0.resume() }
+        requestWaiters.removeAll()
+        return await withCheckedContinuation { captureContinuation = $0 }
+    }
+    func revalidateTarget(_ request: TargetRevalidationRequest) -> TargetValidity { .valid }
+    func waitUntilSecondCaptureRequested() async {
+        if secondRequested { return }
+        await withCheckedContinuation { requestWaiters.append($0) }
+    }
+    func resolveSecondCapture() {
+        captureContinuation?.resume(returning: .success(editableCapture()))
+        captureContinuation = nil
+    }
+}
+
 private actor FakeSpeech: SpeechInputBoundary {
     let result: RecognitionResult
     private(set) var startedCount = 0
@@ -222,7 +420,21 @@ private actor FakeDelivery: TextDeliveryBoundary {
 
 private actor FakeIndicator: IndicatorBoundary {
     private(set) var states: [IndicatorState] = []
-    func present(_ snapshot: IndicatorSnapshot) { states.append(snapshot.state) }
+    private var waiters: [(state: IndicatorState, continuation: CheckedContinuation<Void, Never>)] = []
+
+    func present(_ snapshot: IndicatorSnapshot) {
+        states.append(snapshot.state)
+        waiters.removeAll { waiter in
+            guard waiter.state == snapshot.state else { return false }
+            waiter.continuation.resume()
+            return true
+        }
+    }
+
+    func waitForState(_ state: IndicatorState) async {
+        if states.contains(state) { return }
+        await withCheckedContinuation { waiters.append((state, $0)) }
+    }
 }
 
 private actor FakeHistory: HistoryBoundary {

@@ -42,7 +42,7 @@ let package = Package(
         ),
         .testTarget(
             name: "IntegrationTests",
-            dependencies: ["PoptartApplication", "DictationCore"],
+            dependencies: ["PoptartApplication", "DictationCore", "Persistence"],
             path: "Tests/Integration"
         ),
     ]

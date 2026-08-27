@@ -10,6 +10,7 @@ public actor EncryptedHistoryBoundary: HistoryBoundary {
     }
 
     public func record(_ intent: DictationRecordIntent) async {
+        guard let outcome = persistenceOutcome(for: intent.outcome) else { return }
         let record = Persistence.DictationRecord(
             id: intent.id.rawValue,
             createdAt: intent.occurredAt,
@@ -17,7 +18,7 @@ public actor EncryptedHistoryBoundary: HistoryBoundary {
             deliveredText: intent.deliveredText ?? "",
             destinationApplication: intent.destinationApplicationIdentifier,
             cleanupChangedText: intent.cleanupChanged,
-            outcome: persistenceOutcome(for: intent.outcome),
+            outcome: outcome,
             timings: .init(
                 recognitionMilliseconds: milliseconds(intent.timings.finalRecognition),
                 cleanupMilliseconds: milliseconds(intent.timings.cleanup),
@@ -27,9 +28,10 @@ public actor EncryptedHistoryBoundary: HistoryBoundary {
         try? await store.save(record)
     }
 
+    /// Returns nil for outcomes that must never reach local history.
     private func persistenceOutcome(
         for outcome: DictationCore.DictationOutcome
-    ) -> Persistence.DictationOutcome {
+    ) -> Persistence.DictationOutcome? {
         if outcome.recordingEnd == .fiveMinuteSafetyLimit { return .safetyStop }
         switch outcome {
         case .cleanedInsertion:
@@ -51,7 +53,7 @@ public actor EncryptedHistoryBoundary: HistoryBoundary {
         case .deliveryFailure:
             return .deliveryFailure
         case .secureTargetRejection:
-            return .rawTranscript
+            return nil
         }
     }
 

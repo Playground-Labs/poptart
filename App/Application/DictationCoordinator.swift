@@ -12,6 +12,11 @@ public actor DictationCoordinator {
     public typealias VocabularyProvider = @Sendable () async -> PersonalVocabulary
     public typealias WallClock = @Sendable () -> Date
     public typealias RecordingPreparation = @Sendable () async -> Void
+    /// Waits out the interval a terminal Indicator state stays visible before ready returns.
+    public typealias CompletionPresentationWait = @Sendable (Duration) async -> Void
+
+    /// How long a completion, fallback, or failure state remains readable in the Indicator.
+    public static let completionPresentationInterval = Duration.milliseconds(1_200)
 
     private enum GestureState {
         case capturing(id: DictationID, released: Bool)
@@ -36,7 +41,10 @@ public actor DictationCoordinator {
     private let vocabulary: VocabularyProvider
     private let wallClock: WallClock
     private let prepareForRecording: RecordingPreparation
+    private let completionPresentationInterval: Duration
+    private let awaitCompletionPresentation: CompletionPresentationWait
     private var gesture: GestureState?
+    private var scheduledCompletionPresentationID: DictationID?
 
     public init(
         session: DictationSessionActor,
@@ -49,7 +57,11 @@ public actor DictationCoordinator {
         deadlines: any DictationDeadlineBoundary,
         vocabulary: @escaping VocabularyProvider,
         wallClock: @escaping WallClock = Date.init,
-        prepareForRecording: @escaping RecordingPreparation = {}
+        prepareForRecording: @escaping RecordingPreparation = {},
+        completionPresentationInterval: Duration = DictationCoordinator.completionPresentationInterval,
+        awaitCompletionPresentation: @escaping CompletionPresentationWait = { interval in
+            try? await Task.sleep(for: interval)
+        }
     ) {
         self.session = session
         self.target = target
@@ -62,6 +74,8 @@ public actor DictationCoordinator {
         self.vocabulary = vocabulary
         self.wallClock = wallClock
         self.prepareForRecording = prepareForRecording
+        self.completionPresentationInterval = completionPresentationInterval
+        self.awaitCompletionPresentation = awaitCompletionPresentation
     }
 
     public func receive(_ signal: DictationGesture) async {
@@ -76,6 +90,43 @@ public actor DictationCoordinator {
     public func receive(_ event: DictationEvent) async {
         let effects = await session.handle(event)
         await dispatch(effects)
+        await scheduleCompletionPresentation()
+    }
+
+    /// Returns the Indicator to ready once a terminal outcome has been visible long enough.
+    private func scheduleCompletionPresentation() async {
+        let snapshot = await session.snapshot()
+        guard snapshot.phase == .completed,
+              let id = snapshot.activeID,
+              scheduledCompletionPresentationID != id
+        else { return }
+
+        scheduledCompletionPresentationID = id
+        let awaitCompletionPresentation = awaitCompletionPresentation
+        let interval = completionPresentationInterval
+        Task { [weak self] in
+            await awaitCompletionPresentation(interval)
+            await self?.receive(.completionPresentationElapsed(id))
+        }
+    }
+
+    /// Returns the Indicator to ready after a failure the session never saw.
+    ///
+    /// Target capture fails before any Dictation reaches the session, so the completion
+    /// presentation the session drives never fires for it.
+    private func scheduleDirectFailurePresentation(for id: DictationID) {
+        scheduledCompletionPresentationID = id
+        let awaitCompletionPresentation = awaitCompletionPresentation
+        let interval = completionPresentationInterval
+        Task { [weak self] in
+            await awaitCompletionPresentation(interval)
+            await self?.presentReadyAfterDirectFailure(id)
+        }
+    }
+
+    private func presentReadyAfterDirectFailure(_ id: DictationID) async {
+        guard scheduledCompletionPresentationID == id, gesture == nil else { return }
+        await indicator.present(.init(dictationID: nil, state: .ready))
     }
 
     public func activeDictationID() -> DictationID? {
@@ -95,6 +146,7 @@ public actor DictationCoordinator {
         case .failure:
             gesture = nil
             await indicator.present(.init(dictationID: id, state: .failure(.recording)))
+            scheduleDirectFailurePresentation(for: id)
 
         case .success(let targetCapture):
             let start: DictationStart
