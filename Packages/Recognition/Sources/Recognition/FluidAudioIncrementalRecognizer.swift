@@ -24,16 +24,21 @@ actor FluidAudioIncrementalRecognizer: IncrementalSpeechRecognizing {
     private let modelLayout: RecognitionModelLayout
     private let clock: any MonotonicClock
     private let manager: StreamingUnifiedAsrManager
-    private let latestHypothesis = LatestHypothesisStore()
+    private let latestHypothesis: LatestHypothesisStore
     private var ctcModels: CtcModels?
     private var ctcTokenizer: CtcTokenizer?
     private var isPrepared = false
     private var pendingRecovery: Task<Void, Never>?
     private var currentFinalization: Task<Result<String, RecognitionFailure>, Never>?
 
-    init(modelLayout: RecognitionModelLayout, clock: any MonotonicClock) {
+    init(
+        modelLayout: RecognitionModelLayout,
+        clock: any MonotonicClock,
+        latestHypothesis: LatestHypothesisStore = LatestHypothesisStore()
+    ) {
         self.modelLayout = modelLayout
         self.clock = clock
+        self.latestHypothesis = latestHypothesis
         self.capabilities = .init(
             personalVocabularyAvailable: modelLayout.ctcModelDirectory != nil
         )
@@ -150,8 +155,6 @@ actor FluidAudioIncrementalRecognizer: IncrementalSpeechRecognizing {
                 return .failed(.cancelled)
             case .failure:
                 guard !latest.isEmpty else { return .failed(.finalizationFailed) }
-                let wait = max(.zero, clock.now().duration(to: deadline))
-                try? await Task.sleep(for: wait)
                 return .deadlineFallback(latest)
             }
 
@@ -186,7 +189,7 @@ actor FluidAudioIncrementalRecognizer: IncrementalSpeechRecognizing {
     }
 }
 
-private final class LatestHypothesisStore: @unchecked Sendable {
+final class LatestHypothesisStore: @unchecked Sendable {
     private let lock = NSLock()
     private var text = ""
 

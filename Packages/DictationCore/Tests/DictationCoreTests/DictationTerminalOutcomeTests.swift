@@ -141,6 +141,36 @@ final class DictationTerminalOutcomeTests: XCTestCase {
         })
     }
 
+    func testOnlyFillerCleanupCompletesWithoutDeliveringEmptyText() async {
+        let clock = OutcomeFakeClock()
+        let session = DictationSessionActor(clock: clock)
+        let start = outcomeFixtureStart()
+        await reachCleanup(session, start: start, rawTranscript: "um uh")
+
+        let effects = await session.handle(.cleanupCompleted(
+            start.id,
+            .cleaned(.init(text: " ", metadata: .init(changed: true, editCount: 1)))
+        ))
+
+        let outcome = await session.snapshot().outcome
+        XCTAssertEqual(
+            outcome,
+            .emptyRecognitionFailure(recordingEnd: .released)
+        )
+        XCTAssertFalse(effects.contains { effect in
+            switch effect {
+            case .deliverToTarget, .copyToClipboard, .revalidateTarget: return true
+            default: return false
+            }
+        })
+        XCTAssertTrue(effects.contains { effect in
+            if case .recordHistory(let record) = effect {
+                return record.rawTranscript == "um uh" && record.deliveredText == nil
+            }
+            return false
+        })
+    }
+
     func testRecognitionHypothesisFallbackIsRecordedAsHypothesisNotRawTranscript() async {
         let clock = OutcomeFakeClock()
         let session = DictationSessionActor(clock: clock)
@@ -168,6 +198,118 @@ final class DictationTerminalOutcomeTests: XCTestCase {
             dictationID: start.id,
             state: .recognitionFallback
         ))))
+    }
+
+    func testFailedRecognitionBeforeWatchdogInsertsLatestHypothesis() async {
+        let clock = OutcomeFakeClock()
+        let session = DictationSessionActor(clock: clock)
+        let start = outcomeFixtureStart()
+        _ = await session.handle(.press(start))
+        _ = await session.handle(.recognitionHypothesis(start.id, .init(text: "Useful partial")))
+        _ = await session.handle(.release(start.id))
+        clock.advance(by: .milliseconds(200))
+
+        let recognitionEffects = await session.handle(.recognitionCompleted(
+            start.id,
+            .failed(.finalizationFailed)
+        ))
+
+        XCTAssertTrue(recognitionEffects.contains { effect in
+            if case .revalidateTarget(let request) = effect { return request.id == start.id }
+            return false
+        })
+        XCTAssertFalse(recognitionEffects.contains { effect in
+            if case .requestCleanup = effect { return true }
+            return false
+        })
+
+        let targetEffects = await session.handle(.targetRevalidated(start.id, .valid))
+        XCTAssertTrue(targetEffects.contains { effect in
+            if case .deliverToTarget(let request) = effect {
+                return request.text == "Useful partial"
+            }
+            return false
+        })
+
+        let effects = await session.handle(.deliveryCompleted(start.id, .inserted(.accessibility)))
+        let outcome = await session.snapshot().outcome
+        XCTAssertEqual(
+            outcome,
+            .recognitionHypothesisFallback(method: .accessibility, recordingEnd: .released)
+        )
+        XCTAssertTrue(effects.contains { effect in
+            if case .recordHistory(let record) = effect {
+                return record.rawTranscript == nil
+                    && record.deliveredText == "Useful partial"
+                    && record.outcome == .recognitionHypothesisFallback(
+                        method: .accessibility,
+                        recordingEnd: .released
+                    )
+            }
+            return false
+        })
+        XCTAssertTrue(effects.contains(.presentIndicator(.init(
+            dictationID: start.id,
+            state: .recognitionFallback
+        ))))
+    }
+
+    func testFailedRecognitionWithoutUsableHypothesisCompletesWithoutText() async {
+        let clock = OutcomeFakeClock()
+        let session = DictationSessionActor(clock: clock)
+        let start = outcomeFixtureStart()
+        _ = await session.handle(.press(start))
+        _ = await session.handle(.recognitionHypothesis(start.id, .init(text: "  \n ")))
+        _ = await session.handle(.release(start.id))
+        clock.advance(by: .milliseconds(200))
+
+        let effects = await session.handle(.recognitionCompleted(
+            start.id,
+            .failed(.finalizationFailed)
+        ))
+
+        let outcome = await session.snapshot().outcome
+        XCTAssertEqual(outcome, .emptyRecognitionFailure(recordingEnd: .released))
+        XCTAssertFalse(effects.contains { effect in
+            switch effect {
+            case .deliverToTarget, .copyToClipboard, .revalidateTarget: return true
+            default: return false
+            }
+        })
+        XCTAssertTrue(effects.contains(.presentIndicator(.init(
+            dictationID: start.id,
+            state: .failure(.noUsableText)
+        ))))
+    }
+
+    func testBlankOversizedDeterministicCleanupCompletesWithoutDeliveringEmptyText() async {
+        let clock = OutcomeFakeClock()
+        let session = DictationSessionActor(clock: clock)
+        let start = outcomeFixtureStart()
+        await reachCleanup(session, start: start, rawTranscript: "um uh")
+
+        let effects = await session.handle(.cleanupCompleted(
+            start.id,
+            .oversizedDeterministic(.init(
+                text: " \n ",
+                metadata: .init(changed: true, editCount: 1)
+            ))
+        ))
+
+        let outcome = await session.snapshot().outcome
+        XCTAssertEqual(outcome, .emptyRecognitionFailure(recordingEnd: .released))
+        XCTAssertFalse(effects.contains { effect in
+            switch effect {
+            case .deliverToTarget, .copyToClipboard, .revalidateTarget: return true
+            default: return false
+            }
+        })
+        XCTAssertTrue(effects.contains { effect in
+            if case .recordHistory(let record) = effect {
+                return record.rawTranscript == "um uh" && record.deliveredText == nil
+            }
+            return false
+        })
     }
 
     func testNoHypothesisAtRecognitionWatchdogProducesEmptyFailure() async {

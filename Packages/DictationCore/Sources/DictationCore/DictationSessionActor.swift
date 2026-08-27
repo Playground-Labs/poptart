@@ -148,7 +148,10 @@ public actor DictationSessionActor {
                 )),
             ]
         case .failed:
-            return completeWithoutText(active: active)
+            guard let hypothesis = active.latestHypothesis, hypothesis.isUsable else {
+                return completeWithoutText(active: active)
+            }
+            return recognitionTimedOut(active: active, now: now)
         }
     }
 
@@ -168,6 +171,9 @@ public actor DictationSessionActor {
 
         switch result {
         case .cleaned(let output):
+            guard !output.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                return completeWithoutText(active: active)
+            }
             active.candidate = .init(
                 text: output.text,
                 kind: .cleaned,
@@ -180,6 +186,9 @@ public actor DictationSessionActor {
                 cleanupChanged: false
             )
         case .oversizedDeterministic(let output):
+            guard !output.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                return completeWithoutText(active: active)
+            }
             active.candidate = .init(
                 text: output.text,
                 kind: .oversizedDeterministicFallback,
