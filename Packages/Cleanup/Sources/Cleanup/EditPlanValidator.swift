@@ -95,10 +95,40 @@ public struct CleanupEditPlanValidator: Sendable {
 
     let merged = (reservedEdits + plan.edits).sorted(by: CleanupEditApplier.editOrder)
     let output = CleanupEditApplier.apply(merged, to: transcript)
-    guard !output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-      throw CleanupEditValidationError.blankOutput
+    if output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      guard removesOnlyFiller(merged, transcript: transcript) else {
+        throw CleanupEditValidationError.blankOutput
+      }
     }
     return merged
+  }
+
+  /// A blank result is allowed only when the Raw Transcript contained only removable filler, so
+  /// every applied edit must have deleted filler, or the punctuation attached to it, under the
+  /// same category checks each edit already passed. Repetition and every other category can carry
+  /// substantive wording, so they can never empty the result.
+  ///
+  /// The `.filler` category check reads a span through a word list that ignores symbols, so a span
+  /// of "um 😀 uh" looks like pure filler to it. Emptying the whole Dictation destroys anything it
+  /// overlooked, so the deleted spans are rechecked here: everything outside the filler words must
+  /// be punctuation or whitespace.
+  private func removesOnlyFiller(_ edits: [CleanupEdit], transcript: StableTranscript) -> Bool {
+    edits.contains { $0.category == .filler }
+      && edits.allSatisfy { edit in
+        edit.replacement.isEmpty
+          && (edit.category == .filler || edit.category == .punctuation)
+          && transcript.spans[edit.startSpan..<edit.endSpan].allSatisfy { span in
+            Self.fillerWords.contains(span.text.lowercased())
+              || span.text.unicodeScalars.allSatisfy { Self.isPunctuationOrWhitespace($0) }
+          }
+      }
+  }
+
+  private static let fillerWords: Set<String> = ["ah", "er", "erm", "hmm", "like", "uh", "um"]
+
+  private static func isPunctuationOrWhitespace(_ scalar: Unicode.Scalar) -> Bool {
+    CharacterSet.punctuationCharacters.contains(scalar)
+      || CharacterSet.whitespacesAndNewlines.contains(scalar)
   }
 
   private func conflicts(_ model: CleanupEdit, with reserved: CleanupEdit) -> Bool {
@@ -168,10 +198,9 @@ public struct CleanupEditPlanValidator: Sendable {
     case .capitalization:
       return !source.isEmpty && source.lowercased() == edit.replacement.lowercased()
     case .filler:
-      let fillerWords: Set<String> = ["ah", "er", "erm", "hmm", "like", "uh", "um"]
       let sourceWords = words(source)
       return edit.replacement.isEmpty && !sourceWords.isEmpty
-        && sourceWords.isSubset(of: fillerWords)
+        && sourceWords.isSubset(of: Self.fillerWords)
     case .repetition:
       guard edit.replacement.isEmpty,
         edit.startSpan < edit.endSpan,
