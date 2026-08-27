@@ -18,7 +18,6 @@ struct IndicatorPolicyTests {
     let visuals = states.map(IndicatorVisual.init)
     #expect(visuals.count == states.count)
     #expect(visuals.allSatisfy { $0.accessibilityDescription.isEmpty == false })
-    #expect(visuals.allSatisfy { $0.transcript == nil })
     #expect(visuals[2].audioActivity == 0.8)
   }
 }

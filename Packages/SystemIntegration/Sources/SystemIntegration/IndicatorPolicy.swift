@@ -14,10 +14,8 @@ public struct IndicatorVisual: Equatable, Sendable {
   public let tone: IndicatorTone
   public let audioActivity: Double?
   public let accessibilityDescription: String
-  public let transcript: String?
 
   public init(_ state: IndicatorState) {
-    transcript = nil
     switch state {
     case .ready:
       (tone, audioActivity, accessibilityDescription) = (.neutral, nil, "Poptart ready")

@@ -94,11 +94,6 @@ public final class RightOptionShortcutMonitor: @unchecked Sendable {
     if let release { handler(release) }
   }
 
-  /// Rearms the next gesture after the five-minute safety stop or another lost key-up recovery.
-  public func rearmAfterForcedStop() {
-    lock.withLock { _ = policy.reset() }
-  }
-
   fileprivate func receive(type: CGEventType, event: CGEvent) {
     if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
       let release: ShortcutSignal?
