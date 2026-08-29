@@ -82,10 +82,6 @@ public struct BoundedEditPlanParser: Sendable {
     return try decode(String(buffer[..<markerRange.lowerBound]))
   }
 
-  public func finish() throws -> CleanupEditPlan {
-    throw CleanupEditPlanError.incomplete
-  }
-
   private func decode(_ json: String) throws -> CleanupEditPlan {
     guard let data = json.data(using: .utf8), data.count <= maximumBytes else {
       throw CleanupEditPlanError.exceedsByteLimit

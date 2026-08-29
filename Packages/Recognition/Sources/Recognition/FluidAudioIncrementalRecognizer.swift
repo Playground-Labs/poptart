@@ -44,12 +44,8 @@ actor FluidAudioIncrementalRecognizer: IncrementalSpeechRecognizing {
         )
         let production = FluidAudioRecognitionConfiguration.mvp
         self.manager = StreamingUnifiedAsrManager(
-            config: UnifiedConfig(
-                leftFrames: production.leftFrames,
-                chunkFrames: production.chunkFrames,
-                rightFrames: production.rightFrames
-            ),
-            encoderPrecision: .int8
+            config: production.unifiedConfig,
+            encoderPrecision: production.encoderPrecision
         )
     }
 

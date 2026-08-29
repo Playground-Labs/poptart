@@ -29,7 +29,7 @@ public actor CleanupEngine: CleanupBoundary {
       )
     else { return .rawTranscriptFallback(.cleanupFailed) }
     let modelRequest = CleanupModelRequest(
-      systemInstruction: CleanupPrompt.qwen35SystemInstruction,
+      systemInstruction: CleanupPrompt.cleanupSystemInstruction,
       prompt: prompt,
       enableThinking: false,
       maximumOutputTokens: configuration.maximumOutputTokens,

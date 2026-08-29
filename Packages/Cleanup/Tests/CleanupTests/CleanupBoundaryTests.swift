@@ -273,7 +273,7 @@ struct CleanupBoundaryTests {
           )))
     #expect(generationRequest?.maximumOutputTokens == 128)
     #expect(generationRequest?.stopMarker == CleanupPrompt.stopMarker)
-    #expect(generationRequest?.systemInstruction == CleanupPrompt.qwen35SystemInstruction)
+    #expect(generationRequest?.systemInstruction == CleanupPrompt.cleanupSystemInstruction)
     #expect(generationRequest?.systemInstruction.contains("Do not emit reasoning") == true)
     #expect(generationRequest?.enableThinking == false)
     #expect(generationRequest?.prompt.contains("BEGIN_UNTRUSTED_DATA_JSON_UTF8_BYTES=") == true)

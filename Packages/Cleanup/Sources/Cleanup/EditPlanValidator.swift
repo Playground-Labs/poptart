@@ -119,7 +119,7 @@ public struct CleanupEditPlanValidator: Sendable {
           && (edit.category == .filler || edit.category == .punctuation)
           && transcript.spans[edit.startSpan..<edit.endSpan].allSatisfy { span in
             Self.fillerWords.contains(span.text.lowercased())
-              || span.text.unicodeScalars.allSatisfy { Self.isPunctuationOrWhitespace($0) }
+              || span.text.unicodeScalars.allSatisfy(Self.isPunctuationOrWhitespace)
           }
       }
   }
@@ -187,14 +187,8 @@ public struct CleanupEditPlanValidator: Sendable {
   ) -> Bool {
     switch edit.category {
     case .punctuation:
-      return edit.replacement.unicodeScalars.allSatisfy {
-        CharacterSet.punctuationCharacters.contains($0)
-          || CharacterSet.whitespacesAndNewlines.contains($0)
-      }
-        && source.unicodeScalars.allSatisfy {
-          CharacterSet.punctuationCharacters.contains($0)
-            || CharacterSet.whitespacesAndNewlines.contains($0)
-        }
+      return edit.replacement.unicodeScalars.allSatisfy(Self.isPunctuationOrWhitespace)
+        && source.unicodeScalars.allSatisfy(Self.isPunctuationOrWhitespace)
     case .capitalization:
       return !source.isEmpty && source.lowercased() == edit.replacement.lowercased()
     case .filler:

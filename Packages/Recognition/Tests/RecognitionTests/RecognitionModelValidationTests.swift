@@ -6,7 +6,7 @@ final class RecognitionModelValidationTests: XCTestCase {
     func testProductionFluidAudioConfigurationIsTheApprovedStreamingArtifact() {
         XCTAssertEqual(
             FluidAudioRecognitionConfiguration.mvp,
-            .init(leftFrames: 70, chunkFrames: 7, rightFrames: 1, encoderPrecision: "int8")
+            .init(leftFrames: 70, chunkFrames: 7, rightFrames: 1, encoderPrecision: .int8)
         )
         XCTAssertEqual(
             RecognitionModelLayout.unifiedEncoderBundleName,

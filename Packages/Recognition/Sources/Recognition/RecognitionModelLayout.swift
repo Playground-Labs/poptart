@@ -1,8 +1,14 @@
+import FluidAudio
 import Foundation
 
 public struct RecognitionModelLayout: Equatable, Sendable {
-    public static let unifiedEncoderBundleName =
-        "parakeet_unified_encoder_streaming_70_7_1_int8.mlmodelc"
+    /// Derived from the production configuration so the bundle validation requires is always the
+    /// bundle the streaming manager loads: the encoder bakes its `[left, chunk, right]` attention
+    /// window and its weight precision into the file name.
+    public static let unifiedEncoderBundleName = ModelNames.ParakeetUnified.streamingEncoderFile(
+        precision: FluidAudioRecognitionConfiguration.mvp.encoderPrecision,
+        contextSuffix: FluidAudioRecognitionConfiguration.mvp.unifiedConfig.contextSuffix
+    )
     public static let unifiedDecoderBundleName = "parakeet_unified_decoder.mlmodelc"
     public static let unifiedJointBundleName =
         "parakeet_unified_joint_decision_single_step.mlmodelc"
@@ -33,13 +39,17 @@ public struct FluidAudioRecognitionConfiguration: Equatable, Sendable {
         leftFrames: 70,
         chunkFrames: 7,
         rightFrames: 1,
-        encoderPrecision: "int8"
+        encoderPrecision: .int8
     )
 
     public let leftFrames: Int
     public let chunkFrames: Int
     public let rightFrames: Int
-    public let encoderPrecision: String
+    public let encoderPrecision: UnifiedEncoderPrecision
+
+    var unifiedConfig: UnifiedConfig {
+        UnifiedConfig(leftFrames: leftFrames, chunkFrames: chunkFrames, rightFrames: rightFrames)
+    }
 }
 
 public struct RecognitionModelValidation: Equatable, Sendable {
