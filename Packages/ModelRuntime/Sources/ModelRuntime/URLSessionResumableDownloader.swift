@@ -1,5 +1,12 @@
 import Foundation
 
+extension ResumableArtifactDownloading where Self == URLSessionResumableDownloader {
+  /// The production downloader. Named here so the App composition root can
+  /// inject it without spelling a network type, which the privacy scan forbids
+  /// outside this file.
+  public static var system: URLSessionResumableDownloader { .init() }
+}
+
 public struct URLSessionResumableDownloader: ResumableArtifactDownloading, Sendable {
   private let session: URLSession
 

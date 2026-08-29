@@ -46,9 +46,40 @@ public struct ModelPackManifest: Codable, Equatable, Sendable {
   public let version: String
   public let minimumApplicationVersion: String
   public let maximumApplicationVersion: String
+  /// The Cleanup token ceiling measured on a cold M1 for this pack release.
   public let cleanupTokenCeiling: Int
   public let artifacts: [ModelArtifact]
 
+  private enum CodingKeys: String, CodingKey {
+    case identity
+    case version
+    case minimumApplicationVersion
+    case maximumApplicationVersion
+    case cleanupTokenCeiling
+    case artifacts
+  }
+
+  /// The measured Cleanup token ceiling is release evidence, so a manifest that omits it, nulls it,
+  /// or declares a non-positive value cannot decode into an installable pack description.
+  public init(from decoder: any Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    self.identity = try container.decode(String.self, forKey: .identity)
+    self.version = try container.decode(String.self, forKey: .version)
+    self.minimumApplicationVersion = try container.decode(
+      String.self, forKey: .minimumApplicationVersion)
+    self.maximumApplicationVersion = try container.decode(
+      String.self, forKey: .maximumApplicationVersion)
+    self.artifacts = try container.decode([ModelArtifact].self, forKey: .artifacts)
+    guard let ceiling = try? container.decodeIfPresent(Int.self, forKey: .cleanupTokenCeiling),
+      ceiling > 0
+    else {
+      throw ModelPackError.invalidCleanupTokenCeiling
+    }
+    self.cleanupTokenCeiling = ceiling
+  }
+
+  /// - Throws: `ModelPackError.invalidCleanupTokenCeiling` when the measured ceiling is not positive,
+  ///   so no `ModelPackManifest` value can describe a pack without one.
   public init(
     identity: String,
     version: String,
@@ -56,7 +87,8 @@ public struct ModelPackManifest: Codable, Equatable, Sendable {
     maximumApplicationVersion: String,
     cleanupTokenCeiling: Int,
     artifacts: [ModelArtifact]
-  ) {
+  ) throws {
+    guard cleanupTokenCeiling > 0 else { throw ModelPackError.invalidCleanupTokenCeiling }
     self.identity = identity
     self.version = version
     self.minimumApplicationVersion = minimumApplicationVersion
@@ -100,6 +132,8 @@ public struct ModelPackManifestVerifier: Sendable {
     }
     do {
       return try JSONDecoder().decode(ModelPackManifest.self, from: envelope.manifest)
+    } catch let error as ModelPackError {
+      throw error
     } catch {
       throw ModelPackError.invalidManifest
     }
@@ -110,6 +144,7 @@ public enum ModelPackError: Error, Equatable, Sendable {
   case invalidPublicKey
   case invalidManifest
   case invalidManifestSignature
+  case invalidCleanupTokenCeiling
   case incompatibleApplicationVersion
   case downgradeNotAllowed
   case downloadFailed

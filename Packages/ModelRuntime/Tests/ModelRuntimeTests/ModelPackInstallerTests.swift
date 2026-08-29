@@ -242,6 +242,145 @@ struct ModelPackInstallerTests {
     #expect(await downloader.requests().count == 4)
   }
 
+  @Test(
+    "The measured Cleanup token ceiling reaches the active pack API and survives a restart")
+  func publishesCleanupTokenCeiling() async throws {
+    let fixture = try ModelFixture()
+    let data = Data([4, 2])
+    let signed = try fixture.signedManifest(
+      version: "1.0.0",
+      artifacts: fixture.completeArtifacts(recognition: data, cleanup: data)
+    )
+    let downloader = FakeDownloader(content: [
+      "https://models.example/recognition": data,
+      "https://models.example/cleanup": data,
+    ])
+    let installer = try fixture.installer(downloader: downloader)
+
+    let installed = try await installer.perform(.onboardingInstall, signedManifest: signed)
+
+    #expect(installed.cleanupTokenCeiling == ModelFixture.cleanupTokenCeiling)
+    #expect(await installer.activePack()?.cleanupTokenCeiling == ModelFixture.cleanupTokenCeiling)
+
+    let restarted = try fixture.installer(downloader: FakeDownloader(content: [:]))
+    #expect(await restarted.activePack()?.cleanupTokenCeiling == ModelFixture.cleanupTokenCeiling)
+    #expect(
+      try InstalledModelPackRegistry(rootDirectory: fixture.directory)
+        .activePack()?.cleanupTokenCeiling == ModelFixture.cleanupTokenCeiling)
+  }
+
+  @Test(
+    "An updated pack publishes its own Cleanup token ceiling, and rollback restores the prior one")
+  func publishedCleanupTokenCeilingFollowsTheActivePack() async throws {
+    let fixture = try ModelFixture()
+    let first = Data([1, 1])
+    let second = Data([2, 2, 2])
+    let updatedCeiling = 4_321
+    let downloader = FakeDownloader(content: [
+      "https://models.example/recognition": first,
+      "https://models.example/cleanup": first,
+    ])
+    let installer = try fixture.installer(downloader: downloader)
+    _ = try await installer.perform(
+      .onboardingInstall,
+      signedManifest: try fixture.signedManifest(
+        version: "1.0.0",
+        artifacts: fixture.completeArtifacts(recognition: first, cleanup: first)))
+
+    await downloader.replaceContent([
+      "https://models.example/recognition": second,
+      "https://models.example/cleanup": second,
+    ])
+    let updated = try await installer.perform(
+      .update,
+      signedManifest: try fixture.signedManifest(
+        version: "1.1.0",
+        cleanupTokenCeiling: .declared(updatedCeiling),
+        artifacts: fixture.completeArtifacts(recognition: second, cleanup: second)))
+
+    #expect(updated.cleanupTokenCeiling == updatedCeiling)
+    #expect(
+      try InstalledModelPackRegistry(rootDirectory: fixture.directory)
+        .activePack()?.cleanupTokenCeiling == updatedCeiling)
+
+    #expect(try await installer.rollback().cleanupTokenCeiling == ModelFixture.cleanupTokenCeiling)
+    #expect(
+      try InstalledModelPackRegistry(rootDirectory: fixture.directory)
+        .activePack()?.cleanupTokenCeiling == ModelFixture.cleanupTokenCeiling)
+  }
+
+  @Test(
+    "A manifest without a positive Cleanup token ceiling is rejected before the download boundary",
+    arguments: [
+      FixtureCleanupTokenCeiling.missing,
+      .null,
+      .declared(0),
+      .declared(-1),
+    ])
+  func rejectsManifestWithoutMeasuredCleanupTokenCeiling(
+    _ ceiling: FixtureCleanupTokenCeiling
+  ) async throws {
+    let fixture = try ModelFixture()
+    let data = Data([1])
+    let signed = try fixture.signedManifest(
+      version: "1.0.0",
+      cleanupTokenCeiling: ceiling,
+      artifacts: fixture.completeArtifacts(recognition: data, cleanup: data)
+    )
+    let downloader = FakeDownloader(content: [
+      "https://models.example/recognition": data,
+      "https://models.example/cleanup": data,
+    ])
+    let installer = try fixture.installer(downloader: downloader)
+
+    await #expect(throws: ModelPackError.invalidCleanupTokenCeiling) {
+      try await installer.perform(.onboardingInstall, signedManifest: signed)
+    }
+    #expect(await downloader.requests().isEmpty)
+    #expect(await installer.activePack() == nil)
+  }
+
+  @Test("A manifest value cannot be built without a positive Cleanup token ceiling")
+  func rejectsManifestValueWithoutPositiveCleanupTokenCeiling() throws {
+    let fixture = try ModelFixture()
+    let artifacts = fixture.completeArtifacts(recognition: Data([1]), cleanup: Data([2]))
+
+    #expect(throws: ModelPackError.invalidCleanupTokenCeiling) {
+      try ModelPackManifest(
+        identity: "poptart-english",
+        version: "1.0.0",
+        minimumApplicationVersion: "1.0.0",
+        maximumApplicationVersion: "1.9.9",
+        cleanupTokenCeiling: 0,
+        artifacts: artifacts
+      )
+    }
+  }
+
+  @Test("A persisted pack whose Cleanup token ceiling was lost is refused on reload")
+  func rejectsPersistedPackWithoutCleanupTokenCeiling() async throws {
+    let fixture = try ModelFixture()
+    let data = Data([7])
+    let signed = try fixture.signedManifest(
+      version: "1.0.0",
+      artifacts: fixture.completeArtifacts(recognition: data, cleanup: data)
+    )
+    let downloader = FakeDownloader(content: [
+      "https://models.example/recognition": data,
+      "https://models.example/cleanup": data,
+    ])
+    let installer = try fixture.installer(downloader: downloader)
+    _ = try await installer.perform(.onboardingInstall, signedManifest: signed)
+    try fixture.eraseCleanupTokenCeilingFromActiveState()
+
+    #expect(throws: ModelPackError.invalidCleanupTokenCeiling) {
+      try InstalledModelPackRegistry(rootDirectory: fixture.directory).activePack()
+    }
+    #expect(throws: ModelPackError.invalidCleanupTokenCeiling) {
+      try fixture.installer(downloader: FakeDownloader(content: [:]))
+    }
+  }
+
   @Test("Duplicate artifact paths are rejected before the download boundary")
   func rejectsDuplicateArtifactPaths() async throws {
     let fixture = try ModelFixture()
@@ -261,7 +400,25 @@ struct ModelPackInstallerTests {
   }
 }
 
+/// A ceiling shape a signed manifest can carry, including the shapes Swift's type cannot express.
+enum FixtureCleanupTokenCeiling: Sendable, CustomTestStringConvertible {
+  case missing
+  case null
+  case declared(Int)
+
+  var testDescription: String {
+    switch self {
+    case .missing: return "missing"
+    case .null: return "null"
+    case .declared(let value): return "declared(\(value))"
+    }
+  }
+}
+
 private struct ModelFixture {
+  /// Obviously synthetic: no measured ceiling exists while the repository is unreleased.
+  static let cleanupTokenCeiling = 1_234
+
   let directory: URL
   let privateKey = Curve25519.Signing.PrivateKey()
   var publicKey: Data { privateKey.publicKey.rawRepresentation }
@@ -297,21 +454,51 @@ private struct ModelFixture {
     version: String,
     minimumApplicationVersion: String = "1.0.0",
     maximumApplicationVersion: String = "1.9.9",
+    cleanupTokenCeiling: FixtureCleanupTokenCeiling? = nil,
     artifacts: [ModelArtifact]
   ) throws -> Data {
-    let manifest = ModelPackManifest(
+    let manifest = try ModelPackManifest(
       identity: "poptart-english",
       version: version,
       minimumApplicationVersion: minimumApplicationVersion,
       maximumApplicationVersion: maximumApplicationVersion,
-      cleanupTokenCeiling: 384,
+      cleanupTokenCeiling: ModelFixture.cleanupTokenCeiling,
       artifacts: artifacts
     )
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.sortedKeys]
-    let manifestData = try encoder.encode(manifest)
+    var manifestData = try encoder.encode(manifest)
+    if let cleanupTokenCeiling {
+      manifestData = try rewriteCleanupTokenCeiling(in: manifestData, to: cleanupTokenCeiling)
+    }
     let signature = try privateKey.signature(for: manifestData)
     return try encoder.encode(SignedModelPackManifest(manifest: manifestData, signature: signature))
+  }
+
+  /// Signs manifest shapes `ModelPackManifest` cannot hold, so rejection is proven on real bytes.
+  private func rewriteCleanupTokenCeiling(
+    in data: Data, to ceiling: FixtureCleanupTokenCeiling
+  ) throws -> Data {
+    var object = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    switch ceiling {
+    case .missing: object.removeValue(forKey: "cleanupTokenCeiling")
+    case .null: object["cleanupTokenCeiling"] = NSNull()
+    case .declared(let value): object["cleanupTokenCeiling"] = value
+    }
+    return try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+  }
+
+  func eraseCleanupTokenCeilingFromActiveState() throws {
+    let stateURL = directory.appendingPathComponent("active-model-pack.json")
+    var state = try #require(
+      JSONSerialization.jsonObject(with: Data(contentsOf: stateURL)) as? [String: Any])
+    var current = try #require(state["current"] as? [String: Any])
+    var manifest = try #require(current["manifest"] as? [String: Any])
+    manifest["cleanupTokenCeiling"] = NSNull()
+    current["manifest"] = manifest
+    state["current"] = current
+    try JSONSerialization.data(withJSONObject: state, options: [.sortedKeys])
+      .write(to: stateURL, options: [.atomic])
   }
 
   func installer(

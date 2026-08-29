@@ -44,6 +44,9 @@ public struct InstalledModelPack: Codable, Equatable, Sendable {
   public let directory: URL
   public let manifest: ModelPackManifest
 
+  /// The measured Cleanup token ceiling this pack ships; never a user setting or an app default.
+  public var cleanupTokenCeiling: Int { manifest.cleanupTokenCeiling }
+
   public init(directory: URL, manifest: ModelPackManifest) {
     self.directory = directory
     self.manifest = manifest
@@ -93,6 +96,8 @@ public actor ModelPackInstaller {
       do {
         self.state = try JSONDecoder().decode(
           ActiveState.self, from: Data(contentsOf: activeStateURL))
+      } catch let error as ModelPackError {
+        throw error
       } catch {
         throw ModelPackError.invalidActiveState
       }
@@ -216,7 +221,6 @@ public actor ModelPackInstaller {
       let minimum = SemanticVersion(manifest.minimumApplicationVersion),
       let maximum = SemanticVersion(manifest.maximumApplicationVersion),
       minimum <= maximum,
-      manifest.cleanupTokenCeiling > 0,
       Set(manifest.artifacts.map(\.role)) == Set(ModelRole.allCases),
       Set(artifactPaths).count == artifactPaths.count,
       manifest.artifacts.allSatisfy(isValid)

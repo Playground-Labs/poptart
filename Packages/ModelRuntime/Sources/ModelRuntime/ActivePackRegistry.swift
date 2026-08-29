@@ -20,6 +20,8 @@ public struct InstalledModelPackRegistry: Sendable {
     let state: ActiveState
     do {
       state = try JSONDecoder().decode(ActiveState.self, from: Data(contentsOf: stateURL))
+    } catch let error as ModelPackError {
+      throw error
     } catch {
       throw ModelPackError.invalidActiveState
     }
