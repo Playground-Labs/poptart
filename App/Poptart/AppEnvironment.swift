@@ -1,0 +1,193 @@
+import Foundation
+import ModelRuntime
+import Observation
+import Persistence
+import PoptartApplication
+import SystemIntegration
+
+/// Composition root. It builds the stores, adapters, and surface models, owns the runtime, and
+/// routes shortcut signals to the onboarding shortcut test. Every decision it could make lives in a
+/// model type instead.
+@MainActor
+@Observable
+final class AppEnvironment {
+    private(set) var launch: ApplicationLaunchModel!
+    let onboarding: OnboardingModel
+    let settings: SettingsModel
+    let history: HistoryListModel
+    let shortcut: ShortcutBindingModel
+
+    private let supportDirectory: URL
+    private let settingsStore: AppSettingsStore
+    private let modelPacks: LocatedModelPackProvider
+    private var runtime: RuntimeAssembly?
+
+    /// - Parameter downloader: the resumable downloader Model Pack actions use. ModelRuntime owns
+    ///   the only component in Poptart allowed to reach the network, and the repository privacy scan
+    ///   forbids naming a network client anywhere under `App/`, so a packaged build injects it here.
+    ///   Without one, Model Pack download, update, and repair report that they are unavailable
+    ///   instead of pretending to work.
+    static func make(
+        downloader: (any ResumableArtifactDownloading)? = nil
+    ) throws -> AppEnvironment {
+        let environment = try AppEnvironment(downloader: downloader)
+        environment.launch = ApplicationLaunchModel(
+            modelPacks: environment.modelPacks
+        ) { [unowned environment] pack in
+            try await environment.startRuntime(with: pack)
+        }
+        return environment
+    }
+
+    private init(downloader: (any ResumableArtifactDownloading)?) throws {
+        let base = try FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )
+        let support = base.appendingPathComponent("Playground Labs/Poptart", isDirectory: true)
+        try FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
+        self.supportDirectory = support
+
+        let modelRuntimeDirectory = support.appendingPathComponent("ModelRuntime", isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: modelRuntimeDirectory, withIntermediateDirectories: true)
+
+        let settingsStore = try AppSettingsStore(directory: support)
+        self.settingsStore = settingsStore
+        self.modelPacks = LocatedModelPackProvider(modelRuntimeDirectory: modelRuntimeDirectory)
+
+        // The surfaces read the same encrypted files the runtime writes. Both stores write
+        // atomically, so a second handle only ever sees a complete record.
+        let keyProvider = KeychainEncryptionKeyProvider(service: "labs.playground.Poptart")
+        let historyStore = try HistoryStore(directory: support, keyProvider: keyProvider)
+        let vocabularyStore = try PersonalVocabularyStore(
+            directory: support, keyProvider: keyProvider)
+        let records = HistoryStoreRecords(store: historyStore)
+
+        let microphonePermission = SystemMicrophonePermission()
+        let accessibilityPermission = SystemAccessibilityPermission()
+        let keyboardPermission = SystemKeyboardMonitoringPermission()
+
+        // Without the app-embedded signing key, or without a downloader, nothing can be verified
+        // or fetched, so Model Pack actions report that rather than installing an unverified pack.
+        let installer: any ModelPackInstalling
+        let manifests: any ModelPackManifestSourcing
+        if let downloader,
+           let key = try? ModelPackTrust.embeddedPublicKey(),
+           let verifying = try? ModelPackInstaller(
+               rootDirectory: modelRuntimeDirectory,
+               applicationVersion: PoptartRelease.version(),
+               manifestPublicKey: key,
+               downloader: downloader,
+               smokeTester: LocalModelPackSmokeTest()
+           )
+        {
+            installer = verifying
+            manifests = DownloadedModelPackManifestSource(downloader: downloader)
+        } else {
+            installer = UnavailableModelPackInstaller()
+            manifests = UnavailableModelPackManifestSource()
+        }
+
+        let shortcut = ShortcutBindingModel(
+            binding: .rightOption,
+            settings: settingsStore,
+            apply: { _ in }
+        )
+        self.shortcut = shortcut
+        self.history = HistoryListModel(store: records, clipboard: PasteboardTextCopier())
+        self.onboarding = OnboardingModel(
+            shortcut: shortcut,
+            settings: settingsStore,
+            microphonePermission: microphonePermission,
+            accessibilityPermission: accessibilityPermission,
+            keyboardPermission: keyboardPermission,
+            modelPacks: modelPacks,
+            manifests: manifests,
+            offers: VerifiedModelPackOffers(),
+            installer: installer,
+            readiness: InstalledPackOfflineReadiness(
+                modelRuntimeDirectory: modelRuntimeDirectory,
+                permissions: {
+                    .init(
+                        microphone: microphonePermission.state(),
+                        accessibility: accessibilityPermission.isGranted() ? .granted : .denied,
+                        keyboardMonitoring: keyboardPermission.isGranted() ? .granted : .denied
+                    )
+                }
+            ),
+            dictationProbe: records
+        )
+        self.settings = SettingsModel(
+            shortcut: shortcut,
+            history: history,
+            settings: settingsStore,
+            deviceEnumerator: SystemMicrophoneDeviceEnumerator(),
+            microphoneRouter: SystemMicrophoneRouter(),
+            microphonePermission: microphonePermission,
+            accessibilityPermission: accessibilityPermission,
+            keyboardPermission: keyboardPermission,
+            launchAtLogin: SMAppServiceLaunchAtLogin(),
+            modelPacks: modelPacks,
+            manifests: manifests,
+            offers: VerifiedModelPackOffers(),
+            installer: installer,
+            storage: FileSystemModelPackStorage(),
+            vocabulary: PersonalVocabularyStoreEditor(store: vocabularyStore),
+            links: WorkspaceLinkOpener()
+        )
+    }
+
+    /// Loads persisted state, then starts the runtime if a verified pack and the permissions are
+    /// already in place. Onboarding runs against the live runtime once it is up.
+    func start() async {
+        await shortcut.load()
+        await onboarding.load()
+        await settings.load()
+        await settings.restorePreferredMicrophone()
+        await history.reload()
+        await launch.start()
+    }
+
+    func refreshAfterExternalChange() async {
+        await onboarding.refresh()
+        await settings.refreshPermissions()
+        await settings.refreshModelPack()
+        if !launch.status.isReady { await launch.restart() }
+    }
+
+    private func startRuntime(with pack: ActiveApplicationModelPack) async throws {
+        // A retry must not leave a second event tap listening for the shortcut.
+        await stop()
+        let binding = await settingsStore.settings().shortcutBinding
+        let runtime = try await RuntimeAssembly.start(
+            modelPack: pack.layout,
+            applicationSupportDirectory: supportDirectory,
+            cleanupTokenCeiling: pack.cleanupTokenCeiling,
+            binding: binding
+        )
+        self.runtime = runtime
+        // The Dictation shortcut can be rebound while Poptart runs; the model defers a swap made
+        // while the key is held.
+        shortcut.connect { [weak runtime] newBinding in
+            runtime?.rebindShortcut(to: newBinding)
+        }
+        runtime.observeShortcutSignals { [weak self] signal in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                switch signal {
+                case .pressed: self.onboarding.shortcutPressed()
+                case .released: await self.onboarding.shortcutReleased()
+                }
+            }
+        }
+    }
+
+    func stop() async {
+        runtime?.observeShortcutSignals(nil)
+        await runtime?.stop()
+        runtime = nil
+    }
+}

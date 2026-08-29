@@ -33,7 +33,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "Poptart",
-            dependencies: ["PoptartApplication", "Persistence", "SystemIntegration"],
+            dependencies: ["PoptartApplication", "Persistence", "ModelRuntime", "SystemIntegration"],
             path: "App/Poptart"
         ),
         .executableTarget(
@@ -42,7 +42,13 @@ let package = Package(
         ),
         .testTarget(
             name: "IntegrationTests",
-            dependencies: ["PoptartApplication", "DictationCore", "Persistence"],
+            dependencies: [
+                "PoptartApplication",
+                "DictationCore",
+                "Persistence",
+                "ModelRuntime",
+                "SystemIntegration",
+            ],
             path: "Tests/Integration"
         ),
     ]
