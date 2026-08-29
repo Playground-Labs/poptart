@@ -81,6 +81,12 @@ struct Verifier {
     let artifacts = example["artifacts"] as? [[String: Any]] ?? []
     try expect(Set(artifacts.compactMap { $0["role"] as? String }) == ["recognition", "cleanup"], "model-pack example roles mismatch")
     try expect(artifacts.allSatisfy { $0["sha256"] is NSNull && $0["byteSize"] is NSNull }, "model-pack example contains fabricated evidence")
+    let schemaProperties = try dictionary(schema, "properties")
+    let exampleOnlyRule = schemaProperties["exampleOnly"] as? [String: Any]
+    try expect(exampleOnlyRule?["const"] as? Bool == true, "exampleOnly must be pinned to true in the schema")
+    let installable = try dictionary(try dictionary(schema, "else"), "properties")
+    let installableCeiling = try dictionary(installable, "cleanupTokenCeiling")
+    try expect(installableCeiling["type"] as? String == "integer" && installableCeiling["minimum"] as? Int == 1, "installable manifests must require a positive Cleanup token ceiling")
   }
 
   mutating func verifyPrivacyBoundaries() throws {

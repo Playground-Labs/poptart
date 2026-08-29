@@ -6,3 +6,4 @@ DerivedData/
 Models/Artifacts/
 *.xcuserstate
 xcuserdata/
+__pycache__/

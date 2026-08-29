@@ -15,7 +15,7 @@ command -v openssl >/dev/null || { echo "openssl is required" >&2; exit 1; }
 python3 - "$manifest" <<'PY'
 import json, sys
 value=json.load(open(sys.argv[1]))
-if value.get("exampleOnly") or value.get("cleanupTokenCeiling") in (None, 0): raise SystemExit("refusing to sign example or unmeasured manifest")
+if value.get("exampleOnly") or not isinstance(value.get("cleanupTokenCeiling"), int) or isinstance(value.get("cleanupTokenCeiling"), bool) or value.get("cleanupTokenCeiling") <= 0: raise SystemExit("refusing to sign example or unmeasured manifest")
 artifacts=value.get("artifacts", [])
 if {a.get("role") for a in artifacts}!={"recognition","cleanup"}: raise SystemExit("manifest must contain exactly recognition and cleanup roles")
 for artifact in artifacts:
