@@ -25,27 +25,38 @@ public enum ShortcutMonitorStartResult: Equatable, Sendable {
   case eventTapUnavailable
 }
 
-/// A listen-only event tap for the default Right Option press-and-hold gesture.
-public final class RightOptionShortcutMonitor: @unchecked Sendable {
+/// A listen-only event tap for the press-and-hold Dictation shortcut, bound by
+/// default to Right Option and rebindable while the app runs.
+public final class DictationShortcutMonitor: @unchecked Sendable {
   public typealias SignalHandler = @Sendable (ShortcutSignal) -> Void
 
   private let permission: any KeyboardMonitoringPermission
   private let handler: SignalHandler
   private let lock = NSLock()
-  private var policy = RightOptionShortcutPolicy()
+  /// Guarded by `lock`; package-visible only so tests can stage a held gesture.
+  var policy: DictationShortcutPolicy
   private var tap: CFMachPort?
   private var runLoopSource: CFRunLoopSource?
 
   public init(
+    binding: ShortcutBinding = .rightOption,
     permission: any KeyboardMonitoringPermission = SystemKeyboardMonitoringPermission(),
     handler: @escaping SignalHandler
   ) {
+    policy = DictationShortcutPolicy(binding: binding)
     self.permission = permission
     self.handler = handler
   }
 
   deinit {
     stop()
+  }
+
+  /// The key currently held to dictate.
+  public var binding: ShortcutBinding {
+    lock.lock()
+    defer { lock.unlock() }
+    return policy.binding
   }
 
   @discardableResult
@@ -65,7 +76,7 @@ public final class RightOptionShortcutMonitor: @unchecked Sendable {
         place: .headInsertEventTap,
         options: .listenOnly,
         eventsOfInterest: mask,
-        callback: rightOptionEventTapCallback,
+        callback: dictationShortcutEventTapCallback,
         userInfo: userInfo
       )
     else { return .eventTapUnavailable }
@@ -94,6 +105,16 @@ public final class RightOptionShortcutMonitor: @unchecked Sendable {
     if let release { handler(release) }
   }
 
+  /// Moves the shortcut to another key without restarting the tap. The next
+  /// press uses the new key; a gesture already in flight is released first.
+  public func rebind(to binding: ShortcutBinding) {
+    let release: ShortcutSignal?
+    lock.lock()
+    release = policy.rebind(to: binding)
+    lock.unlock()
+    if let release { handler(release) }
+  }
+
   fileprivate func receive(type: CGEventType, event: CGEvent) {
     if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
       let release: ShortcutSignal?
@@ -112,7 +133,7 @@ public final class RightOptionShortcutMonitor: @unchecked Sendable {
       keyCode: event.getIntegerValueField(.keyboardEventKeycode),
       isDown: CGEventSource.keyState(
         .combinedSessionState,
-        key: CGKeyCode(RightOptionShortcutPolicy.rightOptionKeyCode)
+        key: CGKeyCode(policy.binding.keyCode)
       )
     )
     lock.unlock()
@@ -120,9 +141,9 @@ public final class RightOptionShortcutMonitor: @unchecked Sendable {
   }
 }
 
-private let rightOptionEventTapCallback: CGEventTapCallBack = { _, type, event, userInfo in
+private let dictationShortcutEventTapCallback: CGEventTapCallBack = { _, type, event, userInfo in
   guard let userInfo else { return Unmanaged.passUnretained(event) }
-  let monitor = Unmanaged<RightOptionShortcutMonitor>.fromOpaque(userInfo).takeUnretainedValue()
+  let monitor = Unmanaged<DictationShortcutMonitor>.fromOpaque(userInfo).takeUnretainedValue()
   monitor.receive(type: type, event: event)
   return Unmanaged.passUnretained(event)
 }
