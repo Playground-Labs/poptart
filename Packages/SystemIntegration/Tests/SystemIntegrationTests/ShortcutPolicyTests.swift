@@ -186,6 +186,24 @@ struct ShortcutPolicyTests {
     #expect(signals.recorded.isEmpty)
   }
 
+  @Test("monitor reads modifier state from the flags-changed event")
+  func monitorReadsEventFlags() {
+    let signals = SignalRecorder()
+    let monitor = DictationShortcutMonitor(permission: DeniedKeyboardPermission()) { signal in
+      signals.record(signal)
+    }
+    let source = CGEventSource(stateID: .privateState)
+    let press = CGEvent(keyboardEventSource: source, virtualKey: 61, keyDown: true)!
+    press.flags = [.maskAlternate]
+    let release = CGEvent(keyboardEventSource: source, virtualKey: 61, keyDown: false)!
+    release.flags = []
+
+    monitor.receive(type: .flagsChanged, event: press)
+    monitor.receive(type: .flagsChanged, event: release)
+
+    #expect(signals.recorded == [.pressed, .released])
+  }
+
   @Test("the monitor releases an in-flight gesture when the binding changes")
   func monitorRebindWhileHeld() {
     let signals = SignalRecorder()

@@ -62,16 +62,76 @@ public enum TargetRevalidationPolicy {
   ) -> TargetValidity {
     guard let current,
       current.applicationIdentifier == original.applicationIdentifier,
-      current.elementToken == original.elementIdentifier,
-      current.selection == original.selection
+      current.elementToken == original.elementIdentifier
     else { return .changed }
+    if let selection = original.selection, current.selection != selection { return .changed }
     return .valid
   }
+}
+
+public struct AccessibilityTargetCapabilities: Equatable, Sendable {
+  public let role: String?
+  public let subrole: String?
+  public let isEnabled: Bool
+  public let selectedTextSettable: Bool
+  public let valueSettable: Bool
+
+  public init(
+    role: String?,
+    subrole: String?,
+    isEnabled: Bool,
+    selectedTextSettable: Bool,
+    valueSettable: Bool
+  ) {
+    self.role = role
+    self.subrole = subrole
+    self.isEnabled = isEnabled
+    self.selectedTextSettable = selectedTextSettable
+    self.valueSettable = valueSettable
+  }
+}
+
+public enum AccessibilityTargetAccess: Equatable, Sendable {
+  case direct
+  case pasteOnly
+  case secure
+  case unsupported
 }
 
 public enum AccessibilityTargetPolicy {
   /// Secure classification uses metadata only and must run before any value/range reads.
   public static func isSecure(role: String?, subrole: String?) -> Bool {
     role == "AXSecureTextField" || subrole == "AXSecureTextField"
+  }
+
+  public static func access(
+    for capabilities: AccessibilityTargetCapabilities
+  ) -> AccessibilityTargetAccess {
+    if isSecure(role: capabilities.role, subrole: capabilities.subrole) { return .secure }
+    guard capabilities.isEnabled else { return .unsupported }
+    if capabilities.selectedTextSettable { return .direct }
+
+    let textRoles = ["AXTextArea", "AXTextField", "AXComboBox", "AXSearchField"]
+    return capabilities.valueSettable && textRoles.contains(capabilities.role ?? "")
+      ? .pasteOnly
+      : .unsupported
+  }
+}
+
+enum DirectInsertionVerification {
+  static func wasApplied(
+    originalSelection: TextSelection,
+    originalCharacterCount: Int,
+    insertedUTF16Count: Int,
+    resultingSelection: TextSelection?,
+    resultingCharacterCount: Int?
+  ) -> Bool {
+    let expectedCharacterCount =
+      originalCharacterCount - originalSelection.length
+      + insertedUTF16Count
+    guard resultingCharacterCount == expectedCharacterCount else { return false }
+    if expectedCharacterCount != originalCharacterCount { return true }
+    return resultingSelection
+      == TextSelection(location: originalSelection.location + insertedUTF16Count, length: 0)
   }
 }

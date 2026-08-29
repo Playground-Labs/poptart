@@ -13,6 +13,42 @@ struct TargetPolicyTests {
     #expect(!AccessibilityTargetPolicy.isSecure(role: "AXTextField", subrole: nil))
   }
 
+  @Test(
+    "native, paste-only, secure, and non-text controls select an application-independent path",
+    arguments: [
+      (
+        AccessibilityTargetCapabilities(
+          role: "AXTextArea", subrole: nil, isEnabled: true,
+          selectedTextSettable: true, valueSettable: true),
+        AccessibilityTargetAccess.direct
+      ),
+      (
+        AccessibilityTargetCapabilities(
+          role: "AXTextField", subrole: nil, isEnabled: true,
+          selectedTextSettable: false, valueSettable: true),
+        AccessibilityTargetAccess.pasteOnly
+      ),
+      (
+        AccessibilityTargetCapabilities(
+          role: "AXSecureTextField", subrole: nil, isEnabled: true,
+          selectedTextSettable: true, valueSettable: true),
+        AccessibilityTargetAccess.secure
+      ),
+      (
+        AccessibilityTargetCapabilities(
+          role: "AXButton", subrole: nil, isEnabled: true,
+          selectedTextSettable: false, valueSettable: true),
+        AccessibilityTargetAccess.unsupported
+      ),
+    ]
+  )
+  func targetAccess(
+    capabilities: AccessibilityTargetCapabilities,
+    expected: AccessibilityTargetAccess
+  ) {
+    #expect(AccessibilityTargetPolicy.access(for: capabilities) == expected)
+  }
+
   @Test("context ranges are bounded around the selection")
   func boundedRanges() {
     let ranges = TargetContextBounds(maximumUTF16CodeUnitsPerSide: 4)
@@ -61,5 +97,49 @@ struct TargetPolicyTests {
       selection: .init(location: 4, length: 0)
     )
     #expect(TargetRevalidationPolicy.evaluate(original: original, current: current) == expected)
+  }
+
+  @Test("a paste-only target revalidates by application and element identity")
+  func pasteOnlyRevalidation() {
+    let original = InsertionTarget(
+      applicationIdentifier: "labs.playground.Poptart",
+      elementIdentifier: "editor",
+      selection: nil
+    )
+    let sameTarget = FocusedTargetFingerprint(
+      applicationIdentifier: "labs.playground.Poptart",
+      elementToken: "editor",
+      selection: .init(location: 12, length: 0)
+    )
+    let otherTarget = FocusedTargetFingerprint(
+      applicationIdentifier: "labs.playground.Poptart",
+      elementToken: "other",
+      selection: nil
+    )
+
+    #expect(TargetRevalidationPolicy.evaluate(original: original, current: sameTarget) == .valid)
+    #expect(TargetRevalidationPolicy.evaluate(original: original, current: otherTarget) == .changed)
+  }
+
+  @Test("an ignored direct Accessibility write is not treated as insertion")
+  func ignoredDirectWrite() {
+    let original = TextSelection(location: 4, length: 0)
+
+    #expect(
+      !DirectInsertionVerification.wasApplied(
+        originalSelection: original,
+        originalCharacterCount: 10,
+        insertedUTF16Count: 5,
+        resultingSelection: original,
+        resultingCharacterCount: 10
+      ))
+    let applied = DirectInsertionVerification.wasApplied(
+      originalSelection: original,
+      originalCharacterCount: 10,
+      insertedUTF16Count: 5,
+      resultingSelection: .init(location: 9, length: 0),
+      resultingCharacterCount: 15
+    )
+    #expect(applied)
   }
 }

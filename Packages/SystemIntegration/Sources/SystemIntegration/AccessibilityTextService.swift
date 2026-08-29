@@ -29,7 +29,9 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
     let dictationID: DictationID
     let element: AXUIElement
     let applicationIdentifier: String
-    let selection: TextSelection
+    let selection: TextSelection?
+    let characterCount: Int?
+    let directInsertionAllowed: Bool
   }
 
   private let permission: any AccessibilityPermission
@@ -71,39 +73,55 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
         ))
     }
 
-    guard Self.isEditable(focused.element),
-      let selection = Self.selectedRange(of: focused.element),
-      let characterCount = Self.integerAttribute(
-        kAXNumberOfCharactersAttribute, of: focused.element)
-    else { return .failure(.noEditableTarget) }
+    let access = AccessibilityTargetPolicy.access(
+      for: .init(
+        role: role,
+        subrole: subrole,
+        isEnabled: Self.booleanAttribute(kAXEnabledAttribute, of: focused.element) ?? true,
+        selectedTextSettable: Self.isAttributeSettable(
+          kAXSelectedTextAttribute, of: focused.element),
+        valueSettable: Self.isAttributeSettable(kAXValueAttribute, of: focused.element)
+      ))
+    guard access == .direct || access == .pasteOnly else {
+      return .failure(.noEditableTarget)
+    }
 
-    let ranges = contextBounds.ranges(characterCount: characterCount, selection: selection)
-    guard let before = Self.string(in: ranges.before, of: focused.element),
-      let after = Self.string(in: ranges.after, of: focused.element)
-    else { return .failure(.unavailable) }
-    let selected =
-      ranges.selected.length == 0
-      ? nil
-      : Self.string(in: ranges.selected, of: focused.element)
+    let selection = Self.selectedRange(of: focused.element)
+    let characterCount = Self.integerAttribute(
+      kAXNumberOfCharactersAttribute, of: focused.element)
+    let context =
+      selection.flatMap { selection in
+        characterCount.flatMap { characterCount in
+          Self.context(
+            of: focused.element,
+            applicationIdentifier: focused.applicationIdentifier,
+            characterCount: characterCount,
+            selection: selection,
+            bounds: contextBounds
+          )
+        }
+      }
+      ?? TargetContext(
+        applicationIdentifier: focused.applicationIdentifier,
+        applicationCategory: Self.category(for: focused.applicationIdentifier),
+        textBeforeCursor: "",
+        textAfterCursor: "",
+        selectedText: nil
+      )
 
     let target = InsertionTarget(
       applicationIdentifier: focused.applicationIdentifier,
       elementIdentifier: token,
       selection: selection
     )
-    let context = TargetContext(
-      applicationIdentifier: focused.applicationIdentifier,
-      applicationCategory: Self.category(for: focused.applicationIdentifier),
-      textBeforeCursor: before,
-      textAfterCursor: after,
-      selectedText: selected
-    )
     lock.withLock {
       capturedTargets[token] = .init(
         dictationID: id,
         element: focused.element,
         applicationIdentifier: focused.applicationIdentifier,
-        selection: selection
+        selection: selection,
+        characterCount: characterCount,
+        directInsertionAllowed: access == .direct
       )
     }
     return .success(.editable(target: target, context: context))
@@ -118,12 +136,30 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
       let captured = lock.withLock({ capturedTargets[request.target.elementIdentifier] })
     else { return .failed(.accessibilityAndPasteFailed) }
 
-    let direct = AXUIElementSetAttributeValue(
-      captured.element,
-      kAXSelectedTextAttribute as CFString,
-      request.text as CFTypeRef
-    )
-    if direct == .success {
+    let directWasApplied: Bool
+    if captured.directInsertionAllowed,
+      let selection = captured.selection,
+      let characterCount = captured.characterCount
+    {
+      let direct = AXUIElementSetAttributeValue(
+        captured.element,
+        kAXSelectedTextAttribute as CFString,
+        request.text as CFTypeRef
+      )
+      directWasApplied =
+        direct == .success
+        && DirectInsertionVerification.wasApplied(
+          originalSelection: selection,
+          originalCharacterCount: characterCount,
+          insertedUTF16Count: request.text.utf16.count,
+          resultingSelection: Self.selectedRange(of: captured.element),
+          resultingCharacterCount: Self.integerAttribute(
+            kAXNumberOfCharactersAttribute, of: captured.element)
+        )
+    } else {
+      directWasApplied = false
+    }
+    if directWasApplied {
       removeCapture(for: request.target)
       return .inserted(.accessibility)
     }
@@ -153,14 +189,13 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
       let captured = lock.withLock({ capturedTargets[target.elementIdentifier] }),
       let focused = Self.focusedElement(),
       focused.applicationIdentifier == captured.applicationIdentifier,
-      CFEqual(focused.element, captured.element),
-      let selection = Self.selectedRange(of: focused.element)
+      CFEqual(focused.element, captured.element)
     else { return .changed }
 
     let current = FocusedTargetFingerprint(
       applicationIdentifier: focused.applicationIdentifier,
       elementToken: target.elementIdentifier,
-      selection: selection
+      selection: Self.selectedRange(of: focused.element)
     )
     return TargetRevalidationPolicy.evaluate(original: target, current: current)
   }
@@ -209,6 +244,10 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
     (copiedAttribute(name, of: element) as? NSNumber)?.intValue
   }
 
+  private static func booleanAttribute(_ name: String, of element: AXUIElement) -> Bool? {
+    (copiedAttribute(name, of: element) as? NSNumber)?.boolValue
+  }
+
   private static func selectedRange(of element: AXUIElement) -> TextSelection? {
     guard let rawValue = copiedAttribute(kAXSelectedTextRangeAttribute, of: element),
       CFGetTypeID(rawValue) == AXValueGetTypeID()
@@ -236,13 +275,37 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
     return value as? String
   }
 
-  private static func isEditable(_ element: AXUIElement) -> Bool {
+  private static func isAttributeSettable(_ name: String, of element: AXUIElement) -> Bool {
     var settable = DarwinBoolean(false)
     return AXUIElementIsAttributeSettable(
       element,
-      kAXSelectedTextAttribute as CFString,
+      name as CFString,
       &settable
     ) == .success && settable.boolValue
+  }
+
+  private static func context(
+    of element: AXUIElement,
+    applicationIdentifier: String,
+    characterCount: Int,
+    selection: TextSelection,
+    bounds: TargetContextBounds
+  ) -> TargetContext? {
+    let ranges = bounds.ranges(characterCount: characterCount, selection: selection)
+    guard let before = string(in: ranges.before, of: element),
+      let after = string(in: ranges.after, of: element)
+    else { return nil }
+    let selected =
+      ranges.selected.length == 0
+      ? nil
+      : string(in: ranges.selected, of: element)
+    return .init(
+      applicationIdentifier: applicationIdentifier,
+      applicationCategory: category(for: applicationIdentifier),
+      textBeforeCursor: before,
+      textAfterCursor: after,
+      selectedText: selected
+    )
   }
 
   private static func category(for applicationIdentifier: String) -> ApplicationCategory {

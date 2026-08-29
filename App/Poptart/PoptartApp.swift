@@ -6,20 +6,25 @@ import SwiftUI
 
 @main
 struct PoptartApp: App {
-    @State private var root = AppRoot()
+    @State private var root = AppRoot.shared
+
+    init() {
+        Task { @MainActor in
+            await AppRoot.shared.start()
+        }
+    }
 
     var body: some Scene {
+        Window("Poptart", id: "poptart") {
+            RootView(root: root)
+                .frame(minWidth: 720, minHeight: 560)
+        }
+        .defaultSize(width: 860, height: 660)
+
         MenuBarExtra("Poptart", systemImage: root.menuBarSymbol) {
             PoptartMenu(root: root)
         }
         .menuBarExtraStyle(.menu)
-
-        Window("Poptart", id: "poptart") {
-            RootView(root: root)
-                .frame(minWidth: 720, minHeight: 560)
-                .task { await root.start() }
-        }
-        .defaultSize(width: 860, height: 660)
     }
 }
 
@@ -28,9 +33,13 @@ struct PoptartApp: App {
 @MainActor
 @Observable
 final class AppRoot {
+    static let shared = AppRoot()
+
     private(set) var environment: AppEnvironment?
     private(set) var failure: String?
     private var started = false
+
+    private init() {}
 
     var menuBarSymbol: String {
         environment?.launch.status.isReady == true ? "waveform" : "waveform.badge.exclamationmark"

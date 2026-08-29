@@ -115,7 +115,7 @@ public final class DictationShortcutMonitor: @unchecked Sendable {
     if let release { handler(release) }
   }
 
-  fileprivate func receive(type: CGEventType, event: CGEvent) {
+  func receive(type: CGEventType, event: CGEvent) {
     if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
       let release: ShortcutSignal?
       lock.lock()
@@ -131,10 +131,7 @@ public final class DictationShortcutMonitor: @unchecked Sendable {
     lock.lock()
     signal = policy.handle(
       keyCode: event.getIntegerValueField(.keyboardEventKeycode),
-      isDown: CGEventSource.keyState(
-        .combinedSessionState,
-        key: CGKeyCode(policy.binding.keyCode)
-      )
+      flags: event.flags
     )
     lock.unlock()
     if let signal { handler(signal) }

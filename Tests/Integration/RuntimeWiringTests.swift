@@ -71,6 +71,35 @@ struct RuntimeWiringTests {
         #expect(result == .rawTranscriptFallback(.modelUnavailable))
     }
 
+    @Test("a recognition-only development pack does not construct a Cleanup model")
+    func recognitionOnlyPackSkipsCleanupModel() async throws {
+        let root = try TemporaryDirectory()
+        let components = try RuntimeCleanupComponents.make(
+            modelDirectory: root.url.appendingPathComponent("missing-cleanup"),
+            tokenCeiling: nil,
+            clock: FixedRuntimeClock()
+        )
+        let request = CleanupRequest(
+            id: .init(),
+            rawTranscript: .init(text: "keep every word"),
+            targetContext: .init(
+                applicationIdentifier: "com.example.Editor",
+                applicationCategory: .textEditor,
+                textBeforeCursor: "",
+                textAfterCursor: "",
+                selectedText: nil
+            ),
+            personalVocabulary: .init(entries: []),
+            deadline: .zero
+        )
+
+        #expect(components.model == nil)
+        #expect(
+            await components.boundary.clean(request)
+                == .rawTranscriptFallback(.modelUnavailable)
+        )
+    }
+
     @Test("a started runtime warms the models, listens, and only then says it is ready")
     func successfulActivationStartsEverything() async throws {
         let activation = RecordingActivation()
@@ -135,6 +164,10 @@ struct RuntimeWiringTests {
 
         #expect(seen.value == [.pressed, .released])
     }
+}
+
+private struct FixedRuntimeClock: MonotonicClock {
+    func now() -> MonotonicInstant { .zero }
 }
 
 /// A scratch directory that stages a verifiable installed pack the way `ModelPackInstaller` does.

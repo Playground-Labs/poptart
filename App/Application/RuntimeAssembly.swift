@@ -60,7 +60,9 @@ public enum ApplicationModelPackLocator {
     /// comes from a pack description rather than from application code.
     static let developmentManifestName = "manifest.json"
 
-    public static func activePack(in modelRuntimeDirectory: URL) throws -> ActiveApplicationModelPack? {
+    public static func activePack(
+        in modelRuntimeDirectory: URL
+    ) throws -> ActiveApplicationModelPack? {
         #if DEBUG
         if let path = ProcessInfo.processInfo.environment["POPTART_MODEL_PACK_DIRECTORY"],
            !path.isEmpty
@@ -120,7 +122,7 @@ public final class RuntimeAssembly: @unchecked Sendable {
     private let relay: DictationEventRelay
     private let scheduler: ApplicationDeadlineScheduler
     private let recognition: RecognitionService
-    private let cleanupModel: MLXCleanupModel
+    private let cleanupModel: MLXCleanupModel?
     private let shortcut: DictationShortcutMonitor
     private let shortcutRelay: ShortcutSignalRelay
     private let residency: ModelResidencyController
@@ -134,7 +136,7 @@ public final class RuntimeAssembly: @unchecked Sendable {
         relay: DictationEventRelay,
         scheduler: ApplicationDeadlineScheduler,
         recognition: RecognitionService,
-        cleanupModel: MLXCleanupModel,
+        cleanupModel: MLXCleanupModel?,
         shortcut: DictationShortcutMonitor,
         shortcutRelay: ShortcutSignalRelay,
         residency: ModelResidencyController,
@@ -193,24 +195,17 @@ public final class RuntimeAssembly: @unchecked Sendable {
             clock: clock,
             onEvent: { [relay] event in await relay.send(event) }
         )
-        let cleanupModel = try MLXCleanupModel(modelDirectory: modelPack.cleanup)
+        let cleanupComponents = try RuntimeCleanupComponents.make(
+            modelDirectory: modelPack.cleanup,
+            tokenCeiling: cleanupTokenCeiling,
+            clock: clock
+        )
         let modelLoader = ApplicationModelLoader(
             recognition: recognition,
-            cleanup: cleanupModel,
-            cleanupEnabled: cleanupTokenCeiling != nil
+            cleanup: cleanupComponents.model
         )
         let residency = ModelResidencyController(loader: modelLoader)
         let pressureMonitor = MacOSMemoryPressureMonitor()
-        let cleanup: any CleanupBoundary
-        if let cleanupTokenCeiling {
-            cleanup = CleanupEngine(
-                model: cleanupModel,
-                deadlineWaiter: SystemCleanupDeadlineWaiter(clock: clock),
-                configuration: .init(maximumInputTokens: cleanupTokenCeiling)
-            )
-        } else {
-            cleanup = UnmeasuredCleanupBoundary()
-        }
         let accessibility = AccessibilityTextService()
         let indicator = IndicatorPresenter()
         let keyProvider = KeychainEncryptionKeyProvider(service: "labs.playground.Poptart")
@@ -227,7 +222,7 @@ public final class RuntimeAssembly: @unchecked Sendable {
             session: .init(clock: clock),
             target: accessibility,
             speech: recognition,
-            cleanup: cleanup,
+            cleanup: cleanupComponents.boundary,
             delivery: accessibility,
             indicator: indicator,
             history: history,
@@ -244,7 +239,9 @@ public final class RuntimeAssembly: @unchecked Sendable {
         let shortcutRelay = ShortcutSignalRelay()
         let shortcut = DictationShortcutMonitor(binding: binding) { signal in
             let gesture: DictationGesture = signal == .pressed ? .pressed : .released
-            Task { await coordinator.receive(gesture) }
+            DispatchQueue.main.async {
+                Task { await coordinator.receive(gesture) }
+            }
             shortcutRelay.send(signal)
         }
         let assembly = RuntimeAssembly(
@@ -255,7 +252,7 @@ public final class RuntimeAssembly: @unchecked Sendable {
             relay: relay,
             scheduler: scheduler,
             recognition: recognition,
-            cleanupModel: cleanupModel,
+            cleanupModel: cleanupComponents.model,
             shortcut: shortcut,
             shortcutRelay: shortcutRelay,
             residency: residency,
@@ -349,6 +346,30 @@ struct UnmeasuredCleanupBoundary: CleanupBoundary {
     func cancelCleanup(for id: DictationID) async {}
 }
 
+struct RuntimeCleanupComponents {
+    let boundary: any CleanupBoundary
+    let model: MLXCleanupModel?
+
+    static func make(
+        modelDirectory: URL,
+        tokenCeiling: Int?,
+        clock: any MonotonicClock
+    ) throws -> Self {
+        guard let tokenCeiling else {
+            return .init(boundary: UnmeasuredCleanupBoundary(), model: nil)
+        }
+        let model = try MLXCleanupModel(modelDirectory: modelDirectory)
+        return .init(
+            boundary: CleanupEngine(
+                model: model,
+                deadlineWaiter: SystemCleanupDeadlineWaiter(clock: clock),
+                configuration: .init(maximumInputTokens: tokenCeiling)
+            ),
+            model: model
+        )
+    }
+}
+
 /// Fans shortcut signals out to a surface without giving it the monitor itself.
 final class ShortcutSignalRelay: @unchecked Sendable {
     private let lock = NSLock()
@@ -366,13 +387,11 @@ final class ShortcutSignalRelay: @unchecked Sendable {
 
 private actor ApplicationModelLoader: ManagedModelLoading {
     let recognition: RecognitionService
-    let cleanup: MLXCleanupModel
-    let cleanupEnabled: Bool
+    let cleanup: MLXCleanupModel?
 
-    init(recognition: RecognitionService, cleanup: MLXCleanupModel, cleanupEnabled: Bool) {
+    init(recognition: RecognitionService, cleanup: MLXCleanupModel?) {
         self.recognition = recognition
         self.cleanup = cleanup
-        self.cleanupEnabled = cleanupEnabled
     }
 
     func load(_ role: ModelRole) async throws {
@@ -380,13 +399,12 @@ private actor ApplicationModelLoader: ManagedModelLoading {
         case .recognition:
             try await recognition.prepare()
         case .cleanup:
-            guard cleanupEnabled else { return }
-            try await cleanup.prepare()
+            try await cleanup?.prepare()
         }
     }
 
     func unload(_ role: ModelRole) async {
-        guard role == .cleanup, cleanupEnabled else { return }
-        await cleanup.unload()
+        guard role == .cleanup else { return }
+        await cleanup?.unload()
     }
 }

@@ -147,8 +147,8 @@ final class AppEnvironment {
         await onboarding.load()
         await settings.load()
         await settings.restorePreferredMicrophone()
-        await history.reload()
         await launch.start()
+        Task { await history.reload() }
     }
 
     func refreshAfterExternalChange() async {
