@@ -66,13 +66,38 @@ enum AccessibilityProbe {
     return (element, pid)
   }
 
+  static func attributeNames(of element: AXUIElement) -> [String] {
+    var names: CFArray?
+    guard AXUIElementCopyAttributeNames(element, &names) == .success,
+      let list = names as? [String]
+    else { return [] }
+    return list
+  }
+
+  /// Whether the element implements an attribute at all, independently of its value. This is how
+  /// the shipping classifier detects `AXDOMIdentifier`, so the probe must ask the same question:
+  /// a web element whose DOM node has no `id` still implements the attribute, as an empty string.
+  static func implementsAttribute(_ name: String, of element: AXUIElement) -> Bool {
+    attributeNames(of: element).contains(name)
+  }
+
   static func capabilities(of element: AXUIElement) -> AccessibilityTargetCapabilities {
     .init(
       role: string(kAXRoleAttribute, of: element),
       subrole: string(kAXSubroleAttribute, of: element),
       isEnabled: boolean(kAXEnabledAttribute, of: element) ?? true,
       selectedTextSettable: isSettable(kAXSelectedTextAttribute, of: element),
-      valueSettable: isSettable(kAXValueAttribute, of: element)
+      valueSettable: isSettable(kAXValueAttribute, of: element),
+      hasWebDOMIdentifier: implementsAttribute(
+        AccessibilityTargetPolicy.webDOMIdentifierAttribute, of: element)
+    )
+  }
+
+  /// The bounded state the shipping delivery reads back to confirm an insertion.
+  static func textState(of element: AXUIElement) -> TargetTextState {
+    .init(
+      characterCount: integer(kAXNumberOfCharactersAttribute, of: element),
+      selection: selectedRange(of: element)
     )
   }
 

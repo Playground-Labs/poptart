@@ -136,6 +136,19 @@ public struct SystemIntegrationSleeper: IntegrationSleeper {
   }
 }
 
+/// What a pasteboard transaction alone can establish.
+///
+/// Deliberately *not* a `DeliveryResult`: the coordinator owns the pasteboard, not the target, and
+/// the pasteboard cannot tell an insertion from a clipboard manager sniffing the promised data.
+/// Converting this into a delivery verdict requires evidence from the target and is done by
+/// `PasteInsertionConfirmation.deliveryResult(outcome:evidence:)`.
+public enum ClipboardPasteOutcome: Equatable, Sendable {
+  /// A consumer pulled the promised text, stayed quiet for the policy's quiet period, and the
+  /// previous pasteboard contents were handed back. Necessary for an insertion; not sufficient.
+  case promisedTextWasRead
+  case failed(DeliveryFailure)
+}
+
 /// Owns a single pasteboard receipt from write through conditional restoration.
 public struct ClipboardPasteCoordinator: Sendable {
   private let pasteboard: any PasteboardClient
@@ -158,8 +171,13 @@ public struct ClipboardPasteCoordinator: Sendable {
     self.policy = policy
   }
 
+  /// Writes the text as promised pasteboard data, synthesises Cmd-V, and restores the previous
+  /// clipboard once the promise has been read and gone quiet.
+  ///
+  /// The returned `promisedTextWasRead` says only that: the read happened. The caller must confirm
+  /// against the target before reporting an insertion.
   public func pastePreservingClipboard(text: String, deadline: MonotonicInstant) async
-    -> DeliveryResult
+    -> ClipboardPasteOutcome
   {
     let now = clock.nowNanoseconds()
     guard deadline.nanoseconds - now >= policy.quietPeriodNanoseconds else {
@@ -199,7 +217,7 @@ public struct ClipboardPasteCoordinator: Sendable {
       ) {
       case .restore:
         return await pasteboard.restore(previous)
-          ? .inserted(.clipboardPaste)
+          ? .promisedTextWasRead
           : .failed(.clipboardWriteFailed)
       case .ownershipChanged:
         await pasteboard.releasePromisedData()

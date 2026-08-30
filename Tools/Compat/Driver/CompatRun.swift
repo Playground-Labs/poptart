@@ -15,13 +15,18 @@ final class CompatRun {
   private static let selectionLength = 5
 
   private let client: ChannelClient
-  private let service = AccessibilityTextService()
+  /// The shipping delivery publishes what it actually proved about each insertion; the harness
+  /// records it rather than re-deriving it, so the report shows the production verdict.
+  private let evidence = EvidenceRecorder()
+  private let service: AccessibilityTextService
   private let synthesizer = SystemPasteCommandSynthesizer()
   private var hostProcessIdentifier: pid_t = 0
   private var hostBundleIdentifier: String?
 
   init(client: ChannelClient) {
     self.client = client
+    let evidence = self.evidence
+    service = AccessibilityTextService(observer: { evidence.record($0) })
   }
 
   // MARK: - Entry point
@@ -182,10 +187,24 @@ final class CompatRun {
     result.accessibilityEnabled = capabilities.isEnabled
     result.selectedTextSettable = capabilities.selectedTextSettable
     result.valueSettable = capabilities.valueSettable
+    result.implementsDOMIdentifier = capabilities.hasWebDOMIdentifier
+    result.domIdentifierValue = AccessibilityProbe.string(
+      AccessibilityTargetPolicy.webDOMIdentifierAttribute, of: element)
+    result.expectedWebHosted = spec.isWebHosted
     result.actualAccess = access.name
     if !spec.expected.contains(access) {
       result.failures.append(
         "classification mismatch: expected \(spec.expected.map(\.name).joined(separator: "|")), measured \(access.name)"
+      )
+    }
+    // The web demotion is only safe while AXDOMIdentifier means exactly "web-hosted". A native
+    // control carrying it would lose its direct path; a web control without it would keep paying
+    // for a write measured to do nothing.
+    if capabilities.hasWebDOMIdentifier != spec.isWebHosted {
+      result.failures.append(
+        capabilities.hasWebDOMIdentifier
+          ? "a native control implements \(AccessibilityTargetPolicy.webDOMIdentifierAttribute), so demoting web-hosted controls on that signal would demote native controls too"
+          : "a web-hosted control does not implement \(AccessibilityTargetPolicy.webDOMIdentifierAttribute), so the classifier cannot recognise it as web-hosted"
       )
     }
 
@@ -210,8 +229,17 @@ final class CompatRun {
           caret.clipboard.mode == "restoredAfterPaste" ? caret.clipboard : replacement.clipboard
         appendDeliveryFailures(caret.delivery, to: &result)
         appendDeliveryFailures(replacement.delivery, to: &result)
-        if access == .direct {
-          result.directWriteProbe = try await runDirectWriteProbe(spec)
+        // Run the probe wherever the element claims AXSelectedText is settable, not only where
+        // the classifier believed it: on a demoted control it is the standing evidence that the
+        // write really is a no-op and the demotion costs nothing.
+        if capabilities.selectedTextSettable {
+          let probe = try await runDirectWriteProbe(spec)
+          result.directWriteProbe = probe
+          if access == .pasteOnly, probe.attempted, probe.valueChanged == true {
+            result.failures.append(
+              "this control was demoted off the direct path but its AXSelectedText write actually works (value \(quoted(probe.valueBefore)) -> \(quoted(probe.valueAfter))), so the demotion is throwing away a working mechanism"
+            )
+          }
         }
         if let clipboard = result.clipboard, !clipboard.ok {
           result.failures.append("clipboard check failed in mode \(clipboard.mode)")
@@ -227,6 +255,12 @@ final class CompatRun {
       case .secure:
         result.failures.append("a non-secure control classified as secure")
       }
+    }
+
+    if spec.readsClipboardButAcceptsNothing {
+      let claim = try await runInsertionClaimProbe(spec, element: element)
+      result.insertionClaimProbe = claim
+      appendInsertionClaimFailures(claim, to: &result)
     }
 
     let probe = try await runStandardPasteProbe(spec)
@@ -263,6 +297,56 @@ final class CompatRun {
     if report.accessibilityAgreesWithHost == false {
       result.failures.append(
         "\(report.scenario): Accessibility reports \(quoted(report.accessibilityValue)) while the control's own value is \(quoted(report.hostValue))"
+      )
+    }
+    if report.insertionIsUnverified == true {
+      result.failures.append(
+        "\(report.scenario): the delivery reported \(report.deliveryResult ?? "an insertion") on the pasteboard receipt alone; the read-back said \(report.pasteInsertionEvidence ?? "nothing"), so the claim is unverified"
+      )
+    }
+  }
+
+  private func appendInsertionClaimFailures(
+    _ probe: InsertionClaimProbeReport,
+    to result: inout ControlResult
+  ) {
+    if probe.controlAcceptedText == true {
+      result.failures.append(
+        "the false-insertion probe assumes this control keeps nothing, but its value moved from \(quoted(probe.valueBefore)) to \(quoted(probe.valueAfter)); the matrix's premise for this control is wrong"
+      )
+      return
+    }
+    if probe.promisedTextWasRead != true {
+      result.failures.append(
+        "the false-insertion probe did not reproduce the measured pasteboard read (\(probe.pasteboardOutcome ?? "no outcome")), so it proves nothing about a control that reads the clipboard and accepts nothing"
+      )
+      return
+    }
+    // This control is measured to expose a character count and a selection, so the read-back is
+    // decisive here: anything other than "the target did not move" means the read-back has stopped
+    // being able to catch a false insertion claim on it.
+    if probe.insertionEvidence != InsertionEvidence.targetUnchanged.rawValue {
+      let measured = probe.insertionEvidence ?? "?"
+      let states = "state \(probe.stateBefore ?? "?") -> \(probe.stateAfter ?? "?")"
+      result.failures.append(
+        measured == InsertionEvidence.unverifiable.rawValue
+          ? "the Accessibility read-back can no longer decide this control (\(states)), so it can no longer stop a false insertion claim on a control that reads the promised text and keeps nothing"
+          : "the Accessibility read-back reported \(measured) for a control that read the promised text and kept nothing (\(states))"
+      )
+    }
+    // The regression itself: a pasteboard receipt plus a target that kept nothing must never
+    // compose into an insertion, whether or not the capture path also refused the control.
+    if probe.wouldClaimInsertion == true {
+      result.failures.append(
+        "the shipping delivery composed \(probe.composedDeliveryResult ?? "an insertion") from a pasteboard receipt on a control that read the promised text and kept nothing (capture refusal held: \(probe.captureRefused.map(String.init) ?? "unknown"))"
+      )
+    }
+    if probe.clipboardRestored != true {
+      result.failures.append("the false-insertion probe did not get the clipboard back")
+    }
+    if !probe.collateralChanges.isEmpty {
+      result.failures.append(
+        "the false-insertion probe wrote into other controls: \(probe.collateralChanges.joined(separator: ", "))"
       )
     }
   }
@@ -448,9 +532,21 @@ final class CompatRun {
     report.attempted = true
     let deadline = MonotonicInstant(
       nanoseconds: Int64(clamping: DispatchTime.now().uptimeNanoseconds) + 5_000_000_000)
+    evidence.reset()
     let delivery = await service.deliver(
       .init(id: dictation, target: target, text: Self.payload, deadline: deadline))
     report.deliveryResult = describe(delivery)
+    if let published = evidence.take() {
+      report.directInsertionOutcome = published.directInsertion?.rawValue
+      report.pasteInsertionEvidence = published.pasteInsertion?.rawValue
+      report.insertionIsUnverified = published.insertionIsUnverified
+      if published.result != delivery {
+        report.notes.append(
+          "the delivery published evidence for a different result than it returned")
+      }
+    } else {
+      report.notes.append("the delivery published no evidence")
+    }
     // The classification is the one measured before the write, not one re-read afterwards, so a
     // control that changes shape mid-delivery cannot make the mechanism check pass by accident.
     let expectedMechanism: DeliveryMethod? =
@@ -620,6 +716,94 @@ final class CompatRun {
     return report
   }
 
+  // MARK: - False insertion claim probe
+
+  /// Reproduces, end to end and with shipping code only, the case that makes a pasteboard receipt
+  /// insufficient evidence: a control that pulls the promised text off the pasteboard and keeps
+  /// nothing. Two independent gates must stop an insertion claim - the capture refusing the
+  /// control, and the post-paste Accessibility read-back seeing an unmoved target - and the probe
+  /// records which of them held.
+  private func runInsertionClaimProbe(_ spec: ControlSpec, element: AXUIElement) async throws
+    -> InsertionClaimProbeReport
+  {
+    var report = InsertionClaimProbeReport()
+    _ = try await client.send(.reset)
+    try await activateHost()
+    let focus = try await client.send(.focus, control: spec.identifier)
+    report.focusEstablished = focus.ok && focus.focusedControl == spec.identifier
+    if !report.focusEstablished {
+      // A disabled control cannot take focus, which is the point: the Cmd-V must go nowhere rather
+      // than into whichever control happens to hold focus.
+      _ = try await client.send(.blur)
+    }
+
+    let dictation = DictationID()
+    let capture = await service.captureTarget(for: dictation)
+    report.captureOutcome = describe(capture)
+    if case .success(.editable) = capture {
+      report.captureRefused = false
+    } else {
+      report.captureRefused = true
+    }
+    await service.cancelDelivery(for: dictation)
+
+    let before = try await client.snapshot()
+    report.valueBefore = before[spec.identifier]?.value
+    let stateBefore = AccessibilityProbe.textState(of: element)
+    report.stateBefore = describe(stateBefore)
+
+    report.attempted = true
+    // A synthesised Cmd-V can be dropped while an application is still settling, and an unread
+    // promise measures nothing. Retry a bounded number of times so that "the promise was never
+    // read" is a conclusion about the control rather than about the harness's timing.
+    var outcome = ClipboardPasteOutcome.failed(.pasteTimedOut)
+    var attempts: [String] = []
+    for attempt in 1...3 {
+      ClipboardSeed.write()
+      let deadline = MonotonicInstant(
+        nanoseconds: Int64(clamping: DispatchTime.now().uptimeNanoseconds) + 3_000_000_000)
+      outcome = await ClipboardPasteCoordinator().pastePreservingClipboard(
+        text: Self.probeText, deadline: deadline)
+      attempts.append("attempt \(attempt): \(describe(outcome))")
+      if outcome == .promisedTextWasRead { break }
+      try await activateHost()
+    }
+    report.pasteAttempts = attempts
+    report.pasteboardOutcome = describe(outcome)
+    report.promisedTextWasRead = outcome == .promisedTextWasRead
+
+    // Give the control the same settling time every other probe gets before concluding it kept
+    // nothing, so "unchanged" is a measurement rather than a race the harness won.
+    var stateAfter = stateBefore
+    _ = await waitUntil(timeout: .milliseconds(1000)) {
+      stateAfter = AccessibilityProbe.textState(of: element)
+      return stateAfter != stateBefore
+    }
+    report.stateAfter = describe(stateAfter)
+
+    let insertionEvidence = PasteInsertionConfirmation.evidence(
+      before: stateBefore, after: stateAfter, insertedUTF16Count: Self.probeText.utf16.count)
+    report.insertionEvidence = insertionEvidence.rawValue
+    let composed = PasteInsertionConfirmation.deliveryResult(
+      outcome: outcome, evidence: insertionEvidence)
+    report.composedDeliveryResult = describe(composed)
+    if case .inserted = composed {
+      report.wouldClaimInsertion = true
+    } else {
+      report.wouldClaimInsertion = false
+    }
+
+    let after = try await client.snapshot()
+    report.valueAfter = after[spec.identifier]?.value
+    report.controlAcceptedText = report.valueAfter != report.valueBefore
+    report.collateralChanges = before.keys
+      .filter { $0 != spec.identifier && before[$0]?.value != after[$0]?.value }
+      .sorted()
+    report.clipboardRestored = ClipboardSeed.stringSurvived && ClipboardSeed.markerSurvived
+    _ = try await client.send(.reset)
+    return report
+  }
+
   // MARK: - Coverage probe
 
   /// Asks the only question that matters for the product definition: would this control have
@@ -681,6 +865,17 @@ final class CompatRun {
     selection.map { "{\($0.location), \($0.length)}" } ?? "nil"
   }
 
+  private func describe(_ state: TargetTextState) -> String {
+    "chars \(state.characterCount.map(String.init) ?? "nil") sel \(describe(state.selection))"
+  }
+
+  private func describe(_ outcome: ClipboardPasteOutcome) -> String {
+    switch outcome {
+    case .promisedTextWasRead: "promisedTextWasRead"
+    case .failed(let failure): "failed(\(failure.rawValue))"
+    }
+  }
+
   private func describe(_ result: DeliveryResult) -> String {
     switch result {
     case .inserted(let method): "inserted(\(method.rawValue))"
@@ -701,6 +896,28 @@ final class CompatRun {
       if await condition() { return true }
       if ContinuousClock.now >= deadline { return false }
       try? await Task.sleep(for: poll)
+    }
+  }
+}
+
+/// Captures what the shipping delivery published about its most recent attempt. The observer can
+/// be invoked from whichever context the delivery runs on, so the slot is lock protected.
+final class EvidenceRecorder: @unchecked Sendable {
+  private let lock = NSLock()
+  private var latest: DeliveryEvidence?
+
+  func record(_ evidence: DeliveryEvidence) {
+    lock.withLock { latest = evidence }
+  }
+
+  func reset() {
+    lock.withLock { latest = nil }
+  }
+
+  func take() -> DeliveryEvidence? {
+    lock.withLock {
+      defer { latest = nil }
+      return latest
     }
   }
 }

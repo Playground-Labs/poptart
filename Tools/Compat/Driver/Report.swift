@@ -44,7 +44,46 @@ struct DeliveryReport: Codable {
   var accessibilityCharacterCountAfter: Int?
   var accessibilitySelectionBefore: String?
   var accessibilitySelectionAfter: String?
+  /// Published by the shipping delivery itself through `DeliveryEvidenceObserver`: what the
+  /// direct write achieved and what the post-paste Accessibility read-back proved.
+  var directInsertionOutcome: String?
+  var pasteInsertionEvidence: String?
+  /// True when the delivery reported an insertion that rested on the pasteboard receipt alone.
+  var insertionIsUnverified: Bool?
   var notes: [String] = []
+}
+
+/// The regression evidence for the finding that a pasteboard read is not an insertion.
+///
+/// Run against controls measured to pull the promised pasteboard data while keeping nothing
+/// (`disabledTextField`, which has no first responder at all, and `readOnlyTextView`). Everything
+/// here is produced by shipping code: the shipping capture, the shipping
+/// `ClipboardPasteCoordinator`, and the shipping `PasteInsertionConfirmation`.
+struct InsertionClaimProbeReport: Codable {
+  var attempted = false
+  var focusEstablished = false
+  /// Gate one: the shipping capture refuses the control, so no delivery is reachable for it.
+  var captureRefused: Bool?
+  var captureOutcome: String?
+  /// The precondition that makes this probe worth anything: the pasteboard promise really was
+  /// pulled. If it was not, the dangerous case was not reproduced and nothing was proved.
+  var promisedTextWasRead: Bool?
+  var pasteboardOutcome: String?
+  var pasteAttempts: [String] = []
+  var stateBefore: String?
+  var stateAfter: String?
+  /// Gate two: what the shipping Accessibility read-back concluded.
+  var insertionEvidence: String?
+  var composedDeliveryResult: String?
+  /// True when the pasteboard receipt and the read-back composed into an insertion claim anyway.
+  /// This is the regression, and it is judged independently of the capture gate so that a revert
+  /// of the read-back cannot hide behind the classifier refusing the control.
+  var wouldClaimInsertion: Bool?
+  var valueBefore: String?
+  var valueAfter: String?
+  var controlAcceptedText: Bool?
+  var clipboardRestored: Bool?
+  var collateralChanges: [String] = []
 }
 
 struct ClipboardReport: Codable {
@@ -109,12 +148,19 @@ struct ControlResult: Encodable {
   var accessibilityEnabled: Bool?
   var selectedTextSettable: Bool?
   var valueSettable: Bool?
+  /// Whether the element implements `AXDOMIdentifier`. This is the signal the shipping classifier
+  /// uses to demote web-hosted controls off the direct path, so it is measured on every control:
+  /// the demotion is only safe while no native control carries it.
+  var implementsDOMIdentifier: Bool?
+  var domIdentifierValue: String?
+  var expectedWebHosted: Bool?
   var focus = FocusReport()
   var caretInsertion: DeliveryReport?
   var selectionReplacement: DeliveryReport?
   var clipboard: ClipboardReport?
   var standardPasteProbe: PasteProbeReport?
   var directWriteProbe: DirectWriteProbeReport?
+  var insertionClaimProbe: InsertionClaimProbeReport?
   var secure: SecureReport?
   var coverageGap = false
   var coverageGapDetail: String?
@@ -126,8 +172,9 @@ struct ControlResult: Encodable {
     case controlClass, identifier, expectedAccess, actualAccess, classificationSource
     case serviceCaptureOutcome, accessibilityRole
     case accessibilitySubrole, accessibilityEnabled, selectedTextSettable, valueSettable
+    case implementsDOMIdentifier, domIdentifierValue, expectedWebHosted
     case focus, caretInsertion, selectionReplacement, clipboard, standardPasteProbe
-    case directWriteProbe, secure
+    case directWriteProbe, insertionClaimProbe, secure
     case coverageGap, coverageGapDetail, failures, status
   }
 
@@ -144,12 +191,16 @@ struct ControlResult: Encodable {
     try container.encodeIfPresent(accessibilityEnabled, forKey: .accessibilityEnabled)
     try container.encodeIfPresent(selectedTextSettable, forKey: .selectedTextSettable)
     try container.encodeIfPresent(valueSettable, forKey: .valueSettable)
+    try container.encodeIfPresent(implementsDOMIdentifier, forKey: .implementsDOMIdentifier)
+    try container.encodeIfPresent(domIdentifierValue, forKey: .domIdentifierValue)
+    try container.encodeIfPresent(expectedWebHosted, forKey: .expectedWebHosted)
     try container.encode(focus, forKey: .focus)
     try container.encodeIfPresent(caretInsertion, forKey: .caretInsertion)
     try container.encodeIfPresent(selectionReplacement, forKey: .selectionReplacement)
     try container.encodeIfPresent(clipboard, forKey: .clipboard)
     try container.encodeIfPresent(standardPasteProbe, forKey: .standardPasteProbe)
     try container.encodeIfPresent(directWriteProbe, forKey: .directWriteProbe)
+    try container.encodeIfPresent(insertionClaimProbe, forKey: .insertionClaimProbe)
     try container.encodeIfPresent(secure, forKey: .secure)
     try container.encode(coverageGap, forKey: .coverageGap)
     try container.encodeIfPresent(coverageGapDetail, forKey: .coverageGapDetail)
@@ -219,8 +270,8 @@ struct CompatReport: Encodable {
 enum ReportRenderer {
   static func table(_ report: CompatReport) -> String {
     let header = [
-      "Control class", "Expected", "Actual", "Focus", "Insert", "Select", "Mechanism", "Clipboard",
-      "Paste probe", "Gap", "Status",
+      "Control class", "Expected", "Actual", "DOM id", "Focus", "Insert", "Select", "Mechanism",
+      "Evidence", "Clipboard", "Paste probe", "No false claim", "Gap", "Status",
     ]
     var rows: [[String]] = [header]
     for result in report.results {
@@ -228,12 +279,15 @@ enum ReportRenderer {
         result.controlClass,
         result.expectedAccess.joined(separator: "|"),
         result.actualAccess,
+        result.implementsDOMIdentifier.map { $0 ? "yes" : "no" } ?? "?",
         focusCell(result),
         deliveryCell(result.caretInsertion),
         deliveryCell(result.selectionReplacement),
         mechanismCell(result),
+        evidenceCell(result),
         clipboardCell(result.clipboard),
         probeCell(result.standardPasteProbe),
+        insertionClaimCell(result.insertionClaimProbe),
         result.coverageGap ? "YES" : "-",
         result.status.uppercased(),
       ])
@@ -272,6 +326,21 @@ enum ReportRenderer {
     let observed = delivery.deliveryResult ?? "unknown"
     guard delivery.mechanismMatchesClassification == true else { return "!\(observed)" }
     return observed
+  }
+
+  private static func evidenceCell(_ result: ControlResult) -> String {
+    guard let delivery = result.caretInsertion, delivery.attempted else { return "n/a" }
+    if let paste = delivery.pasteInsertionEvidence {
+      return delivery.insertionIsUnverified == true ? "UNVERIFIED(\(paste))" : paste
+    }
+    return delivery.directInsertionOutcome ?? "none"
+  }
+
+  private static func insertionClaimCell(_ report: InsertionClaimProbeReport?) -> String {
+    guard let report, report.attempted else { return "-" }
+    if report.promisedTextWasRead != true { return "NOT REPRODUCED" }
+    if report.wouldClaimInsertion == true { return "CLAIMED" }
+    return "held(\(report.insertionEvidence ?? "?"))"
   }
 
   private static func clipboardCell(_ report: ClipboardReport?) -> String {

@@ -6,6 +6,26 @@ import Testing
 
 @Suite("Clipboard-preserving paste")
 struct ClipboardPasteCoordinatorTests {
+  @Test("a closed receipt reports only that the promised text was read, never an insertion")
+  func receiptIsNotAnInsertionClaim() async {
+    let original = snapshot("previous")
+    let clock = FakeIntegrationClock(now: 0)
+    let pasteboard = FakePasteboard(snapshot: original, changeCount: 3)
+    let coordinator = makeCoordinator(
+      clock: clock, pasteboard: pasteboard, readTimes: [20],
+      deadlinePolicy: .init(quietPeriodNanoseconds: 75, pollIntervalNanoseconds: 10))
+
+    let outcome = await coordinator.pastePreservingClipboard(
+      text: "dictated", deadline: .init(nanoseconds: 200))
+
+    // The pasteboard cannot tell an insertion from a clipboard manager reading the promise, so the
+    // coordinator is not allowed to express one.
+    #expect(outcome == .promisedTextWasRead)
+    #expect(
+      PasteInsertionConfirmation.deliveryResult(outcome: outcome, evidence: .targetUnchanged)
+        == .failed(.accessibilityAndPasteFailed))
+  }
+
   @Test("successful paste restores every previous pasteboard representation")
   func restoresSnapshot() async {
     let original = PasteboardSnapshot(items: [
@@ -21,7 +41,7 @@ struct ClipboardPasteCoordinatorTests {
     let result = await coordinator.pastePreservingClipboard(
       text: "dictated", deadline: .init(nanoseconds: 200))
 
-    #expect(result == .inserted(.clipboardPaste))
+    #expect(result == .promisedTextWasRead)
     #expect(clock.nowNanoseconds() == 95)
     #expect(await pasteboard.restoredSnapshot() == original)
   }
@@ -53,7 +73,7 @@ struct ClipboardPasteCoordinatorTests {
 
     #expect(
       await coordinator.pastePreservingClipboard(
-        text: "dictated", deadline: .init(nanoseconds: 200)) == .inserted(.clipboardPaste))
+        text: "dictated", deadline: .init(nanoseconds: 200)) == .promisedTextWasRead)
     #expect(clock.nowNanoseconds() == 125)
     #expect(await pasteboard.restoredSnapshot() == original)
   }
@@ -68,7 +88,7 @@ struct ClipboardPasteCoordinatorTests {
 
     #expect(
       await coordinator.pastePreservingClipboard(
-        text: "dictated", deadline: .init(nanoseconds: 150)) == .inserted(.clipboardPaste))
+        text: "dictated", deadline: .init(nanoseconds: 150)) == .promisedTextWasRead)
     #expect(clock.nowNanoseconds() == 95)
   }
 

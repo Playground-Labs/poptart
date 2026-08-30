@@ -37,17 +37,23 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
   private let permission: any AccessibilityPermission
   private let contextBounds: TargetContextBounds
   private let clipboard: ClipboardPasteCoordinator
+  private let confirmation: PasteConfirmationReader
+  private let observer: DeliveryEvidenceObserver?
   private let lock = NSLock()
   private var capturedTargets: [String: CapturedTarget] = [:]
 
   public init(
     permission: any AccessibilityPermission = SystemAccessibilityPermission(),
     contextBounds: TargetContextBounds = .init(),
-    clipboard: ClipboardPasteCoordinator = .init()
+    clipboard: ClipboardPasteCoordinator = .init(),
+    confirmation: PasteConfirmationReader = .init(),
+    observer: DeliveryEvidenceObserver? = nil
   ) {
     self.permission = permission
     self.contextBounds = contextBounds
     self.clipboard = clipboard
+    self.confirmation = confirmation
+    self.observer = observer
   }
 
   @discardableResult
@@ -80,7 +86,9 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
         isEnabled: Self.booleanAttribute(kAXEnabledAttribute, of: focused.element) ?? true,
         selectedTextSettable: Self.isAttributeSettable(
           kAXSelectedTextAttribute, of: focused.element),
-        valueSettable: Self.isAttributeSettable(kAXValueAttribute, of: focused.element)
+        valueSettable: Self.isAttributeSettable(kAXValueAttribute, of: focused.element),
+        hasWebDOMIdentifier: Self.implementsAttribute(
+          AccessibilityTargetPolicy.webDOMIdentifierAttribute, of: focused.element)
       ))
     guard access == .direct || access == .pasteOnly else {
       return .failure(.noEditableTarget)
@@ -134,9 +142,17 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
   public func deliver(_ request: DeliveryRequest) async -> DeliveryResult {
     guard revalidate(request.target) == .valid,
       let captured = lock.withLock({ capturedTargets[request.target.elementIdentifier] })
-    else { return .failed(.accessibilityAndPasteFailed) }
+    else {
+      return report(
+        .failed(.accessibilityAndPasteFailed),
+        for: request,
+        applicationIdentifier: request.target.applicationIdentifier,
+        direct: nil,
+        paste: nil
+      )
+    }
 
-    let directWasApplied: Bool
+    let directOutcome: DirectInsertionOutcome?
     if captured.directInsertionAllowed,
       let selection = captured.selection,
       let characterCount = captured.characterCount
@@ -146,31 +162,81 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
         kAXSelectedTextAttribute as CFString,
         request.text as CFTypeRef
       )
-      directWasApplied =
-        direct == .success
-        && DirectInsertionVerification.wasApplied(
-          originalSelection: selection,
-          originalCharacterCount: characterCount,
-          insertedUTF16Count: request.text.utf16.count,
-          resultingSelection: Self.selectedRange(of: captured.element),
-          resultingCharacterCount: Self.integerAttribute(
-            kAXNumberOfCharactersAttribute, of: captured.element)
-        )
+      directOutcome = DirectInsertionVerification.outcome(
+        writeSucceeded: direct == .success,
+        originalSelection: selection,
+        originalCharacterCount: characterCount,
+        insertedUTF16Count: request.text.utf16.count,
+        resultingSelection: Self.selectedRange(of: captured.element),
+        resultingCharacterCount: Self.integerAttribute(
+          kAXNumberOfCharactersAttribute, of: captured.element)
+      )
     } else {
-      directWasApplied = false
+      directOutcome = nil
     }
-    if directWasApplied {
+    if directOutcome?.nextStep == .reportInserted {
       removeCapture(for: request.target)
-      return .inserted(.accessibility)
+      return report(
+        .inserted(.accessibility),
+        for: request,
+        applicationIdentifier: captured.applicationIdentifier,
+        direct: directOutcome,
+        paste: nil
+      )
     }
 
-    // Revalidate again after the failed write to close the target-change race before paste.
+    // Revalidate again after the unapplied write to close the target-change race before paste.
     guard revalidate(request.target) == .valid else {
-      return .failed(.accessibilityAndPasteFailed)
+      return report(
+        .failed(.accessibilityAndPasteFailed),
+        for: request,
+        applicationIdentifier: captured.applicationIdentifier,
+        direct: directOutcome,
+        paste: nil
+      )
     }
-    let result = await clipboard.pastePreservingClipboard(
+
+    // Read the target immediately before the paste rather than reusing the capture-time numbers:
+    // seconds of recognition and cleanup sit between capture and delivery.
+    let before = Self.textState(of: captured.element)
+    let outcome = await clipboard.pastePreservingClipboard(
       text: request.text, deadline: request.deadline)
+    var evidence: InsertionEvidence?
+    if case .promisedTextWasRead = outcome {
+      // The pasteboard receipt only proves someone read the promised text. Confirm against the
+      // target before claiming the dictation landed.
+      evidence = await confirmation.evidence(
+        before: before,
+        insertedUTF16Count: request.text.utf16.count,
+        deadline: request.deadline,
+        read: { Self.textState(of: captured.element) }
+      )
+    }
     removeCapture(for: request.target)
+    return report(
+      PasteInsertionConfirmation.deliveryResult(outcome: outcome, evidence: evidence),
+      for: request,
+      applicationIdentifier: captured.applicationIdentifier,
+      direct: directOutcome,
+      paste: evidence
+    )
+  }
+
+  private func report(
+    _ result: DeliveryResult,
+    for request: DeliveryRequest,
+    applicationIdentifier: String,
+    direct: DirectInsertionOutcome?,
+    paste: InsertionEvidence?
+  ) -> DeliveryResult {
+    observer?(
+      .init(
+        dictationID: request.id,
+        applicationIdentifier: applicationIdentifier,
+        directInsertion: direct,
+        pasteInsertion: paste,
+        result: result
+      ))
     return result
   }
 
@@ -273,6 +339,24 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
     )
     guard result == .success else { return nil }
     return value as? String
+  }
+
+  /// Whether the element implements an attribute at all, regardless of its value. Used for
+  /// `AXDOMIdentifier`, which a web element with no DOM `id` still implements as an empty string.
+  private static func implementsAttribute(_ name: String, of element: AXUIElement) -> Bool {
+    var names: CFArray?
+    guard AXUIElementCopyAttributeNames(element, &names) == .success,
+      let list = names as? [String]
+    else { return false }
+    return list.contains(name)
+  }
+
+  /// The bounded state the delivery path reads back to confirm an insertion. Never reads text.
+  private static func textState(of element: AXUIElement) -> TargetTextState {
+    .init(
+      characterCount: integerAttribute(kAXNumberOfCharactersAttribute, of: element),
+      selection: selectedRange(of: element)
+    )
   }
 
   private static func isAttributeSettable(_ name: String, of element: AXUIElement) -> Bool {

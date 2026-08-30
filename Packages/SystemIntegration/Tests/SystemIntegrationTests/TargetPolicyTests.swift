@@ -121,25 +121,123 @@ struct TargetPolicyTests {
     #expect(TargetRevalidationPolicy.evaluate(original: original, current: otherTarget) == .changed)
   }
 
-  @Test("an ignored direct Accessibility write is not treated as insertion")
-  func ignoredDirectWrite() {
+  @Test("a web-hosted control is classified paste-only even though it claims to be settable")
+  func webHostedControlIsDemoted() {
+    // Measured: `<input type=text>`, `<textarea>` and `contenteditable` all report
+    // AXSelectedTextSettable = true, then ignore AXUIElementSetAttributeValue and return success.
+    for role in ["AXTextField", "AXTextArea"] {
+      let webHosted = AccessibilityTargetCapabilities(
+        role: role, subrole: nil, isEnabled: true,
+        selectedTextSettable: true, valueSettable: true, hasWebDOMIdentifier: true)
+
+      #expect(AccessibilityTargetPolicy.access(for: webHosted) == .pasteOnly)
+    }
+  }
+
+  @Test("a native control keeps the direct path because it does not implement AXDOMIdentifier")
+  func nativeControlIsNotDemoted() {
+    for role in ["AXTextField", "AXTextArea", "AXComboBox"] {
+      let native = AccessibilityTargetCapabilities(
+        role: role, subrole: nil, isEnabled: true,
+        selectedTextSettable: true, valueSettable: true, hasWebDOMIdentifier: false)
+
+      #expect(AccessibilityTargetPolicy.access(for: native) == .direct)
+    }
+  }
+
+  @Test("a web-hosted password field is still refused before anything else is considered")
+  func webHostedSecureFieldStaysSecure() {
+    let webPassword = AccessibilityTargetCapabilities(
+      role: "AXTextField", subrole: "AXSecureTextField", isEnabled: true,
+      selectedTextSettable: true, valueSettable: true, hasWebDOMIdentifier: true)
+
+    #expect(AccessibilityTargetPolicy.access(for: webPassword) == .secure)
+  }
+
+  @Test("a search field is matched by the role it really reports, not by a subrole role name")
+  func searchFieldUsesItsRealRole() {
+    // A real NSSearchField reports role AXTextField with subrole AXSearchField, so the paste-only
+    // role list covers it. Nothing reports "AXSearchField" as a role.
+    let pasteOnlySearchField = AccessibilityTargetCapabilities(
+      role: "AXTextField", subrole: "AXSearchField", isEnabled: true,
+      selectedTextSettable: false, valueSettable: true)
+    let settableSearchField = AccessibilityTargetCapabilities(
+      role: "AXTextField", subrole: "AXSearchField", isEnabled: true,
+      selectedTextSettable: true, valueSettable: true)
+
+    #expect(AccessibilityTargetPolicy.access(for: pasteOnlySearchField) == .pasteOnly)
+    #expect(AccessibilityTargetPolicy.access(for: settableSearchField) == .direct)
+  }
+
+  @Test("an Accessibility write that returns success and moves nothing is a named no-op")
+  func silentNoOpDirectWrite() {
     let original = TextSelection(location: 4, length: 0)
 
-    #expect(
-      !DirectInsertionVerification.wasApplied(
-        originalSelection: original,
-        originalCharacterCount: 10,
-        insertedUTF16Count: 5,
-        resultingSelection: original,
-        resultingCharacterCount: 10
-      ))
-    let applied = DirectInsertionVerification.wasApplied(
+    let outcome = DirectInsertionVerification.outcome(
+      writeSucceeded: true,
       originalSelection: original,
+      originalCharacterCount: 10,
+      insertedUTF16Count: 5,
+      resultingSelection: original,
+      resultingCharacterCount: 10
+    )
+
+    #expect(outcome == .reportedSuccessButTargetUnchanged)
+    #expect(outcome.nextStep == .fallBackToClipboardPaste)
+  }
+
+  @Test("a verified direct write completes the delivery")
+  func appliedDirectWrite() {
+    let outcome = DirectInsertionVerification.outcome(
+      writeSucceeded: true,
+      originalSelection: .init(location: 4, length: 0),
       originalCharacterCount: 10,
       insertedUTF16Count: 5,
       resultingSelection: .init(location: 9, length: 0),
       resultingCharacterCount: 15
     )
-    #expect(applied)
+
+    #expect(outcome == .applied)
+    #expect(outcome.nextStep == .reportInserted)
+  }
+
+  @Test(
+    "every unverified direct outcome falls back to the clipboard by design",
+    arguments: [
+      DirectInsertionOutcome.writeRefused,
+      DirectInsertionOutcome.reportedSuccessButTargetUnchanged,
+      DirectInsertionOutcome.reportedSuccessButUnverified,
+    ]
+  )
+  func unverifiedDirectOutcomesFallBack(outcome: DirectInsertionOutcome) {
+    #expect(outcome.nextStep == .fallBackToClipboardPaste)
+  }
+
+  @Test("a refused Accessibility write is distinguished from a silent no-op")
+  func refusedDirectWrite() {
+    let original = TextSelection(location: 4, length: 0)
+
+    #expect(
+      DirectInsertionVerification.outcome(
+        writeSucceeded: false,
+        originalSelection: original,
+        originalCharacterCount: 10,
+        insertedUTF16Count: 5,
+        resultingSelection: original,
+        resultingCharacterCount: 10
+      ) == .writeRefused)
+  }
+
+  @Test("an unreadable target after a direct write is unverified rather than applied")
+  func unreadableDirectWrite() {
+    #expect(
+      DirectInsertionVerification.outcome(
+        writeSucceeded: true,
+        originalSelection: .init(location: 4, length: 0),
+        originalCharacterCount: 10,
+        insertedUTF16Count: 5,
+        resultingSelection: nil,
+        resultingCharacterCount: nil
+      ) == .reportedSuccessButUnverified)
   }
 }
