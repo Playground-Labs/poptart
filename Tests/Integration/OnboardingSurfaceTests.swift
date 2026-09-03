@@ -111,6 +111,35 @@ struct OnboardingPolicyTests {
 @Suite("Onboarding surface")
 @MainActor
 struct OnboardingSurfaceTests {
+    @Test("completed onboarding steps remain available through Back")
+    func completedStepsRemainAvailableThroughBack() async {
+        let progress = OnboardingProgress(
+            explanationAcknowledged: true,
+            offlineReadinessConfirmed: true,
+            shortcutTestPassed: true,
+            firstDictationCompleted: false
+        )
+        let harness = OnboardingHarness(
+            progress: progress,
+            microphone: .granted,
+            accessibilityGranted: true,
+            keyboardGranted: true,
+            pack: .stub()
+        )
+        await harness.model.load()
+        #expect(harness.model.step == .firstDictation)
+
+        harness.model.goBack()
+
+        #expect(harness.model.step == .shortcutTest)
+        await harness.model.selectShortcut(.leftOption)
+        #expect(harness.model.shortcut.binding == .leftOption)
+        #expect(harness.model.progress == progress)
+
+        harness.model.visit(.firstDictation)
+        #expect(harness.model.step == .firstDictation)
+    }
+
     @Test("onboarding resumes where the person left off after a relaunch")
     func resumesAfterRelaunch() async {
         let harness = OnboardingHarness(

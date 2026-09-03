@@ -212,6 +212,7 @@ public final class OnboardingModel {
     private let now: @Sendable () -> Date
     private var shortcutPressSeen = false
     private var firstDictationStartedAt: Date?
+    private var viewedStep: OnboardingStep?
 
     public init(
         shortcut: ShortcutBindingModel,
@@ -242,7 +243,31 @@ public final class OnboardingModel {
     }
 
     public var step: OnboardingStep {
-        OnboardingPolicy.currentStep(progress: progress, requirements: requirements)
+        viewedStep ?? requiredStep
+    }
+
+    public var canGoBack: Bool {
+        guard let index = OnboardingStep.allCases.firstIndex(of: step) else { return false }
+        return index > OnboardingStep.allCases.startIndex
+    }
+
+    public func canVisit(_ step: OnboardingStep) -> Bool {
+        guard let requested = OnboardingStep.allCases.firstIndex(of: step),
+              let required = OnboardingStep.allCases.firstIndex(of: requiredStep)
+        else { return false }
+        return requested <= required
+    }
+
+    public func visit(_ step: OnboardingStep) {
+        guard canVisit(step) else { return }
+        viewedStep = step == requiredStep ? nil : step
+    }
+
+    public func goBack() {
+        guard let index = OnboardingStep.allCases.firstIndex(of: step),
+              index > OnboardingStep.allCases.startIndex
+        else { return }
+        visit(OnboardingStep.allCases[OnboardingStep.allCases.index(before: index)])
     }
 
     public var blockers: [OnboardingBlocker] {
@@ -262,7 +287,7 @@ public final class OnboardingModel {
 
     public func refresh() async {
         let pack = (try? await modelPacks.activePack()) ?? nil
-        requirements = .init(
+        let refreshed = OnboardingRequirements(
             permissions: .init(
                 microphone: microphonePermission.state(),
                 accessibility: accessibilityPermission.isGranted() ? .granted : .denied,
@@ -270,6 +295,8 @@ public final class OnboardingModel {
             ),
             hasActiveModelPack: pack != nil
         )
+        if refreshed != requirements { viewedStep = nil }
+        requirements = refreshed
         // A failure keeps its explanation even when an older pack is still installed; only a
         // surface that has said nothing yet adopts the installed pack.
         if case .idle = installState, let pack {
@@ -384,7 +411,12 @@ public final class OnboardingModel {
         mutate(&updated)
         guard updated != progress else { return }
         progress = updated
+        viewedStep = nil
         try? await settings.setOnboardingProgress(updated)
+    }
+
+    private var requiredStep: OnboardingStep {
+        OnboardingPolicy.currentStep(progress: progress, requirements: requirements)
     }
 
 }

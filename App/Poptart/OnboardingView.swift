@@ -17,7 +17,12 @@ struct OnboardingView: View {
             Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    Text(model.step.title).font(.largeTitle.bold())
+                    HStack {
+                        Text(model.step.title).font(.largeTitle.bold())
+                        Spacer()
+                        Button("Back") { model.goBack() }
+                            .disabled(!model.canGoBack)
+                    }
                     stepDetail
                     Divider()
                     remaining
@@ -32,8 +37,15 @@ struct OnboardingView: View {
     private var stepList: some View {
         VStack(alignment: .leading, spacing: 10) {
             ForEach(OnboardingStep.allCases, id: \.self) { step in
-                Label(step.title, systemImage: step == model.step ? "circle.inset.filled" : "circle")
+                Button { model.visit(step) } label: {
+                    Label(
+                        step.title,
+                        systemImage: step == model.step ? "circle.inset.filled" : "circle"
+                    )
                     .foregroundStyle(step == model.step ? .primary : .secondary)
+                }
+                .buttonStyle(.plain)
+                .disabled(!model.canVisit(step))
             }
             Spacer()
         }
