@@ -159,6 +159,7 @@ public final class RuntimeAssembly: @unchecked Sendable {
     /// - Parameter cleanupTokenCeiling: the ceiling the active pack measured, or nil when the pack
     ///   carries none. A nil ceiling takes the same path as a missing Cleanup model: every
     ///   Dictation fails open to the Raw Transcript instead of running against an invented budget.
+    @MainActor
     public static func start(
         modelPack: ApplicationModelPackLayout,
         applicationSupportDirectory: URL,

@@ -22,6 +22,7 @@ public struct SystemAccessibilityPermission: AccessibilityPermission {
 }
 
 /// Accessibility-first target capture and delivery. Captured AX elements remain ephemeral and in memory.
+@MainActor
 public final class AccessibilityTextService: InsertionTargetBoundary, TextDeliveryBoundary,
   @unchecked Sendable
 {

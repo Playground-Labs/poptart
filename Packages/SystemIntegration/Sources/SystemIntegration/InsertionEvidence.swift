@@ -147,6 +147,7 @@ public struct PasteConfirmationReader: Sendable {
   }
 
   /// - Parameter read: reads the target's current text state. Called at least once.
+  @MainActor
   public func evidence(
     before: TargetTextState,
     insertedUTF16Count: Int,
