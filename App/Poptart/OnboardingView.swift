@@ -76,15 +76,19 @@ struct OnboardingView: View {
             }
 
         case .microphonePermission:
-            permissionStep(
-                explanation: "Poptart needs the microphone to hear a Dictation.",
-                state: model.requirements.permissions.microphone,
-                actionTitle: "Allow Microphone",
-                action: {
-                    await model.requestMicrophonePermission()
-                    await environment.refreshAfterExternalChange()
-                }
-            )
+            VStack(alignment: .leading, spacing: 16) {
+                permissionStep(
+                    explanation: "Poptart needs the microphone to hear a Dictation.",
+                    state: model.requirements.permissions.microphone,
+                    actionTitle: "Allow Microphone",
+                    action: {
+                        await model.requestMicrophonePermission()
+                        await environment.refreshAfterExternalChange()
+                    }
+                )
+                Divider()
+                MicrophoneInputPicker(model: environment.settings)
+            }
 
         case .accessibilityPermission:
             permissionStep(

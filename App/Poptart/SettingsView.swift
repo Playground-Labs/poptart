@@ -23,32 +23,12 @@ struct SettingsView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(4)
         }
-        .task { await model.refreshMicrophones() }
     }
 
     private var dictationSection: some View {
         GroupBox("Dictation") {
             VStack(alignment: .leading, spacing: 12) {
-                Picker(
-                    "Microphone",
-                    selection: Binding(
-                        get: { model.selectedMicrophoneIdentifier ?? "" },
-                        set: { identifier in
-                            guard !identifier.isEmpty else { return }
-                            Task { await model.selectMicrophone(identifier) }
-                        }
-                    )
-                ) {
-                    if model.selectedMicrophoneIdentifier == nil {
-                        Text("System input device").tag("")
-                    }
-                    ForEach(model.microphones) { device in
-                        Text(device.name).tag(device.id)
-                    }
-                }
-                if let message = model.microphoneMessage {
-                    Text(message).font(.caption).foregroundStyle(.secondary)
-                }
+                MicrophoneInputPicker(model: model)
 
                 Picker(
                     "Dictation shortcut",
@@ -189,5 +169,35 @@ struct SettingsView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+}
+
+struct MicrophoneInputPicker: View {
+    @Bindable var model: SettingsModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Picker(
+                "Microphone input",
+                selection: Binding(
+                    get: { model.selectedMicrophoneIdentifier ?? "" },
+                    set: { identifier in
+                        guard !identifier.isEmpty else { return }
+                        Task { await model.selectMicrophone(identifier) }
+                    }
+                )
+            ) {
+                if model.selectedMicrophoneIdentifier == nil {
+                    Text("System input device").tag("")
+                }
+                ForEach(model.microphones) { device in
+                    Text(device.name).tag(device.id)
+                }
+            }
+            if let message = model.microphoneMessage {
+                Text(message).font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .task { await model.refreshMicrophones() }
     }
 }
