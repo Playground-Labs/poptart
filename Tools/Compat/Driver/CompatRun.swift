@@ -390,6 +390,7 @@ final class CompatRun {
       report.focusedIdentifier = AccessibilityProbe.identifier(of: focused.element)
       report.focusedRole = AccessibilityProbe.string(kAXRoleAttribute, of: focused.element)
       report.focusedSubrole = AccessibilityProbe.string(kAXSubroleAttribute, of: focused.element)
+      report.focusedAncestry = AccessibilityProbe.ancestryDescription(of: focused.element)
     }
     return (report, nil)
   }

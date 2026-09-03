@@ -28,6 +28,9 @@ cd "$REPO"
 
 BUILD_DIR="$REPO/.build"
 OUTPUT="${1:-$BUILD_DIR/compat-matrix.json}"
+if [[ "$OUTPUT" != /* ]]; then
+  OUTPUT="$REPO/$OUTPUT"
+fi
 CHANNEL="$(mktemp -d "${TMPDIR:-/tmp}/poptart-compat.XXXXXX")"
 DRIVER_STDOUT="$BUILD_DIR/PoptartCompatDriver.stdout.log"
 DRIVER_STDERR="$BUILD_DIR/PoptartCompatDriver.stderr.log"

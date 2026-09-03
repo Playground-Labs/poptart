@@ -112,6 +112,27 @@ enum AccessibilityProbe {
     return unsafeDowncast(value as AnyObject, to: AXUIElement.self)
   }
 
+  static func ancestryDescription(of element: AXUIElement, depthLimit: Int = 8) -> [String] {
+    var descriptions: [String] = []
+    var current: AXUIElement? = element
+    var depth = 0
+    while let item = current, depth < depthLimit {
+      let identifier = identifier(of: item) ?? "nil"
+      let role = string(kAXRoleAttribute, of: item) ?? "nil"
+      let subrole = string(kAXSubroleAttribute, of: item) ?? "nil"
+      let frame =
+        frame(of: item).map {
+          "(\($0.x),\($0.y),\($0.width),\($0.height))"
+        } ?? "nil"
+      descriptions.append(
+        "depth=\(depth) identifier=\(identifier) role=\(role) subrole=\(subrole) frame=\(frame)"
+      )
+      current = parent(of: item)
+      depth += 1
+    }
+    return descriptions
+  }
+
   static func children(of element: AXUIElement) -> [AXUIElement] {
     guard let value = copiedAttribute(kAXChildrenAttribute, of: element) else { return [] }
     guard let array = value as? [AnyObject] else { return [] }

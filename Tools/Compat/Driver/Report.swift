@@ -20,6 +20,7 @@ struct FocusReport: Codable {
   var focusedIdentifier: String?
   var focusedRole: String?
   var focusedSubrole: String?
+  var focusedAncestry: [String] = []
 }
 
 struct DeliveryReport: Codable {
