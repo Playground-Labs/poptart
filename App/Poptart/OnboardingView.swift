@@ -6,6 +6,8 @@ import SystemIntegration
 /// blocks completion, and when the shortcut may be rebound belongs to the model.
 struct OnboardingView: View {
     let environment: AppEnvironment
+    @State private var firstDictationText = ""
+    @FocusState private var firstDictationFieldFocused: Bool
 
     private var model: OnboardingModel { environment.onboarding }
 
@@ -127,12 +129,18 @@ struct OnboardingView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text(
                     """
-                    Open any text field, hold \(model.shortcut.binding.displayName), say a sentence, \
-                    and release.
+                    Start the test, then hold \(model.shortcut.binding.displayName), say a sentence, \
+                    and release. Your Dictation will appear here.
                     """
                 )
+                TextField("First Dictation test field", text: $firstDictationText)
+                    .textFieldStyle(.roundedBorder)
+                    .focused($firstDictationFieldFocused)
                 HStack {
-                    Button("Start the test") { model.beginFirstDictationTest() }
+                    Button("Start the test") {
+                        model.beginFirstDictationTest()
+                        firstDictationFieldFocused = true
+                    }
                     Button("I dictated something") {
                         Task { await model.confirmFirstDictation() }
                     }
