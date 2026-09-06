@@ -69,6 +69,8 @@ The inherited repository will be renamed or archived as `poptart-legacy` only wh
 
 If the target changed during Dictation, Poptart copies the completed text to the system clipboard and clearly reports that result. It never inserts private speech into a newly focused field.
 
+If no editable Insertion Target is focused at key-down, Poptart records a Clipboard Dictation instead of refusing. It recognizes and cleans the speech without cursor-local Target Context, places the completed text on the system clipboard, writes the encrypted Dictation Record, and reports the copied result.
+
 If the focused control is secure, Poptart does not begin Recording and creates no history.
 
 ## Runtime architecture
@@ -118,6 +120,7 @@ Terminal outcome variants are part of `completed`, not separate side channels:
 - oversized-input deterministic fallback;
 - recognition-hypothesis fallback;
 - target-changed clipboard result;
+- no-target Clipboard Dictation result;
 - empty recognition failure;
 - secure-target rejection;
 - user cancellation;
@@ -246,11 +249,12 @@ It never contains a full document, full window, screenshot, OCR result, unrelate
 Delivery policy:
 
 1. Block Dictation entirely for secure controls.
-2. Revalidate the original target before delivery.
-3. Replace the original selection only when it remains valid.
-4. Prefer a direct Accessibility value/range write.
-5. If direct Accessibility insertion fails while the original target remains focused, use a clipboard-preserving paste transaction.
-6. If the target changed, replace the system clipboard contents with the completed text, create history, and show the copied result; do not synthesize paste into the new target.
+2. If no Insertion Target was captured at key-down, replace the system clipboard contents with the completed text, create history, and show the copied result.
+3. Revalidate the original target before delivery.
+4. Replace the original selection only when it remains valid.
+5. Prefer a direct Accessibility value/range write.
+6. If direct Accessibility insertion fails while the original target remains focused, use a clipboard-preserving paste transaction.
+7. If the target changed, replace the system clipboard contents with the completed text, create history, and show the copied result; do not synthesize paste into the new target.
 
 ## Indicator
 
@@ -267,6 +271,7 @@ The Indicator is persistent, compact, nonactivating, and never displays live or 
 - Raw Transcript fallback;
 - recognition fallback;
 - copied because the target changed;
+- copied because no Insertion Target was focused;
 - failure with no usable text.
 
 Completion and failure states remain visible long enough to be understood, then return to ready without stealing focus.
@@ -390,6 +395,7 @@ Reused Handy-derived code is copied selectively only after review and retains al
 - Secure fields never start capture or create history.
 - Clipboard-preserving paste restores every represented pasteboard item after successful or failed paste.
 - Target changes copy but never paste into the new target.
+- A Dictation started with no Insertion Target records, copies to the clipboard, and creates history.
 - Every fallback produces the documented Indicator and history outcome.
 
 ### Cleanup quality

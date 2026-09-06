@@ -97,6 +97,7 @@ public enum IndicatorState: Equatable, Sendable {
     case oversizedFallback
     case recognitionFallback
     case copiedBecauseTargetChanged
+    case copiedBecauseNoTarget
     case failure(IndicatorFailure)
     case cancelled
 }

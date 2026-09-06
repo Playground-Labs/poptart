@@ -52,6 +52,29 @@ struct DictationCoordinatorTests {
         #expect(await harness.indicator.states.last == .copiedBecauseTargetChanged)
     }
 
+    @Test("a dictation with no editable target records and copies instead of failing")
+    func noTargetCopies() async {
+        let harness = Harness(
+            targetCapture: noTargetCapture(),
+            recognition: .final(.init(text: "Nowhere to type")),
+            cleanup: .rawTranscriptFallback(.modelUnavailable)
+        )
+
+        await harness.coordinator.receive(.pressed)
+        await harness.coordinator.receive(.released)
+        let record = await harness.history.nextRecord()
+
+        #expect(await harness.speech.startedCount == 1)
+        #expect(await harness.delivery.insertedTexts.isEmpty)
+        #expect(await harness.delivery.copiedTexts == ["Nowhere to type"])
+        #expect(record.outcome == .noTargetClipboard(
+            source: .rawTranscriptFallback(.modelUnavailable),
+            recordingEnd: .released
+        ))
+        #expect(await harness.indicator.states.contains(.failure(.recording)) == false)
+        #expect(await harness.indicator.states.last == .copiedBecauseNoTarget)
+    }
+
     @Test("a secure target never starts recording or writes history")
     func secureTargetStopsBeforeCapture() async {
         let secure = DictationTargetCapture.secure(
@@ -301,6 +324,16 @@ private func editableCapture() -> DictationTargetCapture {
             selectedText: nil
         )
     )
+}
+
+private func noTargetCapture() -> DictationTargetCapture {
+    .noTarget(context: .init(
+        applicationIdentifier: "com.example.Viewer",
+        applicationCategory: .other,
+        textBeforeCursor: "",
+        textAfterCursor: "",
+        selectedText: nil
+    ))
 }
 
 private struct FixedClock: MonotonicClock {

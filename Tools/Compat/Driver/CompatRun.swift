@@ -857,6 +857,7 @@ final class CompatRun {
   private func describe(_ capture: Result<DictationTargetCapture, TargetCaptureFailure>) -> String {
     switch capture {
     case .success(.editable): "editable"
+    case .success(.noTarget): "noTarget"
     case .success(.secure): "secure"
     case .failure(let failure): "failure(\(failure.rawValue))"
     }

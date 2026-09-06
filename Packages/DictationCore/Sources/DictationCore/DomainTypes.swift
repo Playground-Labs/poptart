@@ -94,6 +94,18 @@ public struct DictationStart: Equatable, Sendable {
     }
 
     public init(
+        noTargetID id: DictationID,
+        occurredAt: Date,
+        targetContext: TargetContext,
+        personalVocabulary: PersonalVocabulary
+    ) {
+        self.id = id
+        self.occurredAt = occurredAt
+        self.targetCapture = .noTarget(context: targetContext)
+        self.personalVocabulary = personalVocabulary
+    }
+
+    public init(
         secureTargetID id: DictationID,
         occurredAt: Date,
         applicationIdentifier: String,
@@ -111,6 +123,7 @@ public struct DictationStart: Equatable, Sendable {
 
 public enum DictationTargetCapture: Equatable, Sendable {
     case editable(target: InsertionTarget, context: TargetContext)
+    case noTarget(context: TargetContext)
     case secure(applicationIdentifier: String, elementIdentifier: String)
 }
 
@@ -231,6 +244,7 @@ public enum DictationOutcome: Equatable, Sendable {
     case oversizedDeterministicFallback(method: DeliveryMethod, recordingEnd: RecordingEndReason)
     case recognitionHypothesisFallback(method: DeliveryMethod, recordingEnd: RecordingEndReason)
     case targetChangedClipboard(source: DeliveredTextKind, recordingEnd: RecordingEndReason)
+    case noTargetClipboard(source: DeliveredTextKind, recordingEnd: RecordingEndReason)
     case emptyRecognitionFailure(recordingEnd: RecordingEndReason)
     case secureTargetRejection
     case cancelled

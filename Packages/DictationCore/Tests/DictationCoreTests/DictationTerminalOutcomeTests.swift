@@ -116,6 +116,65 @@ final class DictationTerminalOutcomeTests: XCTestCase {
         XCTAssertTrue(completionEffects.contains { if case .recordHistory = $0 { true } else { false } })
     }
 
+    func testNoTargetDictationRecordsThenCopiesWithoutRevalidatingAnyTarget() async {
+        let clock = OutcomeFakeClock()
+        let session = DictationSessionActor(clock: clock)
+        let start = outcomeFixtureStart(noTarget: true)
+
+        let pressEffects = await session.handle(.press(start))
+        XCTAssertTrue(pressEffects.contains(.startRecording(.init(
+            id: start.id,
+            personalVocabulary: start.personalVocabulary
+        ))))
+        XCTAssertTrue(pressEffects.contains(.presentIndicator(.init(
+            dictationID: start.id,
+            state: .recording(audioActivity: nil)
+        ))))
+
+        _ = await session.handle(.release(start.id))
+        _ = await session.handle(.recognitionCompleted(
+            start.id,
+            .final(.init(text: "no field here"))
+        ))
+        let deliveryEffects = await session.handle(.cleanupCompleted(
+            start.id,
+            .cleaned(.init(text: "No field here.", metadata: .init(changed: true, editCount: 1)))
+        ))
+
+        XCTAssertFalse(deliveryEffects.contains { effect in
+            if case .revalidateTarget = effect { return true }
+            return false
+        })
+        XCTAssertTrue(deliveryEffects.contains { effect in
+            if case .copyToClipboard(let request) = effect {
+                return request.text == "No field here."
+            }
+            return false
+        })
+
+        let completionEffects = await session.handle(.deliveryCompleted(
+            start.id,
+            .copiedToClipboard
+        ))
+        let outcome = await session.snapshot().outcome
+        XCTAssertEqual(
+            outcome,
+            .noTargetClipboard(source: .cleaned, recordingEnd: .released)
+        )
+        XCTAssertTrue(completionEffects.contains(.presentIndicator(.init(
+            dictationID: start.id,
+            state: .copiedBecauseNoTarget
+        ))))
+        XCTAssertTrue(completionEffects.contains { effect in
+            if case .recordHistory(let record) = effect {
+                return record.deliveredText == "No field here."
+                    && record.rawTranscript == "no field here"
+                    && record.destinationApplicationIdentifier == "com.example.Editor"
+            }
+            return false
+        })
+    }
+
     func testEmptyFinalRecognitionProducesFailureWithoutDelivery() async {
         let clock = OutcomeFakeClock()
         let session = DictationSessionActor(clock: clock)
@@ -436,8 +495,23 @@ private final class OutcomeFakeClock: MonotonicClock, @unchecked Sendable {
 private func outcomeFixtureStart(
     id: DictationID = .init(),
     secure: Bool = false,
+    noTarget: Bool = false,
     selection: TextSelection? = nil
 ) -> DictationStart {
+    if noTarget {
+        return DictationStart(
+            noTargetID: id,
+            occurredAt: Date(timeIntervalSince1970: 1_800_000_000),
+            targetContext: .init(
+                applicationIdentifier: "com.example.Editor",
+                applicationCategory: .textEditor,
+                textBeforeCursor: "",
+                textAfterCursor: "",
+                selectedText: nil
+            ),
+            personalVocabulary: .init(entries: ["Poptart"])
+        )
+    }
     if secure {
         return DictationStart(
             secureTargetID: id,

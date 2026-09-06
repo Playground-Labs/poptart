@@ -17,7 +17,7 @@ Poptart collects and transmits no usage data or user-generated content; private 
 _Avoid_: Anonymous analytics, opt-out telemetry
 
 **Dictation**:
-One recording interaction that produces text at the current insertion point.
+One recording interaction that produces text at the current insertion point, or on the system clipboard when no Insertion Target is focused.
 _Avoid_: Recording job, transcription request
 
 **Recording**:
@@ -59,6 +59,10 @@ _Avoid_: Active app, destination window
 **Target Context**:
 A bounded, ephemeral slice of text surrounding the Insertion Target, plus application identity, used only to make Cleanup fit the destination.
 _Avoid_: Window context, screen context, conversation history
+
+**Clipboard Dictation**:
+A Dictation started with no Insertion Target, whose completed text is placed on the system clipboard instead of inserted into a field.
+_Avoid_: Clipboard mode, target-change copy
 
 **Personal Vocabulary**:
 The person's manually curated names, acronyms, and technical terms that guide both recognition and Cleanup.

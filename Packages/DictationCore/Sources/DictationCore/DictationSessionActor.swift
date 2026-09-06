@@ -64,7 +64,17 @@ public actor DictationSessionActor {
             break
         }
 
-        guard case .editable(let target, let targetContext) = start.targetCapture else {
+        let target: InsertionTarget?
+        let targetContext: TargetContext
+        switch start.targetCapture {
+        case .editable(let capturedTarget, let capturedContext):
+            target = capturedTarget
+            targetContext = capturedContext
+        case .noTarget(let capturedContext):
+            // A Clipboard Dictation records exactly like any other; it just has nowhere to insert.
+            target = nil
+            targetContext = capturedContext
+        case .secure:
             let outcome = DictationOutcome.secureTargetRejection
             state = .completed(start.id, outcome)
             return [.presentIndicator(.init(
@@ -202,10 +212,35 @@ public actor DictationSessionActor {
     private func beginDelivery(_ active: inout Active, now: MonotonicInstant) -> [DictationEffect] {
         active.phase = .delivering
         active.stageStartedAt = now
+        let indicator = DictationEffect.presentIndicator(
+            .init(dictationID: active.start.id, state: .delivering)
+        )
+
+        // A Clipboard Dictation has no Insertion Target to revalidate, so it routes straight to
+        // the clipboard on the same deadline a target-changed Dictation would use.
+        guard let target = active.target else {
+            guard let candidate = active.candidate,
+                  let deadlineStartedAt = active.deadlineStartedAt
+            else {
+                state = .active(active)
+                return []
+            }
+            active.deliveryRoute = .clipboard
+            state = .active(active)
+            return [
+                indicator,
+                .copyToClipboard(.init(
+                    id: active.start.id,
+                    text: candidate.text,
+                    deadline: deadlineStartedAt.advanced(by: policy.completionDeadline)
+                )),
+            ]
+        }
+
         state = .active(active)
         return [
-            .presentIndicator(.init(dictationID: active.start.id, state: .delivering)),
-            .revalidateTarget(.init(id: active.start.id, originalTarget: active.target)),
+            indicator,
+            .revalidateTarget(.init(id: active.start.id, originalTarget: target)),
         ]
     }
 
@@ -213,6 +248,7 @@ public actor DictationSessionActor {
         guard case .active(var active) = state,
               active.start.id == id,
               active.phase == .delivering,
+              let target = active.target,
               let candidate = active.candidate,
               active.deliveryRoute == nil,
               let deadlineStartedAt = active.deadlineStartedAt
@@ -224,7 +260,7 @@ public actor DictationSessionActor {
             state = .active(active)
             return [.deliverToTarget(.init(
                 id: id,
-                target: active.target,
+                target: target,
                 text: candidate.text,
                 deadline: deadlineStartedAt.advanced(by: policy.completionDeadline)
             ))]
@@ -278,9 +314,16 @@ public actor DictationSessionActor {
             deliveredText = candidate.text
             indicator = candidate.kind.successIndicator
         case (.clipboard, .copiedToClipboard):
-            outcome = .targetChangedClipboard(source: candidate.kind, recordingEnd: recordingEnd)
+            // A missing Insertion Target means this was a Clipboard Dictation from the press, not
+            // a Dictation whose target changed underneath it.
+            if active.target == nil {
+                outcome = .noTargetClipboard(source: candidate.kind, recordingEnd: recordingEnd)
+                indicator = .copiedBecauseNoTarget
+            } else {
+                outcome = .targetChangedClipboard(source: candidate.kind, recordingEnd: recordingEnd)
+                indicator = .copiedBecauseTargetChanged
+            }
             deliveredText = candidate.text
-            indicator = .copiedBecauseTargetChanged
         case (_, .failed(let failure)):
             outcome = .deliveryFailure(
                 source: candidate.kind,
@@ -506,7 +549,8 @@ public actor DictationSessionActor {
                     delivery: active.deliveryDuration,
                     completion: active.deadlineStartedAt?.duration(to: now)
                 ),
-                destinationApplicationIdentifier: active.target.applicationIdentifier
+                destinationApplicationIdentifier: active.target?.applicationIdentifier
+                    ?? active.targetContext.applicationIdentifier
             )))
         }
         return effects
@@ -522,7 +566,7 @@ private extension DictationSessionActor {
 
     struct Active {
         let start: DictationStart
-        let target: InsertionTarget
+        let target: InsertionTarget?
         let targetContext: TargetContext
         var phase: DictationPhase
         let recordingStartedAt: MonotonicInstant

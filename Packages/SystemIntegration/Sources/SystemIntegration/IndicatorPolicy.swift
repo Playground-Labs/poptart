@@ -51,6 +51,10 @@ public struct IndicatorVisual: Equatable, Sendable {
       (tone, audioActivity, accessibilityDescription) = (
         .fallback, nil, "Target changed; dictation copied"
       )
+    case .copiedBecauseNoTarget:
+      (tone, audioActivity, accessibilityDescription) = (
+        .fallback, nil, "No text field; dictation copied"
+      )
     case .failure:
       (tone, audioActivity, accessibilityDescription) = (.failure, nil, "Dictation failed")
     case .cancelled:

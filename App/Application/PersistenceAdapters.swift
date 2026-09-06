@@ -42,7 +42,7 @@ public actor EncryptedHistoryBoundary: HistoryBoundary {
             return .oversized
         case .recognitionHypothesisFallback:
             return .recognitionHypothesis
-        case .targetChangedClipboard:
+        case .targetChangedClipboard, .noTargetClipboard:
             return .copiedToClipboard
         case .emptyRecognitionFailure:
             return .emptyRecognition
@@ -74,6 +74,7 @@ private extension DictationCore.DictationOutcome {
              .oversizedDeterministicFallback(_, let end),
              .recognitionHypothesisFallback(_, let end),
              .targetChangedClipboard(_, let end),
+             .noTargetClipboard(_, let end),
              .emptyRecognitionFailure(let end),
              .deliveryFailure(_, _, let end):
             return end

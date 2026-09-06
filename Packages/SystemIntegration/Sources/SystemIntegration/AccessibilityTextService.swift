@@ -66,7 +66,19 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
     DictationTargetCapture, TargetCaptureFailure
   > {
     guard permission.isGranted() else { return .failure(.permissionDenied) }
-    guard let focused = Self.focusedElement() else { return .failure(.noEditableTarget) }
+    // Nothing readable has focus, so the dictation still records and lands on the clipboard.
+    guard let focused = Self.focusedElement() else {
+      let applicationIdentifier = NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? ""
+      return .success(
+        .noTarget(
+          context: TargetContext(
+            applicationIdentifier: applicationIdentifier,
+            applicationCategory: Self.category(for: applicationIdentifier),
+            textBeforeCursor: "",
+            textAfterCursor: "",
+            selectedText: nil
+          )))
+    }
 
     // Secure classification deliberately precedes every text or range query.
     let role = Self.stringAttribute(kAXRoleAttribute, of: focused.element)
@@ -91,8 +103,17 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
         hasWebDOMIdentifier: Self.implementsAttribute(
           AccessibilityTargetPolicy.webDOMIdentifierAttribute, of: focused.element)
       ))
+    // The focused element takes no text, so the dictation still records and lands on the clipboard.
     guard access == .direct || access == .pasteOnly else {
-      return .failure(.noEditableTarget)
+      return .success(
+        .noTarget(
+          context: TargetContext(
+            applicationIdentifier: focused.applicationIdentifier,
+            applicationCategory: Self.category(for: focused.applicationIdentifier),
+            textBeforeCursor: "",
+            textAfterCursor: "",
+            selectedText: nil
+          )))
     }
 
     let selection = Self.selectedRange(of: focused.element)

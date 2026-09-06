@@ -159,6 +159,13 @@ public actor DictationCoordinator {
                     targetContext: context,
                     personalVocabulary: await vocabulary()
                 )
+            case .noTarget(let context):
+                start = .init(
+                    noTargetID: id,
+                    occurredAt: wallClock(),
+                    targetContext: context,
+                    personalVocabulary: await vocabulary()
+                )
             case .secure(let applicationIdentifier, let elementIdentifier):
                 start = .init(
                     secureTargetID: id,

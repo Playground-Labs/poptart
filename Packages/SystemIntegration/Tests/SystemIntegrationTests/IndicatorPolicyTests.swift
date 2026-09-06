@@ -12,6 +12,7 @@ struct IndicatorPolicyTests {
       .approachingRecordingLimit(audioActivity: 0.2), .finalizingRecognition,
       .cleaning, .delivering, .success, .rawTranscriptFallback,
       .oversizedFallback, .recognitionFallback, .copiedBecauseTargetChanged,
+      .copiedBecauseNoTarget,
       .failure(.noUsableText), .failure(.recording), .failure(.delivery), .cancelled,
     ]
 
@@ -19,5 +20,11 @@ struct IndicatorPolicyTests {
     #expect(visuals.count == states.count)
     #expect(visuals.allSatisfy { $0.accessibilityDescription.isEmpty == false })
     #expect(visuals[2].audioActivity == 0.8)
+  }
+
+  @Test("a dictation that reached the clipboard is never presented as a failure")
+  func clipboardResultsShareTheFallbackTone() {
+    #expect(IndicatorVisual(.copiedBecauseNoTarget).tone == .fallback)
+    #expect(IndicatorVisual(.copiedBecauseTargetChanged).tone == .fallback)
   }
 }
