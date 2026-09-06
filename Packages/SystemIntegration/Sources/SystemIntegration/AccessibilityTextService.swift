@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+import Carbon.HIToolbox
 import DictationCore
 import Foundation
 
@@ -18,6 +19,19 @@ public struct SystemAccessibilityPermission: AccessibilityPermission {
   public func request() -> Bool {
     let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
     return AXIsProcessTrustedWithOptions(options)
+  }
+}
+
+/// Whether macOS is currently holding Secure Event Input, which a focused password field does.
+public protocol SecureInputState: Sendable {
+  func isEnabled() -> Bool
+}
+
+public struct SystemSecureInputState: SecureInputState {
+  public init() {}
+
+  public func isEnabled() -> Bool {
+    IsSecureEventInputEnabled()
   }
 }
 
@@ -40,6 +54,7 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
   private let clipboard: ClipboardPasteCoordinator
   private let confirmation: PasteConfirmationReader
   private let retry: TargetCaptureRetry
+  private let secureInput: any SecureInputState
   private let observer: DeliveryEvidenceObserver?
   private let lock = NSLock()
   private var capturedTargets: [String: CapturedTarget] = [:]
@@ -50,6 +65,7 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
     clipboard: ClipboardPasteCoordinator = .init(),
     confirmation: PasteConfirmationReader = .init(),
     retry: TargetCaptureRetry = .init(),
+    secureInput: any SecureInputState = SystemSecureInputState(),
     observer: DeliveryEvidenceObserver? = nil
   ) {
     self.permission = permission
@@ -57,6 +73,7 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
     self.clipboard = clipboard
     self.confirmation = confirmation
     self.retry = retry
+    self.secureInput = secureInput
     self.observer = observer
   }
 
@@ -75,9 +92,20 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
     DictationTargetCapture, TargetCaptureFailure
   > {
     guard permission.isGranted() else { return .failure(.permissionDenied) }
-    // Nothing readable has focus, so the dictation still records and lands on the clipboard.
     guard let focused = Self.focusedElement() else {
       let applicationIdentifier = NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? ""
+      // An unreadable focus is not evidence that no editable target is there. macOS holds Secure
+      // Event Input while a password field is focused, which is itself a reason these reads fail,
+      // so answering "no target" here would copy private speech to the clipboard that ADR 0047
+      // blocks. Secure input is answered as the secure target it is; only a quiet system records.
+      guard secureInput.isEnabled() == false else {
+        return .success(
+          .secure(
+            applicationIdentifier: applicationIdentifier,
+            elementIdentifier: UUID().uuidString
+          ))
+      }
+      // Nothing readable has focus, so the dictation still records and lands on the clipboard.
       return .success(
         .noTarget(
           context: TargetContext(
