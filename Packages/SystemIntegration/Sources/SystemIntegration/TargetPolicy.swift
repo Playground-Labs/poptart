@@ -201,3 +201,64 @@ public enum DirectInsertionVerification {
     return .reportedSuccessButUnverified
   }
 }
+
+/// Waits briefly for a focused editable target to appear before settling for a capture with none.
+///
+/// Activating a window publishes the window before it publishes the focused element inside it, so a
+/// shortcut pressed during that gap reads no focused element at all, or the window rather than the
+/// text field the user is looking at. A missing target is no longer an error but a Clipboard
+/// Dictation, which makes the gap silent: the user meant to type into the field they were switching
+/// to and finds the text on the clipboard instead. Polling only while the answer is still "no
+/// target" keeps the ordinary capture at a single Accessibility read and confines the extra latency
+/// to captures already heading for the clipboard.
+public struct TargetCapturePolicy: Equatable, Sendable {
+  public let budgetNanoseconds: Int64
+  public let pollIntervalNanoseconds: Int64
+
+  public init(
+    budgetNanoseconds: Int64 = 150_000_000,
+    pollIntervalNanoseconds: Int64 = 15_000_000
+  ) {
+    precondition(budgetNanoseconds >= 0)
+    precondition(pollIntervalNanoseconds > 0)
+    self.budgetNanoseconds = budgetNanoseconds
+    self.pollIntervalNanoseconds = pollIntervalNanoseconds
+  }
+}
+
+public struct TargetCaptureRetry: Sendable {
+  private let clock: any IntegrationNanosecondClock
+  private let sleeper: any IntegrationSleeper
+  private let policy: TargetCapturePolicy
+
+  public init(
+    clock: any IntegrationNanosecondClock = SystemIntegrationClock(),
+    sleeper: any IntegrationSleeper = SystemIntegrationSleeper(),
+    policy: TargetCapturePolicy = .init()
+  ) {
+    self.clock = clock
+    self.sleeper = sleeper
+    self.policy = policy
+  }
+
+  /// - Parameter attempt: reads whatever currently has focus. Called at least once.
+  @MainActor
+  public func capture(
+    attempt: () -> Result<DictationTargetCapture, TargetCaptureFailure>
+  ) async -> Result<DictationTargetCapture, TargetCaptureFailure> {
+    let start = clock.nowNanoseconds()
+    let budgetEnd = start + policy.budgetNanoseconds
+    while true {
+      let result = attempt()
+      // A secure field and a denied permission are answers, not delays: retrying them would turn a
+      // password field into a Clipboard Dictation. Only "nothing focused yet" is worth waiting on.
+      guard case .success(.noTarget) = result else { return result }
+      let now = clock.nowNanoseconds()
+      // The last attempt wins: its application identity is the freshest reading of where the user
+      // actually is.
+      guard now < budgetEnd else { return result }
+      await sleeper.sleep(
+        nanoseconds: UInt64(max(1, min(policy.pollIntervalNanoseconds, budgetEnd - now))))
+    }
+  }
+}

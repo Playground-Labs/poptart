@@ -39,6 +39,7 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
   private let contextBounds: TargetContextBounds
   private let clipboard: ClipboardPasteCoordinator
   private let confirmation: PasteConfirmationReader
+  private let retry: TargetCaptureRetry
   private let observer: DeliveryEvidenceObserver?
   private let lock = NSLock()
   private var capturedTargets: [String: CapturedTarget] = [:]
@@ -48,12 +49,14 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
     contextBounds: TargetContextBounds = .init(),
     clipboard: ClipboardPasteCoordinator = .init(),
     confirmation: PasteConfirmationReader = .init(),
+    retry: TargetCaptureRetry = .init(),
     observer: DeliveryEvidenceObserver? = nil
   ) {
     self.permission = permission
     self.contextBounds = contextBounds
     self.clipboard = clipboard
     self.confirmation = confirmation
+    self.retry = retry
     self.observer = observer
   }
 
@@ -63,6 +66,12 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
   }
 
   public func captureTarget(for id: DictationID) async -> Result<
+    DictationTargetCapture, TargetCaptureFailure
+  > {
+    await retry.capture { self.captureFocusedTarget(for: id) }
+  }
+
+  private func captureFocusedTarget(for id: DictationID) -> Result<
     DictationTargetCapture, TargetCaptureFailure
   > {
     guard permission.isGranted() else { return .failure(.permissionDenied) }
