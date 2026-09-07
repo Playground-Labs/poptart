@@ -55,9 +55,12 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
   private let confirmation: PasteConfirmationReader
   private let retry: TargetCaptureRetry
   private let secureInput: any SecureInputState
+  private let clock: any IntegrationNanosecondClock
   private let observer: DeliveryEvidenceObserver?
   private let lock = NSLock()
   private var capturedTargets: [String: CapturedTarget] = [:]
+  /// Only one Dictation is ever active, so the session can only have given up on one delivery.
+  private var cancelledDelivery: DictationID?
 
   public init(
     permission: any AccessibilityPermission = SystemAccessibilityPermission(),
@@ -66,6 +69,7 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
     confirmation: PasteConfirmationReader = .init(),
     retry: TargetCaptureRetry = .init(),
     secureInput: any SecureInputState = SystemSecureInputState(),
+    clock: any IntegrationNanosecondClock = SystemIntegrationClock(),
     observer: DeliveryEvidenceObserver? = nil
   ) {
     self.permission = permission
@@ -74,6 +78,7 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
     self.confirmation = confirmation
     self.retry = retry
     self.secureInput = secureInput
+    self.clock = clock
     self.observer = observer
   }
 
@@ -300,12 +305,24 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
   }
 
   public func copyToClipboard(_ request: ClipboardRequest) async -> DeliveryResult {
+    // A delivery to a target is already protected: cancelling drops the captured element, so the
+    // write finds nothing to write to. The clipboard has no captured element to drop, so without
+    // these two refusals a Dictation the session has already given up on would still replace what
+    // the person has on their clipboard, minutes of their own copying gone for text nobody is
+    // going to paste.
+    guard lock.withLock({ cancelledDelivery != request.id }) else {
+      return .failed(.cancelled)
+    }
+    guard clock.nowNanoseconds() < request.deadline.nanoseconds else {
+      return .failed(.completionDeadlineExceeded)
+    }
     let result = await clipboard.replaceClipboard(text: request.text)
     removeCaptures(for: request.id)
     return result
   }
 
   public func cancelDelivery(for id: DictationID) async {
+    lock.withLock { cancelledDelivery = id }
     removeCaptures(for: id)
   }
 

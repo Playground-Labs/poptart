@@ -213,6 +213,8 @@ public enum DeliveryFailure: String, Error, Equatable, Sendable {
     case clipboardOwnershipChanged
     case clipboardWriteFailed
     case completionDeadlineExceeded
+    /// The session gave up on this delivery before it reached the clipboard or the target.
+    case cancelled
 }
 
 public enum DeliveryResult: Equatable, Sendable {
