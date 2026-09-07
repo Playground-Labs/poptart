@@ -22,9 +22,21 @@ struct IndicatorPolicyTests {
     #expect(visuals[2].audioActivity == 0.8)
   }
 
-  @Test("a dictation that reached the clipboard is never presented as a failure")
-  func clipboardResultsShareTheFallbackTone() {
-    #expect(IndicatorVisual(.copiedBecauseNoTarget).tone == .fallback)
-    #expect(IndicatorVisual(.copiedBecauseTargetChanged).tone == .fallback)
+  @Test("a dictation left on the clipboard does not look like one that was inserted")
+  func clipboardResultsAreDistinctFromInsertedFallbacks() {
+    // Both reached the clipboard, so both still need the person to paste.
+    #expect(IndicatorVisual(.copiedBecauseNoTarget).tone == .copied)
+    #expect(IndicatorVisual(.copiedBecauseTargetChanged).tone == .copied)
+
+    // These landed in the target; nothing is left for the person to do.
+    #expect(IndicatorVisual(.rawTranscriptFallback).tone == .fallback)
+    #expect(IndicatorVisual(.oversizedFallback).tone == .fallback)
+    #expect(IndicatorVisual(.recognitionFallback).tone == .fallback)
+  }
+
+  @Test("reaching the clipboard is never presented as a failure")
+  func clipboardResultsAreNotFailures() {
+    #expect(IndicatorVisual(.copiedBecauseNoTarget).tone != .failure)
+    #expect(IndicatorVisual(.copiedBecauseTargetChanged).tone != .failure)
   }
 }

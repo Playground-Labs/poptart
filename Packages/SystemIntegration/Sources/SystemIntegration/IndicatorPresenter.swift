@@ -103,7 +103,14 @@ private final class IndicatorView: NSView {
         NSBezierPath(roundedRect: rect, xRadius: 2, yRadius: 2).fill()
       }
     } else {
-      NSBezierPath(ovalIn: NSRect(x: bounds.midX - 5, y: centerY - 5, width: 10, height: 10)).fill()
+      let mark = NSRect(x: bounds.midX - 5, y: centerY - 5, width: 10, height: 10)
+      // Colour alone would not carry this: the one completion that still needs the person to act
+      // is also the one they may be reading at a glance, or not distinguishing by hue at all.
+      if visual.tone == .copied {
+        NSBezierPath(roundedRect: mark, xRadius: 2, yRadius: 2).fill()
+      } else {
+        NSBezierPath(ovalIn: mark).fill()
+      }
     }
   }
 
@@ -114,6 +121,7 @@ private final class IndicatorView: NSView {
     case .warning: .systemOrange
     case .success: .systemGreen
     case .fallback: .systemYellow
+    case .copied: .systemPurple
     case .failure: .systemRed
     }
   }

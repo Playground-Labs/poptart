@@ -7,6 +7,9 @@ public enum IndicatorTone: String, Equatable, Sendable {
   case warning
   case success
   case fallback
+  /// The text is on the clipboard and the person has to paste it themselves. This is the only
+  /// completion that leaves work undone, so it does not share the inserted fallbacks' tone.
+  case copied
   case failure
 }
 
@@ -49,11 +52,11 @@ public struct IndicatorVisual: Equatable, Sendable {
       )
     case .copiedBecauseTargetChanged:
       (tone, audioActivity, accessibilityDescription) = (
-        .fallback, nil, "Target changed; dictation copied"
+        .copied, nil, "Target changed; dictation copied"
       )
     case .copiedBecauseNoTarget:
       (tone, audioActivity, accessibilityDescription) = (
-        .fallback, nil, "No text field; dictation copied"
+        .copied, nil, "No text field; dictation copied"
       )
     case .failure:
       (tone, audioActivity, accessibilityDescription) = (.failure, nil, "Dictation failed")
