@@ -72,6 +72,10 @@ _Avoid_: Custom words, learned vocabulary, dictionary
 The compact, persistent visual signal that shows Poptart is ready and communicates the state of the active Dictation.
 _Avoid_: Overlay window, HUD, widget
 
+**Outcome Toast**:
+The brief message shown above the Indicator that names how a Dictation ended when the person cannot already see that result on screen. It carries one of a fixed set of short messages and never live or completed transcript text.
+_Avoid_: Notification, alert, status text
+
 **Managed Model**:
 A versioned inference asset that Poptart selects, installs, verifies, and operates without asking the person to manage model technology.
 _Avoid_: User model, provider model

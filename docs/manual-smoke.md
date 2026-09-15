@@ -46,8 +46,9 @@ Result:
 
 ### 4. A secure field is refused
 Focus a password field (System Settings authentication prompt, or any login
-form) and hold the shortcut. Recording must not begin, the Indicator must show
-the unavailable-secure-target state, and no history entry may appear.
+form) and hold the shortcut. Recording must not begin, an Outcome Toast must
+report that Dictation is not available in a password field, and no history entry
+may appear.
 Result:
 
 ### 5. The Indicator behaves

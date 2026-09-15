@@ -1,67 +1,71 @@
 import DictationCore
 import Foundation
 
-public enum IndicatorTone: String, Equatable, Sendable {
-  case neutral
-  case active
-  case warning
-  case success
-  case fallback
-  /// The text is on the clipboard and the person has to paste it themselves. This is the only
-  /// completion that leaves work undone, so it does not share the inserted fallbacks' tone.
-  case copied
-  case failure
+/// The indicator says what it is doing by changing silhouette, never by changing hue. Colour is
+/// unreliable as the sole carrier of meaning — it is invisible to a person who does not know the
+/// legend, and to one who cannot separate the hues at all.
+public enum IndicatorShape: Equatable, Sendable {
+  /// A blank sliver: present, saying nothing.
+  case collapsed
+  case waveform(level: Double?)
+  case spinner
 }
 
 public struct IndicatorVisual: Equatable, Sendable {
-  public let tone: IndicatorTone
-  public let audioActivity: Double?
+  public let shape: IndicatorShape
+  /// `nil` means the indicator stays silent. A toast fires only when the outcome is not already
+  /// obvious on screen: inserted text is right there in the person's document, so announcing
+  /// "inserted" would nag on the most common path. Silence on success is the design, not an
+  /// oversight.
+  public let toast: String?
   public let accessibilityDescription: String
 
   public init(_ state: IndicatorState) {
     switch state {
     case .ready:
-      (tone, audioActivity, accessibilityDescription) = (.neutral, nil, "Poptart ready")
+      (shape, toast, accessibilityDescription) = (.collapsed, nil, "Poptart ready")
     case .unavailableSecureTarget:
-      (tone, audioActivity, accessibilityDescription) = (
-        .warning, nil, "Dictation unavailable in secure field"
+      (shape, toast, accessibilityDescription) = (
+        .collapsed, "Not available in a password field", "Dictation unavailable in secure field"
       )
     case .recording(let activity):
-      (tone, audioActivity, accessibilityDescription) = (.active, activity, "Recording")
+      (shape, toast, accessibilityDescription) = (.waveform(level: activity), nil, "Recording")
     case .approachingRecordingLimit(let activity):
-      (tone, audioActivity, accessibilityDescription) = (
-        .warning, activity, "Recording limit approaching"
+      (shape, toast, accessibilityDescription) = (
+        .waveform(level: activity), "Thirty seconds left", "Recording limit approaching"
       )
     case .finalizingRecognition:
-      (tone, audioActivity, accessibilityDescription) = (.active, nil, "Finalizing recognition")
+      (shape, toast, accessibilityDescription) = (.spinner, nil, "Finalizing recognition")
     case .cleaning:
-      (tone, audioActivity, accessibilityDescription) = (.active, nil, "Cleaning dictation")
+      (shape, toast, accessibilityDescription) = (.spinner, nil, "Cleaning dictation")
     case .delivering:
-      (tone, audioActivity, accessibilityDescription) = (.active, nil, "Delivering dictation")
+      (shape, toast, accessibilityDescription) = (.spinner, nil, "Delivering dictation")
     case .success:
-      (tone, audioActivity, accessibilityDescription) = (.success, nil, "Dictation inserted")
+      (shape, toast, accessibilityDescription) = (.collapsed, nil, "Dictation inserted")
     case .rawTranscriptFallback:
-      (tone, audioActivity, accessibilityDescription) = (.fallback, nil, "Raw transcript inserted")
+      (shape, toast, accessibilityDescription) = (.collapsed, nil, "Raw transcript inserted")
     case .oversizedFallback:
-      (tone, audioActivity, accessibilityDescription) = (
-        .fallback, nil, "Deterministic cleanup inserted"
+      (shape, toast, accessibilityDescription) = (
+        .collapsed, nil, "Deterministic cleanup inserted"
       )
     case .recognitionFallback:
-      (tone, audioActivity, accessibilityDescription) = (
-        .fallback, nil, "Recognition hypothesis inserted"
+      (shape, toast, accessibilityDescription) = (
+        .collapsed, nil, "Recognition hypothesis inserted"
       )
     case .copiedBecauseTargetChanged:
-      (tone, audioActivity, accessibilityDescription) = (
-        .copied, nil, "Target changed; dictation copied"
+      (shape, toast, accessibilityDescription) = (
+        .collapsed, "Copied to clipboard", "Target changed; dictation copied"
       )
     case .copiedBecauseNoTarget:
-      (tone, audioActivity, accessibilityDescription) = (
-        .copied, nil, "No text field; dictation copied"
+      (shape, toast, accessibilityDescription) = (
+        .collapsed, "Copied to clipboard", "No text field; dictation copied"
       )
     case .failure:
-      (tone, audioActivity, accessibilityDescription) = (.failure, nil, "Dictation failed")
+      (shape, toast, accessibilityDescription) = (
+        .collapsed, "Dictation failed", "Dictation failed"
+      )
     case .cancelled:
-      (tone, audioActivity, accessibilityDescription) = (.neutral, nil, "Dictation cancelled")
+      (shape, toast, accessibilityDescription) = (.collapsed, nil, "Dictation cancelled")
     }
   }
 }

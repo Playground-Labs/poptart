@@ -38,7 +38,7 @@ The inherited repository will be renamed or archived as `poptart-legacy` only wh
 - Cursor-local Target Context and manually managed Personal Vocabulary.
 - Accessibility-first insertion and a clipboard-preserving paste fallback.
 - Selection replacement when the original selection remains valid.
-- A persistent, transcript-free Indicator.
+- A persistent, transcript-free Indicator and a transcript-free Outcome Toast.
 - Encrypted local Dictation history with a 30-day rolling lifetime.
 - One managed recognition model and one managed Cleanup model.
 - A user-initiated, signed model-pack installation and update path.
@@ -64,7 +64,7 @@ The inherited repository will be renamed or archived as `poptart-legacy` only wh
 6. When the input is within its measured budget, the Cleanup Managed Model proposes a compact Cleanup Edit Plan.
 7. Poptart validates and applies accepted edits. A timeout, unsafe plan, or model failure selects the Raw Transcript path.
 8. Poptart revalidates the Insertion Target and inserts the result.
-9. The Indicator communicates success or the specific fallback class without showing dictated text.
+9. The Indicator returns to its ready shape. An Outcome Toast reports the result only when that result is not already visible at the insertion point.
 10. Poptart writes the encrypted Dictation Record and destroys the captured audio.
 
 If the target changed during Dictation, Poptart copies the completed text to the system clipboard and clearly reports that result. It never inserts private speech into a newly focused field.
@@ -92,7 +92,7 @@ The app is native Swift. SwiftUI owns onboarding, settings, history, vocabulary,
 | `Insertion` | Accessibility writes, selection replacement, pasteboard transaction, target-change clipboard result | Recognition or Cleanup |
 | `ModelRuntime` | Signed model-pack install, atomic activation, warm residency, memory-pressure release | Product settings beyond pack state |
 | `Persistence` | CryptoKit field encryption, Keychain key, history expiry, vocabulary storage | Inference or UI state |
-| `IndicatorUI` | Nonactivating AppKit panel and state/audio visualization | Transcript text or session decisions |
+| `IndicatorUI` | Nonactivating AppKit panel, state and audio visualization, and Outcome Toast presentation | Transcript text or session decisions |
 | `SettingsUI` | SwiftUI onboarding, permissions, shortcut, model status, vocabulary, history | Direct system integration |
 
 Use local Swift packages to enforce these boundaries. Framework adapters conform to narrow protocols owned by the domain module, so FluidAudio and MLX Swift LM remain replaceable implementation details.
@@ -258,23 +258,24 @@ Delivery policy:
 
 ## Indicator
 
-The Indicator is persistent, compact, nonactivating, and never displays live or completed transcript text. It represents:
+The Indicator is persistent, compact, nonactivating, and never displays live or completed transcript text. It sits at the bottom of the screen, just above the Dock. It is rendered monochrome and contains no words. Its silhouette is the whole vocabulary; color encodes nothing.
 
-- ready;
-- unavailable secure target;
-- recording with audio activity;
-- approaching the five-minute limit;
-- finalizing recognition;
-- cleaning;
-- delivering;
-- success;
-- Raw Transcript fallback;
-- recognition fallback;
-- copied because the target changed;
-- copied because no Insertion Target was focused;
-- failure with no usable text.
+The shapes are:
 
-Completion and failure states remain visible long enough to be understood, then return to ready without stealing focus.
+- a blank collapsed sliver when Poptart is ready and between Dictations;
+- a twenty-one bar waveform driven by audio activity during Recording;
+- a spinner while finalizing, cleaning, and delivering.
+
+No outcome has a shape of its own. The Indicator returns to the collapsed sliver as soon as a Dictation ends, however it ended, without stealing focus.
+
+An Outcome Toast appears directly above the Indicator, shows one short fixed message, and dismisses itself. It speaks only for outcomes that are not already evident on screen:
+
+- “Copied to clipboard” when the Insertion Target changed, and when no Insertion Target was focused;
+- “Dictation failed” when there is no usable text;
+- “Not available in a password field” when the focused control is secure;
+- “Thirty seconds left” as a Recording approaches the five-minute limit.
+
+Every other outcome is silent. Cleaned insertion, the Raw Transcript fallback, the oversized-input fallback, and the recognition-hypothesis fallback all deliver their words to the insertion point where the person can read them, and cancellation is deliberate. Those distinctions live in the Dictation Record rather than on screen. The Outcome Toast shows only the fixed messages above and never live or completed transcript text.
 
 ## Models and offline operation
 
@@ -396,7 +397,7 @@ Reused Handy-derived code is copied selectively only after review and retains al
 - Clipboard-preserving paste restores every represented pasteboard item after successful or failed paste.
 - Target changes copy but never paste into the new target.
 - A Dictation started with no Insertion Target records, copies to the clipboard, and creates history.
-- Every fallback produces the documented Indicator and history outcome.
+- Every fallback produces the documented history outcome, and produces an Outcome Toast only where the Indicator section requires one.
 
 ### Cleanup quality
 

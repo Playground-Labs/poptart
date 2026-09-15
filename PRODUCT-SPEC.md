@@ -16,7 +16,7 @@ Build Poptart again in a clean public repository as a fully native Swift applica
 
 The person holds right Option, speaks, and releases. Poptart recognizes speech incrementally while Recording, finalizes the Raw Transcript at key-up, applies fast deterministic Explicit Corrections, and asks one small task-specific local model for a compact Cleanup Edit Plan. Poptart validates every proposed edit and inserts the cleaned result at the original Insertion Target. If recognition, model Cleanup, validation, or delivery cannot complete safely, Poptart follows a documented deadline-safe Fallback instead of delaying or losing the Dictation.
 
-The product exposes one Conservative Cleanup behavior and one primary shortcut. It has no Command Mode, cloud inference, account, activation, telemetry, or retained audio. Cursor-local Target Context and Personal Vocabulary improve Cleanup without reading an entire document or sending content off the Mac. A persistent transcript-free Indicator makes recording, processing, fallback, and completion state visible.
+The product exposes one Conservative Cleanup behavior and one primary shortcut. It has no Command Mode, cloud inference, account, activation, telemetry, or retained audio. Cursor-local Target Context and Personal Vocabulary improve Cleanup without reading an entire document or sending content off the Mac. A persistent transcript-free Indicator makes readiness, Recording, and processing visible through shape alone, and a brief Outcome Toast above it reports only the results a person cannot already see.
 
 The application installs one signed Model Pack during onboarding. That pack contains an English FluidAudio/Parakeet recognition model and a four-bit, task-specific Qwen 3.5 0.8B Cleanup model running in-process through MLX Swift LM. Both models normally remain warm for the application lifetime. The exact Cleanup weights, training recipe, evaluation harness, and redistributable training corpus are public.
 
@@ -29,7 +29,7 @@ The application installs one signed Model Pack during onboarding. That pack cont
 5. As a new Poptart user, I want onboarding to test my shortcut, so that I know it works before relying on it in another application.
 6. As a Poptart user, I want the Indicator to show that Poptart is ready, so that I know Dictation is available.
 7. As a Poptart user, I want the Indicator to react to my voice while Recording, so that I know the microphone is receiving audio.
-8. As a privacy-conscious user, I want the Indicator to omit live transcript text, so that nearby people cannot read my Dictation from an overlay.
+8. As a privacy-conscious user, I want the Indicator and the Outcome Toast to omit live transcript text, so that nearby people cannot read my Dictation from an overlay.
 9. As a Poptart user, I want key-up to end Recording immediately, so that I control exactly what audio belongs to the Dictation.
 10. As a Poptart user, I want a visual warning before a five-minute Recording limit, so that a safety stop is not surprising.
 11. As a Poptart user, I want Poptart to stop a Recording after five minutes, so that a stuck shortcut cannot leave the microphone active indefinitely.
@@ -66,46 +66,47 @@ The application installs one signed Model Pack during onboarding. That pack cont
 42. As a Poptart user, I want paste fallback to restore my previous clipboard, so that routine Dictation does not destroy copied data.
 43. As a privacy-conscious user, I want Poptart to avoid inserting into a newly focused application, so that private speech cannot leak to the wrong destination.
 44. As a Poptart user, I want the result copied to the clipboard when the Insertion Target changes, so that my Dictation remains recoverable.
-45. As a Poptart user, I want the Indicator to tell me when a target change caused clipboard delivery, so that I know to paste manually.
+45. As a Poptart user, I want an Outcome Toast when a target change caused clipboard delivery, so that I know to paste manually.
 46. As a Poptart user, I want the result copied to the clipboard when no editable field is focused, so that Poptart records my speech instead of refusing it.
-47. As a Poptart user, I want the Indicator to tell me when a missing editable field caused clipboard delivery, so that I know to paste manually.
-48. As a privacy-conscious user, I want Dictation blocked in password and other secure fields, so that sensitive entry never enters the speech pipeline.
-49. As a privacy-conscious user, I want secure-field attempts omitted from history, so that even blocked sensitive actions leave no text record.
-50. As a Poptart user, I want local history to show what recognition heard and what Poptart delivered, so that I can understand Cleanup behavior.
-51. As a Poptart user, I want history to identify changed, Raw Transcript, oversized, recognition, and clipboard outcomes, so that every result is explainable.
-52. As a Poptart user, I want local stage timings in history, so that I can diagnose slow behavior without sending diagnostics elsewhere.
-53. As a Poptart user, I want to copy a prior Dictation from history, so that I can recover text after an insertion problem.
-54. As a Poptart user, I want to delete an individual Dictation Record, so that I control retained text.
-55. As a Poptart user, I want a visible Clear History action, so that I can remove all retained Dictations immediately.
-56. As a privacy-conscious user, I want history to expire after 30 days, so that old Dictations do not accumulate indefinitely by default.
-57. As a privacy-conscious user, I want sensitive history and Personal Vocabulary encrypted with a key held in Keychain, so that application data is not stored as readable plaintext.
-58. As a privacy-conscious user, I want Target Context destroyed after each Dictation, so that nearby document text never becomes history.
-59. As a privacy-conscious user, I want recorded audio discarded after recognition, so that Poptart never becomes an audio archive.
-60. As a privacy-conscious user, I want normal startup and Dictation to make no network requests, so that local processing is verifiable.
-61. As a privacy-conscious user, I want no analytics, crash uploads, or diagnostics opt-in, so that “privacy-first” has no hidden exception.
-62. As a Poptart user, I want no account, activation, or device registration, so that the app remains useful offline and does not identify my Mac.
-63. As a new Poptart user, I want onboarding to explain microphone and Accessibility permissions, so that I understand why each permission is needed.
-64. As a new Poptart user, I want onboarding to show the Model Pack size and licenses before download, so that network and storage use are explicit.
-65. As a new Poptart user, I want a resumable Model Pack download, so that an interrupted connection does not force a complete restart.
-66. As a Poptart user, I want model artifacts verified before activation, so that corrupted or substituted files never execute.
-67. As a Poptart user, I want recognition and Cleanup models activated together, so that incompatible versions cannot be mixed.
-68. As a Poptart user, I want model activation to preserve the last valid pack until the new pack works, so that a failed update does not break offline Dictation.
-69. As a Poptart user, I want model repair and updates to begin only when I request them, so that Poptart makes no surprise network connection.
-70. As a Poptart user, I want models kept warm while Poptart runs, so that arbitrary residency timers do not make occasional Dictations slow.
-71. As a Mac user under memory pressure, I want Poptart to yield model memory when the system needs it, so that the app remains a good platform citizen.
-72. As a Poptart user, I want Raw Transcript fallback while a released model reloads, so that memory pressure does not break the completion promise.
-73. As a Poptart user, I want settings for the microphone, shortcut, launch at login, Model Pack, permissions, vocabulary, and history, so that core behavior remains manageable without model-provider complexity.
-74. As a Poptart user, I want explicit application and Model Pack update checks, so that I control every post-onboarding network action.
-75. As an open-source user, I want the application code and Cleanup model artifacts public, so that privacy and behavior can be audited.
-76. As an open-source contributor, I want the Cleanup training recipe and evaluation harness, so that model improvements are reproducible.
-77. As an open-source contributor, I want training data provenance and redistribution rights documented, so that the public model is legally and ethically reviewable.
-78. As an open-source contributor, I want domain modules separated from Apple and model framework adapters, so that behavior can be tested without microphones, UI automation, or loaded models.
-79. As an open-source contributor, I want late asynchronous results rejected by Dictation identity, so that concurrency cannot deliver text from an obsolete session.
-80. As a release maintainer, I want every release measured on an 8 GB M1, so that the stated minimum hardware has evidence behind it.
-81. As a release maintainer, I want at least 99% of representative Dictations delivered within 1.5 seconds, so that latency is a release criterion rather than an aspiration.
-82. As a release maintainer, I want privacy, network-deny, model-signature, interruption, and rollback tests, so that local-first behavior survives real failures.
-83. As a Playground Labs maintainer, I want the new Poptart to install beside the legacy application during beta, so that testers retain a reliable fallback.
-84. As a Playground Labs maintainer, I want no legacy data import, so that the native architecture begins with a clean security and migration boundary.
+47. As a Poptart user, I want an Outcome Toast when a missing editable field caused clipboard delivery, so that I know to paste manually.
+48. As a Poptart user, I want no Outcome Toast when the dictated words already appear at my cursor, so that a routine Dictation ends without being told what I can already see.
+49. As a privacy-conscious user, I want Dictation blocked in password and other secure fields, so that sensitive entry never enters the speech pipeline.
+50. As a privacy-conscious user, I want secure-field attempts omitted from history, so that even blocked sensitive actions leave no text record.
+51. As a Poptart user, I want local history to show what recognition heard and what Poptart delivered, so that I can understand Cleanup behavior.
+52. As a Poptart user, I want history to identify changed, Raw Transcript, oversized, recognition, and clipboard outcomes, so that every result is explainable.
+53. As a Poptart user, I want local stage timings in history, so that I can diagnose slow behavior without sending diagnostics elsewhere.
+54. As a Poptart user, I want to copy a prior Dictation from history, so that I can recover text after an insertion problem.
+55. As a Poptart user, I want to delete an individual Dictation Record, so that I control retained text.
+56. As a Poptart user, I want a visible Clear History action, so that I can remove all retained Dictations immediately.
+57. As a privacy-conscious user, I want history to expire after 30 days, so that old Dictations do not accumulate indefinitely by default.
+58. As a privacy-conscious user, I want sensitive history and Personal Vocabulary encrypted with a key held in Keychain, so that application data is not stored as readable plaintext.
+59. As a privacy-conscious user, I want Target Context destroyed after each Dictation, so that nearby document text never becomes history.
+60. As a privacy-conscious user, I want recorded audio discarded after recognition, so that Poptart never becomes an audio archive.
+61. As a privacy-conscious user, I want normal startup and Dictation to make no network requests, so that local processing is verifiable.
+62. As a privacy-conscious user, I want no analytics, crash uploads, or diagnostics opt-in, so that “privacy-first” has no hidden exception.
+63. As a Poptart user, I want no account, activation, or device registration, so that the app remains useful offline and does not identify my Mac.
+64. As a new Poptart user, I want onboarding to explain microphone and Accessibility permissions, so that I understand why each permission is needed.
+65. As a new Poptart user, I want onboarding to show the Model Pack size and licenses before download, so that network and storage use are explicit.
+66. As a new Poptart user, I want a resumable Model Pack download, so that an interrupted connection does not force a complete restart.
+67. As a Poptart user, I want model artifacts verified before activation, so that corrupted or substituted files never execute.
+68. As a Poptart user, I want recognition and Cleanup models activated together, so that incompatible versions cannot be mixed.
+69. As a Poptart user, I want model activation to preserve the last valid pack until the new pack works, so that a failed update does not break offline Dictation.
+70. As a Poptart user, I want model repair and updates to begin only when I request them, so that Poptart makes no surprise network connection.
+71. As a Poptart user, I want models kept warm while Poptart runs, so that arbitrary residency timers do not make occasional Dictations slow.
+72. As a Mac user under memory pressure, I want Poptart to yield model memory when the system needs it, so that the app remains a good platform citizen.
+73. As a Poptart user, I want Raw Transcript fallback while a released model reloads, so that memory pressure does not break the completion promise.
+74. As a Poptart user, I want settings for the microphone, shortcut, launch at login, Model Pack, permissions, vocabulary, and history, so that core behavior remains manageable without model-provider complexity.
+75. As a Poptart user, I want explicit application and Model Pack update checks, so that I control every post-onboarding network action.
+76. As an open-source user, I want the application code and Cleanup model artifacts public, so that privacy and behavior can be audited.
+77. As an open-source contributor, I want the Cleanup training recipe and evaluation harness, so that model improvements are reproducible.
+78. As an open-source contributor, I want training data provenance and redistribution rights documented, so that the public model is legally and ethically reviewable.
+79. As an open-source contributor, I want domain modules separated from Apple and model framework adapters, so that behavior can be tested without microphones, UI automation, or loaded models.
+80. As an open-source contributor, I want late asynchronous results rejected by Dictation identity, so that concurrency cannot deliver text from an obsolete session.
+81. As a release maintainer, I want every release measured on an 8 GB M1, so that the stated minimum hardware has evidence behind it.
+82. As a release maintainer, I want at least 99% of representative Dictations delivered within 1.5 seconds, so that latency is a release criterion rather than an aspiration.
+83. As a release maintainer, I want privacy, network-deny, model-signature, interruption, and rollback tests, so that local-first behavior survives real failures.
+84. As a Playground Labs maintainer, I want the new Poptart to install beside the legacy application during beta, so that testers retain a reliable fallback.
+85. As a Playground Labs maintainer, I want no legacy data import, so that the native architecture begins with a clean security and migration boundary.
 
 ## Implementation Decisions
 
@@ -124,8 +125,11 @@ The application installs one signed Model Pack during onboarding. That pack cont
 - Use right Option alone as the default press-and-hold shortcut. Expose one configurable Dictation binding.
 - Key-down captures the Insertion Target and starts Recording. Key-up ends Recording and starts the Completion Deadline.
 - Cap one Recording at five minutes and begin a visual warning at four minutes and thirty seconds.
-- Keep one persistent, compact, nonactivating Indicator visible while Poptart runs.
-- Show state and audio activity only; never show partial or completed transcript text in the Indicator.
+- Keep one persistent, compact, nonactivating Indicator visible while Poptart runs, at the bottom of the screen just above the Dock.
+- Give the Indicator a monochrome shape vocabulary: a blank collapsed sliver when ready, a twenty-one bar waveform during Recording, and a spinner while finalizing, cleaning, and delivering. Color carries no meaning and no outcome has a shape of its own.
+- Show state and audio activity only; never show partial or completed transcript text in the Indicator or the Outcome Toast.
+- Report a result with a brief Outcome Toast directly above the Indicator. It carries one short fixed message, dismisses itself, and never puts words inside the Indicator.
+- Limit the Outcome Toast to the four results a person cannot already see: copied to clipboard, Dictation failed, unavailable in a password field, and thirty seconds left in a Recording. Stay silent for inserted text, for every Fallback that still delivers words, and for cancellation.
 - Build onboarding, settings, history, vocabulary, and ordinary windows with SwiftUI.
 - Use narrow AppKit adapters for the menu-bar lifecycle, nonactivating Indicator panel, global event taps, Accessibility, window ordering, and text insertion.
 - Keep Cleanup in the normal Dictation path. Do not create a separate post-processing shortcut, Command Mode, or model-provider UI.
@@ -245,7 +249,7 @@ The application installs one signed Model Pack during onboarding. That pack cont
 ## Testing Decisions
 
 - Use one primary behavioral seam: drive a complete `DictationSession` through injected input events, fake time, and fake system adapters, then assert only observable outcomes.
-- Observable outcomes are delivered or copied text, Indicator snapshots, requested history writes, outcome/Fallback classification, cancellation, and elapsed deadline behavior.
+- Observable outcomes are delivered or copied text, Indicator snapshots, Outcome Toast messages, requested history writes, outcome/Fallback classification, cancellation, and elapsed deadline behavior.
 - Do not assert actor scheduling, private helper calls, prompt-builder implementation, internal state storage, or framework-specific method invocation from the primary behavior suite.
 - Use a deterministic fake clock. No deadline behavior test may wait on wall-clock sleeps.
 - Use scripted recognition and Cleanup adapters capable of returning success, partials, timeouts, cancellation, malformed plans, unsafe plans, and late results.
@@ -257,6 +261,7 @@ The application installs one signed Model Pack during onboarding. That pack cont
 - Verify direct insertion success, Accessibility failure with clipboard-preserving paste, paste timeout, clipboard ownership changes, and target-change copy behavior.
 - Verify that a Dictation started with no editable target records, copies to the clipboard, and creates a Dictation Record.
 - Verify successful Cleanup, Raw Transcript Fallback, Recognition Hypothesis Fallback, empty recognition, oversized deterministic Fallback, model timeout, invalid schema, bad spans, overlap, excessive edits, blank output, and cancellation.
+- Verify that an Outcome Toast appears for exactly the four documented results and that every other outcome, including each Fallback that still delivers words, produces none.
 - Verify the watchdog at the boundary immediately before, at, and immediately after 1.4 seconds, plus final delivery within 1.5 seconds.
 - Test Explicit Correction parsing and Cleanup Edit Plan validation as pure behavioral components with table-driven gold and adversarial examples.
 - Require the deterministic Explicit Correction corpus to pass completely.
@@ -264,7 +269,7 @@ The application installs one signed Model Pack during onboarding. That pack cont
 - Include adversarial examples containing prompt injection in Raw Transcript and Target Context, hidden Unicode, control characters, URLs, numbers, context-copy attempts, excessive deletion, overlapping spans, and stylistic rewrites.
 - Add contract tests around FluidAudio for partial/final ordering, cancellation, vocabulary capability reporting, audio release, and error translation.
 - Add contract tests around MLX for local artifact loading, bounded edit-plan parsing, cancellation, warm reuse, memory-pressure unload, and late completion.
-- Add macOS integration tests for secure-field detection, Accessibility target capture/revalidation, selected-range replacement, nonactivating Indicator behavior, and pasteboard restoration.
+- Add macOS integration tests for secure-field detection, Accessibility target capture/revalidation, selected-range replacement, nonactivating Indicator and Outcome Toast behavior, and pasteboard restoration.
 - Add Model Pack integration tests with a local HTTP server for fresh and resumed downloads, valid and invalid ranges, interruption, cancellation, size limits, hash mismatch, manifest-signature failure, incompatible versions, smoke-test failure, atomic activation, and rollback.
 - Add persistence tests proving sensitive values are not present as plaintext, expiry works, individual and bulk deletion work, Keychain key loss makes old records unreadable, and reset recovers a usable empty store.
 - Add network-deny tests proving normal startup, Dictation, settings, history, vocabulary, and inference work without outbound access.
