@@ -19,15 +19,15 @@ private final class IndicatorUI {
   /// The panel is the silhouette, so its size is part of the vocabulary, not a layout detail.
   private static func size(for shape: IndicatorShape) -> NSSize {
     switch shape {
-    case .collapsed: NSSize(width: 64, height: 10)
-    case .waveform: NSSize(width: 163, height: 44)
-    case .spinner: NSSize(width: 72, height: 44)
+    case .collapsed: NSSize(width: 51, height: 10)
+    case .waveform: NSSize(width: 98, height: 26)
+    case .spinner: NSSize(width: 43, height: 26)
     }
   }
 
   private static let screenInset: CGFloat = 10
   private static let toastGap: CGFloat = 8
-  private static let morphDuration: TimeInterval = 0.3
+  private static let morphDuration: TimeInterval = 0.17
 
   private let panel: IndicatorPanel
   private let indicatorView: IndicatorView
@@ -92,7 +92,9 @@ private final class IndicatorUI {
     }
     NSAnimationContext.runAnimationGroup { context in
       context.duration = IndicatorUI.morphDuration
-      context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+      // Overshoot past the target and settle back, so opening reads as a snap rather than a
+      // glide. The shape is the only thing announcing that recording started; it has to arrive.
+      context.timingFunction = CAMediaTimingFunction(controlPoints: 0.2, 1.7, 0.3, 1)
       panel.animator().setFrame(frame, display: true)
     }
     toast.anchor(at: toastOrigin, animated: true)
@@ -195,17 +197,21 @@ private final class IndicatorView: NSView {
 
   private func drawWaveform(level: Double?) {
     let level = level.map { min(1, max(0, $0)) } ?? IndicatorView.restingLevel
-    let inset: CGFloat = 10
+    // Speech sits low in a linear 0...1 scale, so a raw level leaves every bar pinned near the
+    // floor and the waveform looks frozen. The curve lifts ordinary talking into the visible part
+    // of the pill; the floor keeps it alive between syllables.
+    let shaped = pow(level, 0.45)
+    let inset: CGFloat = 7
     let available = max(0, bounds.width - inset * 2)
     let count = IndicatorView.barWeights.count
     let pitch = available / CGFloat(count)
-    let barWidth = max(1, pitch * 0.43)
-    let resting: CGFloat = 3
-    let tallest = max(resting, bounds.height - 14)
+    let barWidth = max(1, pitch * 0.5)
+    let resting: CGFloat = 2
+    let tallest = max(resting, bounds.height - bounds.height * 0.42)
     NSColor.labelColor.setFill()
     for index in 0..<count {
-      let ripple = 0.65 + 0.35 * sin(phase * 2.4 + Double(index) * 0.55)
-      let amplitude = level * IndicatorView.barWeights[index] * ripple
+      let ripple = 0.45 + 0.55 * sin(phase * 5.2 + Double(index) * 0.8)
+      let amplitude = min(1, shaped * IndicatorView.barWeights[index] * ripple + 0.08)
       let height = resting + (tallest - resting) * CGFloat(amplitude)
       let rect = NSRect(
         x: inset + pitch * CGFloat(index) + (pitch - barWidth) / 2,
