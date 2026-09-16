@@ -17,7 +17,7 @@ public actor IndicatorPresenter: IndicatorBoundary {
 /// settle rather than stop dead: a hard snap reads as a glitch at this size, and a symmetric ease
 /// reads as sluggish. The weight lives in the deceleration.
 private enum IndicatorMotion {
-  static let duration: TimeInterval = 0.28
+  static let duration: TimeInterval = 0.31
   static var timing: CAMediaTimingFunction {
     CAMediaTimingFunction(controlPoints: 0.22, 1.12, 0.26, 1)
   }
