@@ -55,7 +55,6 @@ public struct InstalledModelPack: Codable, Equatable, Sendable {
 
 private struct ActiveState: Codable, Sendable {
   var current: InstalledModelPack
-  var previous: InstalledModelPack?
 }
 
 /// The only production entry point that can reach the download boundary. Every operation requires
@@ -133,7 +132,7 @@ public actor ModelPackInstaller {
         UUID().uuidString, isDirectory: true)
       try FileManager.default.moveItem(at: stage, to: installedDirectory)
       let installed = InstalledModelPack(directory: installedDirectory, manifest: manifest)
-      let newState = ActiveState(current: installed, previous: state?.current)
+      let newState = ActiveState(current: installed)
       try persist(newState)
       state = newState
       return installed
@@ -144,20 +143,6 @@ public actor ModelPackInstaller {
     } catch {
       throw ModelPackError.fileSystemFailure
     }
-  }
-
-  @discardableResult
-  public func rollback() throws -> InstalledModelPack {
-    guard let current = state?.current, let previous = state?.previous else {
-      throw ModelPackError.noPreviousPack
-    }
-    guard FileManager.default.fileExists(atPath: previous.directory.path) else {
-      throw ModelPackError.invalidActiveState
-    }
-    let newState = ActiveState(current: previous, previous: current)
-    try persist(newState)
-    state = newState
-    return previous
   }
 
   private func stageArtifact(_ artifact: ModelArtifact, in stage: URL) async throws {

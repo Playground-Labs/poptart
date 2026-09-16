@@ -1,5 +1,6 @@
 # Verification and release commands
 
+- `dev-run.sh` builds Poptart into an ad-hoc-signed `.app` bundle pinned to `labs.playground.Poptart` and launches it, so permission grants survive rebuilds.
 - `PoptartVerifier/main.swift` is a Foundation-only executable source intended to be the root package's `PoptartVerifier` target.
 - `test_tooling.py` exercises deterministic corpus/evaluation behavior and fail-closed benchmark prerequisites.
 - `benchmark_release.py` accepts only a real executable runner, exact local model, macOS 15+, and the physical 8 GB Apple M1 baseline.

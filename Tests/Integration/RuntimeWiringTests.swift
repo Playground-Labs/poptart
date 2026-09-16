@@ -215,8 +215,7 @@ final class TemporaryDirectory {
             cleanupTokenCeiling: cleanupTokenCeiling,
             artifacts: artifacts
         )
-        let state = ActivationRecord(
-            current: .init(directory: directory, manifest: manifest), previous: nil)
+        let state = ActivationRecord(current: .init(directory: directory, manifest: manifest))
         try JSONEncoder().encode(state).write(
             to: url.appendingPathComponent("active-model-pack.json"))
         return directory
@@ -228,7 +227,6 @@ final class TemporaryDirectory {
 
     private struct ActivationRecord: Codable {
         let current: InstalledModelPack
-        let previous: InstalledModelPack?
     }
 }
 

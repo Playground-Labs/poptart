@@ -104,7 +104,7 @@ The application installs one signed Model Pack during onboarding. That pack cont
 80. As an open-source contributor, I want late asynchronous results rejected by Dictation identity, so that concurrency cannot deliver text from an obsolete session.
 81. As a release maintainer, I want every release measured on an 8 GB M1, so that the stated minimum hardware has evidence behind it.
 82. As a release maintainer, I want at least 99% of representative Dictations delivered within 1.5 seconds, so that latency is a release criterion rather than an aspiration.
-83. As a release maintainer, I want privacy, network-deny, model-signature, interruption, and rollback tests, so that local-first behavior survives real failures.
+83. As a release maintainer, I want privacy, network-deny, model-signature, interruption, and atomic-activation tests, so that local-first behavior survives real failures.
 84. As a Playground Labs maintainer, I want the new Poptart to install beside the legacy application during beta, so that testers retain a reliable fallback.
 85. As a Playground Labs maintainer, I want no legacy data import, so that the native architecture begins with a clean security and migration boundary.
 
@@ -271,7 +271,7 @@ The application installs one signed Model Pack during onboarding. That pack cont
 - Add contract tests around FluidAudio for partial/final ordering, cancellation, vocabulary capability reporting, audio release, and error translation.
 - Add contract tests around MLX for local artifact loading, bounded edit-plan parsing, cancellation, warm reuse, memory-pressure unload, and late completion.
 - Add macOS integration tests for secure-field detection, Accessibility target capture/revalidation, selected-range replacement, nonactivating Indicator and Outcome Toast behavior, and pasteboard restoration.
-- Add Model Pack integration tests with a local HTTP server for fresh and resumed downloads, valid and invalid ranges, interruption, cancellation, size limits, hash mismatch, manifest-signature failure, incompatible versions, smoke-test failure, atomic activation, and rollback.
+- Add Model Pack integration tests with a local HTTP server for fresh and resumed downloads, valid and invalid ranges, interruption, cancellation, size limits, hash mismatch, manifest-signature failure, incompatible versions, smoke-test failure, and atomic activation.
 - Add persistence tests proving sensitive values are not present as plaintext, expiry works, individual and bulk deletion work, Keychain key loss makes old records unreadable, and reset recovers a usable empty store.
 - Add network-deny tests proving normal startup, Dictation, settings, history, vocabulary, and inference work without outbound access.
 - Capture clean-install network traffic and require that only the explicit Model Pack download occurs.

@@ -170,8 +170,6 @@ public enum ModelPackFailureMessage {
             return "That Model Pack does not support this version of Poptart."
         case .downgradeNotAllowed:
             return "That Model Pack is older than the one already installed."
-        case .noPreviousPack:
-            return "There is no earlier Model Pack to fall back to."
         case .invalidActiveState, .fileSystemFailure:
             return "The installed Model Pack no longer verifies. Use Repair Model Pack."
         }

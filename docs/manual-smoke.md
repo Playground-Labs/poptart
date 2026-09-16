@@ -14,7 +14,7 @@ Record each result inline with a date and build. A blank result is not a pass.
 
 ## Prerequisites
 
-- A build launched through `Models/Artifacts/dev-run.sh` (ad-hoc signed so the
+- A build launched through `Scripts/dev-run.sh` (ad-hoc signed so the
   permission grants survive a rebuild).
 - A development Model Pack present. Without a Cleanup artifact, Cleanup fails
   open and delivers the Raw Transcript; that is the expected smoke behaviour.

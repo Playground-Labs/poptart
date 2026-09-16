@@ -19,6 +19,7 @@ public actor EncryptedHistoryBoundary: HistoryBoundary {
             destinationApplication: intent.destinationApplicationIdentifier,
             cleanupChangedText: intent.cleanupChanged,
             outcome: outcome,
+            fallbackReason: intent.outcome.fallbackReason,
             timings: .init(
                 recognitionMilliseconds: milliseconds(intent.timings.finalRecognition),
                 cleanupMilliseconds: milliseconds(intent.timings.cleanup),
@@ -42,8 +43,10 @@ public actor EncryptedHistoryBoundary: HistoryBoundary {
             return .oversized
         case .recognitionHypothesisFallback:
             return .recognitionHypothesis
-        case .targetChangedClipboard, .noTargetClipboard:
-            return .copiedToClipboard
+        case .targetChangedClipboard:
+            return .copiedTargetChanged
+        case .noTargetClipboard:
+            return .copiedNoTarget
         case .emptyRecognitionFailure:
             return .emptyRecognition
         case .cancelled:
@@ -82,6 +85,42 @@ private extension DictationCore.DictationOutcome {
             return end
         case .secureTargetRejection, .cancelled, .recordingFailure:
             return nil
+        }
+    }
+
+    /// The Raw Transcript fallback reason, wherever the outcome carries it: as the outcome itself,
+    /// or as the kind of text a copy or a failed delivery was carrying.
+    var fallbackReason: Persistence.RawTranscriptFallbackReason? {
+        switch self {
+        case .rawTranscriptFallback(let reason, _, _):
+            return reason.persisted
+        case .targetChangedClipboard(let source, _),
+             .noTargetClipboard(let source, _),
+             .deliveryFailure(let source, _, _):
+            switch source {
+            case .rawTranscriptFallback(let reason):
+                return reason.persisted
+            case .cleaned, .oversizedDeterministicFallback, .recognitionHypothesisFallback:
+                return nil
+            }
+        case .cleanedInsertion, .oversizedDeterministicFallback, .recognitionHypothesisFallback,
+             .emptyRecognitionFailure, .secureTargetRejection, .cancelled, .recordingFailure:
+            return nil
+        }
+    }
+}
+
+private extension DictationCore.RawTranscriptFallbackReason {
+    var persisted: Persistence.RawTranscriptFallbackReason {
+        switch self {
+        case .cleanupTimedOut:
+            return .cleanupTimedOut
+        case .cleanupFailed:
+            return .cleanupFailed
+        case .unsafeEditPlan:
+            return .unsafeEditPlan
+        case .modelUnavailable:
+            return .modelUnavailable
         }
     }
 }

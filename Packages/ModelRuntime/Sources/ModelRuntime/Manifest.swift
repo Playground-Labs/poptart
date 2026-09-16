@@ -153,7 +153,6 @@ public enum ModelPackError: Error, Equatable, Sendable {
   case artifactSizeMismatch(ModelRole)
   case artifactHashMismatch(ModelRole)
   case smokeTestFailed
-  case noPreviousPack
   case invalidActiveState
   case fileSystemFailure
 }

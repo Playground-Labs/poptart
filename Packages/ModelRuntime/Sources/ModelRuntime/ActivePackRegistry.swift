@@ -5,7 +5,6 @@ import Foundation
 public struct InstalledModelPackRegistry: Sendable {
   private struct ActiveState: Codable {
     let current: InstalledModelPack
-    let previous: InstalledModelPack?
   }
 
   private let rootDirectory: URL

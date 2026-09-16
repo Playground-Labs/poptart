@@ -90,8 +90,8 @@ struct ModelPackInstallerTests {
     #expect(await downloader.offsets() == [0, 2, 0])
   }
 
-  @Test("A failed smoke test preserves the active pack, while activation supports rollback")
-  func atomicActivationAndRollback() async throws {
+  @Test("A failed smoke test preserves the active pack, while a successful update replaces it")
+  func atomicActivationPreservesTheActivePackUntilAnUpdateSucceeds() async throws {
     let fixture = try ModelFixture()
     let v1Data = Data([1, 1])
     let v2Data = Data([2, 2, 2])
@@ -120,8 +120,6 @@ struct ModelPackInstallerTests {
     await smokeTester.allowAll()
     let second = try await installer.perform(.update, signedManifest: v2)
     #expect(await installer.activePack() == second)
-    #expect(try await installer.rollback() == first)
-    #expect(await installer.activePack() == first)
   }
 
   @Test("Incompatible and downgrade manifests are rejected before downloading")
@@ -269,8 +267,7 @@ struct ModelPackInstallerTests {
         .activePack()?.cleanupTokenCeiling == ModelFixture.cleanupTokenCeiling)
   }
 
-  @Test(
-    "An updated pack publishes its own Cleanup token ceiling, and rollback restores the prior one")
+  @Test("An updated pack publishes its own Cleanup token ceiling")
   func publishedCleanupTokenCeilingFollowsTheActivePack() async throws {
     let fixture = try ModelFixture()
     let first = Data([1, 1])
@@ -302,11 +299,6 @@ struct ModelPackInstallerTests {
     #expect(
       try InstalledModelPackRegistry(rootDirectory: fixture.directory)
         .activePack()?.cleanupTokenCeiling == updatedCeiling)
-
-    #expect(try await installer.rollback().cleanupTokenCeiling == ModelFixture.cleanupTokenCeiling)
-    #expect(
-      try InstalledModelPackRegistry(rootDirectory: fixture.directory)
-        .activePack()?.cleanupTokenCeiling == ModelFixture.cleanupTokenCeiling)
   }
 
   @Test(

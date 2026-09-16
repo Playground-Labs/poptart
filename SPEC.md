@@ -420,7 +420,7 @@ Reused Handy-derived code is copied selectively only after review and retains al
 - A clean-install traffic capture shows network activity only for the explicit model download.
 - Persistence tests prove sensitive columns are not recoverable as plaintext from the database or logs.
 - Key deletion makes history unrecoverable and produces a safe reset path.
-- Model-pack signature, checksum, downgrade/compatibility, interrupted download, and atomic rollback paths have tests.
+- Model-pack signature, checksum, downgrade/compatibility, interrupted download, and atomic activation paths have tests.
 
 ## Incremental build sequence
 

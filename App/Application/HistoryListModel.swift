@@ -24,32 +24,44 @@ public struct DictationRecordPresentation: Equatable, Sendable, Identifiable {
 
 public enum DictationRecordPresenter {
     /// Names the outcome and fallback in the person's terms. `cleanupChangedText` refines only the
-    /// cleaned outcome, where whether Cleanup edited anything is the interesting part.
+    /// cleaned outcome, where whether Cleanup edited anything is the interesting part. A
+    /// `fallbackReason` is appended to whatever the outcome is, because a copy or a failed delivery
+    /// can be carrying a Raw Transcript fallback just as much as an insertion can.
     public static func classification(
         outcome: Persistence.DictationOutcome,
-        cleanupChangedText: Bool
+        cleanupChangedText: Bool,
+        fallbackReason: Persistence.RawTranscriptFallbackReason? = nil
     ) -> String {
-        switch outcome {
-        case .cleaned:
-            return cleanupChangedText ? "Cleanup changed the text" : "Cleanup left the text as heard"
-        case .rawTranscript:
-            return "Raw Transcript fallback"
-        case .oversized:
-            return "Too long for Cleanup — deterministic rules only"
-        case .recognitionHypothesis:
-            return "Recognition fallback — not fully finalized"
-        case .copiedToClipboard:
-            return "Copied because the target changed"
-        case .emptyRecognition:
-            return "No usable text"
-        case .cancelled:
-            return "Cancelled"
-        case .safetyStop:
-            return "Stopped at the five-minute limit"
-        case .recordingFailure:
-            return "Recording failed"
-        case .deliveryFailure:
-            return "Delivery failed"
+        let named: String =
+            switch outcome {
+            case .cleaned:
+                cleanupChangedText ? "Cleanup changed the text" : "Cleanup left the text as heard"
+            case .rawTranscript: "Raw Transcript fallback"
+            case .oversized: "Too long for Cleanup — deterministic rules only"
+            case .recognitionHypothesis: "Recognition fallback — not fully finalized"
+            case .copiedTargetChanged: "Copied because the target changed"
+            case .copiedNoTarget: "Copied because no text field was focused"
+            case .emptyRecognition: "No usable text"
+            case .cancelled: "Cancelled"
+            case .safetyStop: "Stopped at the five-minute limit"
+            case .recordingFailure: "Recording failed"
+            case .deliveryFailure: "Delivery failed"
+            }
+        guard let fallbackReason else { return named }
+        return "\(named) — \(reason(fallbackReason))"
+    }
+
+    /// Names why Cleanup gave the Raw Transcript back unchanged.
+    private static func reason(_ reason: Persistence.RawTranscriptFallbackReason) -> String {
+        switch reason {
+        case .cleanupTimedOut:
+            return "Cleanup timed out"
+        case .cleanupFailed:
+            return "Cleanup failed"
+        case .unsafeEditPlan:
+            return "Cleanup's edits were unsafe"
+        case .modelUnavailable:
+            return "The Cleanup model was unavailable"
         }
     }
 
@@ -70,7 +82,8 @@ public enum DictationRecordPresenter {
             destinationApplication: record.destinationApplication,
             classification: classification(
                 outcome: record.outcome,
-                cleanupChangedText: record.cleanupChangedText
+                cleanupChangedText: record.cleanupChangedText,
+                fallbackReason: record.fallbackReason
             ),
             outcome: record.outcome,
             cleanupChangedText: record.cleanupChangedText,

@@ -13,6 +13,8 @@ swift build --product Poptart
 swift test
 ```
 
+To launch a development build whose permission grants survive a rebuild, use `Scripts/dev-run.sh`, which wraps the executable in an ad-hoc-signed application bundle.
+
 Run package-level tests separately; the root test command covers application integration tests:
 
 ```sh

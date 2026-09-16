@@ -215,6 +215,39 @@ struct DictationCoordinatorTests {
         ))
         #expect(try await store.records().count == 1)
     }
+
+    @Test("history keeps why a Dictation fell back and which copy it was")
+    func fallbackReasonAndClipboardResultsReachHistory() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = try HistoryStore(
+            directory: directory,
+            keyProvider: InMemoryKeyProvider(),
+            now: { Date(timeIntervalSince1970: 1_100) }
+        )
+        let history = EncryptedHistoryBoundary(store: store)
+
+        await history.record(recordIntent(outcome: .rawTranscriptFallback(
+            reason: .cleanupTimedOut, method: .accessibility, recordingEnd: .released
+        )))
+        await history.record(recordIntent(outcome: .targetChangedClipboard(
+            source: .cleaned, recordingEnd: .released
+        )))
+        await history.record(recordIntent(outcome: .noTargetClipboard(
+            source: .rawTranscriptFallback(.cleanupFailed), recordingEnd: .released
+        )))
+
+        let records = try await store.records()
+        #expect(
+            Set(records.map(\.outcome))
+                == [.rawTranscript, .copiedTargetChanged, .copiedNoTarget])
+        #expect(records.first { $0.outcome == .rawTranscript }?.fallbackReason == .cleanupTimedOut)
+        #expect(records.first { $0.outcome == .copiedTargetChanged }?.fallbackReason == nil)
+        #expect(records.first { $0.outcome == .copiedNoTarget }?.fallbackReason == .cleanupFailed)
+    }
 }
 
 private func recordIntent(outcome: DictationCore.DictationOutcome) -> DictationRecordIntent {
