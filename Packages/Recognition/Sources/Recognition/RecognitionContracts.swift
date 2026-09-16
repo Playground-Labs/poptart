@@ -13,9 +13,9 @@ public struct RecognitionCapabilities: Equatable, Sendable {
 /// An immutable, package-internal copy of an AVFoundation capture buffer.
 struct RecognitionAudioBuffer: @unchecked Sendable {
     let buffer: AVAudioPCMBuffer
-    let audioActivity: Double?
+    let audioActivity: AudioLevels?
 
-    init(buffer: AVAudioPCMBuffer, audioActivity: Double?) {
+    init(buffer: AVAudioPCMBuffer, audioActivity: AudioLevels?) {
         self.buffer = buffer
         self.audioActivity = audioActivity
     }

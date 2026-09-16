@@ -27,8 +27,8 @@ public actor DictationSessionActor {
             return begin(start)
         case .release(let id):
             return endRecording(id: id, reason: .released)
-        case .audioActivity(let id, let level):
-            return receiveAudioActivity(id: id, level: level)
+        case .audioActivity(let id, let levels):
+            return receiveAudioActivity(id: id, levels: levels)
         case .recognitionHypothesis(let id, let hypothesis):
             return receiveHypothesis(id: id, hypothesis: hypothesis)
         case .recordingWarningFired(let id):
@@ -374,13 +374,13 @@ public actor DictationSessionActor {
         return []
     }
 
-    private func receiveAudioActivity(id: DictationID, level: Double) -> [DictationEffect] {
+    private func receiveAudioActivity(id: DictationID, levels: AudioLevels) -> [DictationEffect] {
         guard case .active(var active) = state,
               active.start.id == id,
               active.phase == .recording
         else { return [] }
 
-        active.latestAudioActivity = min(max(level, 0), 1)
+        active.latestAudioActivity = levels
         state = .active(active)
         let warningAt = active.recordingStartedAt.advanced(by: policy.recordingWarningDelay)
         let indicator: IndicatorState = clock.now() >= warningAt
@@ -574,7 +574,7 @@ private extension DictationSessionActor {
         var deadlineStartedAt: MonotonicInstant?
         var stageStartedAt: MonotonicInstant?
         var latestHypothesis: RecognitionHypothesis?
-        var latestAudioActivity: Double?
+        var latestAudioActivity: AudioLevels?
         var rawTranscript: RawTranscript?
         var candidate: Candidate?
         var deliveryRoute: DeliveryRoute?

@@ -125,20 +125,13 @@ private final class IndicatorView: NSView {
     }
   }
 
-  /// The bars are driven by one amplitude scalar, not by an FFT. `audioActivity` has always been a
-  /// single 0...1 level; the per-bar variation below is decoration chosen to read as speech, and
-  /// no bar corresponds to a frequency band. Do not "fix" this by reading it as spectrum data.
-  private static let barWeights: [Double] = [
-    0.32, 0.55, 0.41, 0.78, 0.62, 0.93, 0.70, 1.00, 0.84, 0.58, 0.88,
-    0.47, 0.72, 0.95, 0.66, 0.38, 0.81, 0.52, 0.60, 0.35, 0.28,
-  ]
-  /// With no level yet, the waveform rests rather than collapsing: an empty pill would read as a
-  /// dead microphone.
+  /// The shortest a bar is ever drawn. With nothing to hear the waveform rests at this height
+  /// rather than collapsing: an empty pill would read as a dead microphone.
   private static let restingLevel = 0.12
 
   private let spinnerLayer = CAShapeLayer()
   private var waveformTimer: Timer?
-  private var phase: Double = 0
+  private var envelope = WaveformEnvelope()
 
   override var isFlipped: Bool { true }
 
@@ -187,8 +180,8 @@ private final class IndicatorView: NSView {
     switch visual.shape {
     case .collapsed, .spinner:
       break
-    case .waveform(let level):
-      drawWaveform(level: level)
+    case .waveform:
+      drawWaveform()
     }
   }
 
@@ -203,23 +196,20 @@ private final class IndicatorView: NSView {
     surface.stroke()
   }
 
-  private func drawWaveform(level: Double?) {
-    let level = level.map { min(1, max(0, $0)) } ?? IndicatorView.restingLevel
-    // Speech sits low in a linear 0...1 scale, so a raw level leaves every bar pinned near the
-    // floor and the waveform looks frozen. The curve lifts ordinary talking into the visible part
-    // of the pill; the floor keeps it alive between syllables.
-    let shaped = pow(level, 0.45)
+  private func drawWaveform() {
     let inset: CGFloat = 7
     let available = max(0, bounds.width - inset * 2)
-    let count = IndicatorView.barWeights.count
-    let pitch = available / CGFloat(count)
+    let levels = envelope.levels
+    let pitch = available / CGFloat(levels.count)
     let barWidth = max(1, pitch * 0.5)
     let resting: CGFloat = 2
     let tallest = max(resting, bounds.height - bounds.height * 0.42)
     NSColor.labelColor.setFill()
-    for index in 0..<count {
-      let ripple = 0.45 + 0.55 * sin(phase * 5.2 + Double(index) * 0.8)
-      let amplitude = min(1, shaped * IndicatorView.barWeights[index] * ripple + 0.08)
+    for (index, level) in levels.enumerated() {
+      // Speech sits low in a linear 0...1 scale, so a raw band leaves every bar pinned near the
+      // floor and the waveform looks frozen. The curve lifts ordinary talking into the visible part
+      // of the pill; the floor keeps it alive between syllables.
+      let amplitude = min(1, max(IndicatorView.restingLevel, pow(min(1, max(0, level)), 0.45)))
       let height = resting + (tallest - resting) * CGFloat(amplitude)
       let rect = NSRect(
         x: inset + pitch * CGFloat(index) + (pitch - barWidth) / 2,
@@ -229,6 +219,15 @@ private final class IndicatorView: NSView {
       )
       NSBezierPath(roundedRect: rect, xRadius: barWidth / 2, yRadius: barWidth / 2).fill()
     }
+  }
+
+  /// What the bars are heading for: the levels the microphone last reported, or silence when there
+  /// is nothing yet to draw.
+  private var waveformTarget: [Double] {
+    guard case .waveform(let levels) = visual.shape, let levels else {
+      return Array(repeating: 0, count: AudioLevels.bandCount)
+    }
+    return levels.bands
   }
 
   private func cornerRadius(for shape: IndicatorShape) -> CGFloat {
@@ -254,12 +253,14 @@ private final class IndicatorView: NSView {
 
   private func startWaveform() {
     guard waveformTimer == nil else { return }
-    // The phase only moves while a waveform is on screen; nothing animates in the resting sliver.
+    // The envelope only moves while a waveform is on screen; nothing animates in the resting
+    // sliver. The timer also owns the fall: without a tick, a bar would hang at the last level the
+    // microphone reported.
     waveformTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) {
       [weak self] _ in
       MainActor.assumeIsolated {
         guard let self else { return }
-        self.phase += 1.0 / 30.0
+        self.envelope.advance(toward: self.waveformTarget)
         self.needsDisplay = true
       }
     }
@@ -268,6 +269,7 @@ private final class IndicatorView: NSView {
   private func stopWaveform() {
     waveformTimer?.invalidate()
     waveformTimer = nil
+    envelope.reset()
   }
 
   private func startSpinner() {

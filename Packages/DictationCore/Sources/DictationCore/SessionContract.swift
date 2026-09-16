@@ -87,8 +87,8 @@ public enum IndicatorFailure: String, Equatable, Sendable {
 public enum IndicatorState: Equatable, Sendable {
     case ready
     case unavailableSecureTarget
-    case recording(audioActivity: Double?)
-    case approachingRecordingLimit(audioActivity: Double?)
+    case recording(audioActivity: AudioLevels?)
+    case approachingRecordingLimit(audioActivity: AudioLevels?)
     case finalizingRecognition
     case cleaning
     case delivering
@@ -133,7 +133,7 @@ public enum DictationEffect: Equatable, Sendable {
 public enum DictationEvent: Equatable, Sendable {
     case press(DictationStart)
     case release(DictationID)
-    case audioActivity(DictationID, Double)
+    case audioActivity(DictationID, AudioLevels)
     case recognitionHypothesis(DictationID, RecognitionHypothesis)
     case recordingWarningFired(DictationID)
     case recordingLimitFired(DictationID)

@@ -72,6 +72,10 @@ _Avoid_: Custom words, learned vocabulary, dictionary
 The compact, persistent visual signal that shows Poptart is ready and communicates the state of the active Dictation.
 _Avoid_: Overlay window, HUD, widget
 
+**Audio Levels**:
+Ephemeral microphone measurements: overall amplitude and twenty-one frequency-band magnitudes, ordered low to high, used to animate the Indicator before speech gating. They are never persisted or logged.
+_Avoid_: Voiceprint, recognized speech
+
 **Outcome Toast**:
 The brief message shown above the Indicator that names how a Dictation ended when the person cannot already see that result on screen. It carries one of a fixed set of short messages and never live or completed transcript text.
 _Avoid_: Notification, alert, status text

@@ -7,7 +7,7 @@ import Foundation
 public enum IndicatorShape: Equatable, Sendable {
   /// A blank sliver: present, saying nothing.
   case collapsed
-  case waveform(level: Double?)
+  case waveform(levels: AudioLevels?)
   case spinner
 }
 
@@ -29,10 +29,10 @@ public struct IndicatorVisual: Equatable, Sendable {
         .collapsed, "Not available in a password field", "Dictation unavailable in secure field"
       )
     case .recording(let activity):
-      (shape, toast, accessibilityDescription) = (.waveform(level: activity), nil, "Recording")
+      (shape, toast, accessibilityDescription) = (.waveform(levels: activity), nil, "Recording")
     case .approachingRecordingLimit(let activity):
       (shape, toast, accessibilityDescription) = (
-        .waveform(level: activity), "Thirty seconds left", "Recording limit approaching"
+        .waveform(levels: activity), "Thirty seconds left", "Recording limit approaching"
       )
     case .finalizingRecognition:
       (shape, toast, accessibilityDescription) = (.spinner, nil, "Finalizing recognition")

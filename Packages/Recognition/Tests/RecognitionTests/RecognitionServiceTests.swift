@@ -38,7 +38,7 @@ final class RecognitionServiceTests: XCTestCase {
         XCTAssertEqual(
             recordedEvents,
             [
-                .audioActivity(id, 0.25),
+                .audioActivity(id, testLevels),
                 .recognitionHypothesis(id, .init(text: "Hello Pop")),
             ]
         )
@@ -223,6 +223,11 @@ private actor FakeIncrementalRecognizer: IncrementalSpeechRecognizing {
     func didDestroyAudio() -> Bool { destroyed }
 }
 
+private let testLevels = AudioLevels(
+    bands: (0..<AudioLevels.bandCount).map { Double($0) / Double(AudioLevels.bandCount) },
+    overall: 0.25
+)
+
 private func audioBuffer() throws -> RecognitionAudioBuffer {
     let format = try XCTUnwrap(AVAudioFormat(
         commonFormat: .pcmFormatFloat32,
@@ -232,5 +237,5 @@ private func audioBuffer() throws -> RecognitionAudioBuffer {
     ))
     let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 160))
     buffer.frameLength = 160
-    return .init(buffer: buffer, audioActivity: 0.25)
+    return .init(buffer: buffer, audioActivity: testLevels)
 }

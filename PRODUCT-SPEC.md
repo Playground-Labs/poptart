@@ -127,6 +127,7 @@ The application installs one signed Model Pack during onboarding. That pack cont
 - Cap one Recording at five minutes and begin a visual warning at four minutes and thirty seconds.
 - Keep one persistent, compact, nonactivating Indicator visible while Poptart runs, at the bottom of the screen just above the Dock.
 - Give the Indicator a monochrome shape vocabulary: a blank collapsed sliver when ready, a twenty-one bar waveform during Recording, and a spinner while finalizing, cleaning, and delivering. Color carries no meaning and no outcome has a shape of its own.
+- Drive waveform bars from measured microphone frequency bands before speech gating, with fast attack and slower decay. Keep these levels ephemeral and never store them.
 - Show state and audio activity only; never show partial or completed transcript text in the Indicator or the Outcome Toast.
 - Report a result with a brief Outcome Toast directly above the Indicator. It carries one short fixed message, dismisses itself, and never puts words inside the Indicator.
 - Limit the Outcome Toast to the four results a person cannot already see: copied to clipboard, Dictation failed, unavailable in a password field, and thirty seconds left in a Recording. Stay silent for inserted text, for every Fallback that still delivers words, and for cancellation.
@@ -234,7 +235,7 @@ The application installs one signed Model Pack during onboarding. That pack cont
 - Keep plaintext persistence limited to non-sensitive metadata required for ordering, expiry, and outcome filtering.
 - Treat loss of the Keychain key as unrecoverable history and provide a safe local reset path.
 - Expire Dictation Records after 30 days and expose individual deletion and Clear History.
-- Exclude audio, transcripts, Target Context, Personal Vocabulary contents, clipboard contents, and keys from logs.
+- Exclude audio, audio levels and frequency bands, transcripts, Target Context, Personal Vocabulary contents, clipboard contents, and keys from logs.
 - Send no analytics, usage events, performance data, diagnostics, crash reports, audio, text, vocabulary, or context to Playground Labs or third parties.
 - Require no account, sign-in, activation, license check, or device registration.
 

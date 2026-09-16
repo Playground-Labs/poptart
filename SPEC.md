@@ -263,7 +263,7 @@ The Indicator is persistent, compact, nonactivating, and never displays live or 
 The shapes are:
 
 - a blank collapsed sliver when Poptart is ready and between Dictations;
-- a twenty-one bar waveform driven by audio activity during Recording;
+- a twenty-one bar waveform driven by measured, logarithmically spaced microphone frequency bands during Recording, with fast attack and slower decay;
 - a spinner while finalizing, cleaning, and delivering.
 
 No outcome has a shape of its own. The Indicator returns to the collapsed sliver as soon as a Dictation ends, however it ended, without stealing focus.
@@ -313,7 +313,7 @@ Each Dictation Record contains:
 
 Raw Transcript, delivered text, and sensitive destination fields are encrypted with CryptoKit using a random per-install key stored in Keychain. Plaintext storage is limited to non-sensitive indexing and expiry metadata. Loss of the Keychain key makes encrypted history unrecoverable; Poptart does not upload or escrow it.
 
-History expires after 30 days and offers Clear History. Personal Vocabulary is local, manual, and application-level encrypted. Debug logs must exclude audio, transcript text, Target Context, vocabulary contents, clipboard contents, and encryption keys.
+History expires after 30 days and offers Clear History. Personal Vocabulary is local, manual, and application-level encrypted. Audio levels and frequency bands are ephemeral display data: they come from the raw microphone before speech gating, and are never retained in history or diagnostic artifacts. Debug logs must exclude audio, audio levels and frequency bands, transcript text, Target Context, vocabulary contents, clipboard contents, and encryption keys.
 
 Poptart sends no product-generated request to Playground Labs or a third party unless the person explicitly starts an update, repair, or model download. There is no exception for crash reporting or optional analytics.
 

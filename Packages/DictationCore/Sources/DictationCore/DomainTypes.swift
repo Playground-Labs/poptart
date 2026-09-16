@@ -192,6 +192,29 @@ public enum CleanupResult: Equatable, Sendable {
     case oversizedDeterministic(CleanupOutput)
 }
 
+/// What the microphone hears at one instant: how loud the sound is overall, and how that sound is
+/// spread across the speech range. `bands` runs from the lowest band to the highest, each value a
+/// normalised 0...1 magnitude, so the Indicator can draw the shape of a voice rather than one
+/// number repeated twenty-one times. Ephemeral display data; never persist or log these values.
+public struct AudioLevels: Equatable, Sendable {
+    public static let bandCount = 21
+
+    public let bands: [Double]
+    public let overall: Double
+
+    public init(bands: [Double], overall: Double) {
+        precondition(bands.count == Self.bandCount)
+        self.bands = bands.map { $0.isFinite ? min(max($0, 0), 1) : 0 }
+        self.overall = overall.isFinite ? min(max(overall, 0), 1) : 0
+    }
+
+    /// The level of a microphone that is open but hearing nothing.
+    public static let silent = AudioLevels(
+        bands: Array(repeating: 0, count: bandCount),
+        overall: 0
+    )
+}
+
 public enum RecordingEndReason: String, Equatable, Sendable {
     case released
     case fiveMinuteSafetyLimit

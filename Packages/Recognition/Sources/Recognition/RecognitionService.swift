@@ -74,8 +74,8 @@ public actor RecognitionService: SpeechInputBoundary {
                 do {
                     for try await audio in stream {
                         try Task.checkCancellation()
-                        if let activity = audio.audioActivity {
-                            await onEvent(.audioActivity(id, activity))
+                        if let levels = audio.audioActivity {
+                            await onEvent(.audioActivity(id, levels))
                         }
                         try await recognizer.accept(audio)
                     }

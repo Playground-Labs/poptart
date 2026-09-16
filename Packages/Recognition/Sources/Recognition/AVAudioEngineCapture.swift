@@ -1,4 +1,5 @@
 @preconcurrency import AVFoundation
+import DictationCore
 import Foundation
 
 actor AVAudioEngineCapture: RecognitionAudioCapturing {
@@ -33,9 +34,13 @@ actor AVAudioEngineCapture: RecognitionAudioCapturing {
             bufferingPolicy: .bufferingOldest(maxQueuedBuffers)
         )
         let streamContinuation = pair.continuation
+        // The Indicator is fed from here, ahead of the speech gate, because it reports what the
+        // microphone hears rather than what the recognizer is given. Gated audio arrives a third of
+        // a second late, which a live meter cannot hide.
+        let analyzer = SpeechBandAnalyzer(frameCount: Int(tapBufferSize))
         input.installTap(onBus: 0, bufferSize: tapBufferSize, format: nil) { buffer, _ in
             do {
-                let immutableCopy = try Self.copy(buffer)
+                let immutableCopy = try Self.copy(buffer, analyzer: analyzer)
                 switch streamContinuation.yield(immutableCopy) {
                 case .enqueued:
                     break
@@ -107,8 +112,9 @@ actor AVAudioEngineCapture: RecognitionAudioCapturing {
         continuation = nil
     }
 
-    private nonisolated static func copy(
-        _ source: AVAudioPCMBuffer
+    nonisolated static func copy(
+        _ source: AVAudioPCMBuffer,
+        analyzer: SpeechBandAnalyzer?
     ) throws -> RecognitionAudioBuffer {
         guard let destination = AVAudioPCMBuffer(
             pcmFormat: source.format,
@@ -134,20 +140,24 @@ actor AVAudioEngineCapture: RecognitionAudioCapturing {
             memcpy(destinationData, sourceData, byteCount)
             destinationBuffers[index].mDataByteSize = sourceBuffers[index].mDataByteSize
         }
-        return .init(buffer: destination, audioActivity: audioActivity(in: destination))
+        return .init(
+            buffer: destination,
+            audioActivity: audioActivity(in: destination, analyzer: analyzer)
+        )
     }
 
-    private nonisolated static func audioActivity(in buffer: AVAudioPCMBuffer) -> Double? {
-        guard let channels = buffer.floatChannelData,
+    private nonisolated static func audioActivity(
+        in buffer: AVAudioPCMBuffer,
+        analyzer: SpeechBandAnalyzer?
+    ) -> AudioLevels? {
+        guard let analyzer,
+              let channels = buffer.floatChannelData,
               buffer.format.channelCount > 0,
               buffer.frameLength > 0
         else { return nil }
-        let samples = channels[0]
-        var sumOfSquares = 0.0
-        for index in 0..<Int(buffer.frameLength) {
-            let sample = Double(samples[index])
-            sumOfSquares += sample * sample
-        }
-        return min(1, sqrt(sumOfSquares / Double(buffer.frameLength)))
+        let samples = stride(
+            from: 0, to: Int(buffer.frameLength) * buffer.stride, by: buffer.stride
+        ).map { channels[0][$0] }
+        return analyzer.levels(of: samples, sampleRate: buffer.format.sampleRate)
     }
 }

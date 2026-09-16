@@ -3,6 +3,39 @@ import XCTest
 @testable import DictationCore
 
 final class DictationTerminalOutcomeTests: XCTestCase {
+    func testMeasuredBandsReachRecordingAndWarningButLateEventsAreIgnored() async {
+        let clock = OutcomeFakeClock()
+        let session = DictationSessionActor(clock: clock)
+        let start = outcomeFixtureStart()
+        let levels = AudioLevels(
+            bands: (0..<AudioLevels.bandCount).map { Double($0) / Double(AudioLevels.bandCount) },
+            overall: 0.3
+        )
+        _ = await session.handle(.press(start))
+        let recording = await session.handle(.audioActivity(start.id, levels))
+        XCTAssertEqual(recording, [.presentIndicator(.init(
+            dictationID: start.id, state: .recording(audioActivity: levels)
+        ))])
+        clock.advance(by: .seconds(270))
+        let warning = await session.handle(.recordingWarningFired(start.id))
+        XCTAssertTrue(warning.contains(.presentIndicator(.init(
+            dictationID: start.id, state: .approachingRecordingLimit(audioActivity: levels)
+        ))))
+        let wrongID = await session.handle(.audioActivity(.init(), levels))
+        XCTAssertTrue(wrongID.isEmpty)
+        _ = await session.handle(.release(start.id))
+        let late = await session.handle(.audioActivity(start.id, levels))
+        XCTAssertTrue(late.isEmpty)
+    }
+
+    func testNonfiniteAudioLevelsCannotReachDrawing() {
+        var bands = Array(repeating: 0.5, count: AudioLevels.bandCount)
+        bands.replaceSubrange(0..<4, with: [.nan, .infinity, -1, 2])
+        let levels = AudioLevels(bands: bands, overall: .nan)
+        XCTAssertEqual(Array(levels.bands.prefix(4)), [0, 0, 0, 1])
+        XCTAssertEqual(levels.overall, 0)
+    }
+
     func testSecureTargetIsRejectedBeforeRecordingAndNeverCreatesHistory() async {
         let session = DictationSessionActor(clock: OutcomeFakeClock())
         let start = outcomeFixtureStart(secure: true)

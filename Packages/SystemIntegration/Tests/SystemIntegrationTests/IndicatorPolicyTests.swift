@@ -5,9 +5,13 @@ import Testing
 
 @Suite("Indicator presentation")
 struct IndicatorPolicyTests {
+  private static func levels(_ value: Double) -> AudioLevels {
+    AudioLevels(bands: Array(repeating: value, count: AudioLevels.bandCount), overall: value)
+  }
+
   private static let everyState: [IndicatorState] = [
-    .ready, .unavailableSecureTarget, .recording(audioActivity: 0.8),
-    .approachingRecordingLimit(audioActivity: 0.2), .finalizingRecognition,
+    .ready, .unavailableSecureTarget, .recording(audioActivity: levels(0.8)),
+    .approachingRecordingLimit(audioActivity: levels(0.2)), .finalizingRecognition,
     .cleaning, .delivering, .success, .rawTranscriptFallback,
     .oversizedFallback, .recognitionFallback, .copiedBecauseTargetChanged,
     .copiedBecauseNoTarget,
@@ -35,7 +39,8 @@ struct IndicatorPolicyTests {
   func speakingStates() {
     #expect(IndicatorVisual(.unavailableSecureTarget).toast == "Not available in a password field")
     #expect(
-      IndicatorVisual(.approachingRecordingLimit(audioActivity: 0.4)).toast == "Thirty seconds left")
+      IndicatorVisual(.approachingRecordingLimit(audioActivity: IndicatorPolicyTests.levels(0.4)))
+        .toast == "Thirty seconds left")
     #expect(IndicatorVisual(.copiedBecauseTargetChanged).toast == "Copied to clipboard")
     #expect(IndicatorVisual(.copiedBecauseNoTarget).toast == "Copied to clipboard")
     #expect(IndicatorVisual(.failure(.delivery)).toast == "Dictation failed")
@@ -52,22 +57,28 @@ struct IndicatorPolicyTests {
     #expect(IndicatorVisual(.recognitionFallback).toast == nil)
     #expect(IndicatorVisual(.ready).toast == nil)
     #expect(IndicatorVisual(.cancelled).toast == nil)
-    #expect(IndicatorVisual(.recording(audioActivity: 0.5)).toast == nil)
+    #expect(
+      IndicatorVisual(.recording(audioActivity: IndicatorPolicyTests.levels(0.5))).toast == nil)
     #expect(IndicatorVisual(.finalizingRecognition).toast == nil)
     #expect(IndicatorVisual(.cleaning).toast == nil)
     #expect(IndicatorVisual(.delivering).toast == nil)
   }
 
-  @Test("both recording states carry the live level through to the waveform")
+  @Test("both recording states preserve every measured frequency band")
   func recordingStatesRenderAWaveform() {
-    #expect(IndicatorVisual(.recording(audioActivity: 0.8)).shape == .waveform(level: 0.8))
-    #expect(IndicatorVisual(.recording(audioActivity: nil)).shape == .waveform(level: nil))
+    let measured = AudioLevels(
+      bands: (0..<AudioLevels.bandCount).map { Double($0) / Double(AudioLevels.bandCount) },
+      overall: 0.4
+    )
     #expect(
-      IndicatorVisual(.approachingRecordingLimit(audioActivity: 0.2)).shape
-        == .waveform(level: 0.2))
+      IndicatorVisual(.recording(audioActivity: measured)).shape == .waveform(levels: measured))
+    #expect(IndicatorVisual(.recording(audioActivity: nil)).shape == .waveform(levels: nil))
+    #expect(
+      IndicatorVisual(.approachingRecordingLimit(audioActivity: measured)).shape
+        == .waveform(levels: measured))
     #expect(
       IndicatorVisual(.approachingRecordingLimit(audioActivity: nil)).shape
-        == .waveform(level: nil))
+        == .waveform(levels: nil))
   }
 
   @Test("work in progress spins; everything else collapses to a sliver")
