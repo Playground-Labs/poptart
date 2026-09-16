@@ -12,6 +12,17 @@ public actor IndicatorPresenter: IndicatorBoundary {
   }
 }
 
+/// One curve for everything the indicator surface does, so the panel and its chip cannot drift
+/// onto separate schedules. It leaves quickly, arrives slowly, and overshoots just enough to
+/// settle rather than stop dead: a hard snap reads as a glitch at this size, and a symmetric ease
+/// reads as sluggish. The weight lives in the deceleration.
+private enum IndicatorMotion {
+  static let duration: TimeInterval = 0.28
+  static var timing: CAMediaTimingFunction {
+    CAMediaTimingFunction(controlPoints: 0.22, 1.12, 0.26, 1)
+  }
+}
+
 @MainActor
 private final class IndicatorUI {
   static let shared = IndicatorUI()
@@ -27,7 +38,6 @@ private final class IndicatorUI {
 
   private static let screenInset: CGFloat = 10
   private static let toastGap: CGFloat = 8
-  private static let morphDuration: TimeInterval = 0.17
 
   private let panel: IndicatorPanel
   private let indicatorView: IndicatorView
@@ -91,10 +101,8 @@ private final class IndicatorUI {
       return
     }
     NSAnimationContext.runAnimationGroup { context in
-      context.duration = IndicatorUI.morphDuration
-      // Overshoot past the target and settle back, so opening reads as a snap rather than a
-      // glide. The shape is the only thing announcing that recording started; it has to arrive.
-      context.timingFunction = CAMediaTimingFunction(controlPoints: 0.2, 1.7, 0.3, 1)
+      context.duration = IndicatorMotion.duration
+      context.timingFunction = IndicatorMotion.timing
       panel.animator().setFrame(frame, display: true)
     }
     toast.anchor(at: toastOrigin, animated: true)
@@ -332,8 +340,8 @@ private final class ToastUI {
     let frame = frameForCurrentMessage()
     if animated {
       NSAnimationContext.runAnimationGroup { context in
-        context.duration = 0.3
-        context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        context.duration = IndicatorMotion.duration
+        context.timingFunction = IndicatorMotion.timing
         panel.animator().setFrame(frame, display: true)
       }
     } else {
