@@ -64,5 +64,7 @@ Result:
 ## Out of scope here
 
 Deadline and memory measurements belong to the 8 GB M1 benchmark, not to this
-list. Network silence is proven by the privacy deny test. Cleanup quality is
-measured by the evaluation harness against a trained artifact.
+list. The privacy checks are `Scripts/privacy/network_deny.sh` and
+`Scripts/privacy/traffic_capture.sh`; their prerequisites and evidence limits are
+in `Scripts/README.md`. A startup-only deny run does not prove offline Dictation.
+Cleanup quality is measured by the evaluation harness against a trained artifact.

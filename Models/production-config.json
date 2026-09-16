@@ -32,6 +32,8 @@
   "releaseMeasurements": {
     "cleanupTokenCeiling": null,
     "physicalM1P99Milliseconds": null,
+    "physicalM1PeakFootprintBytes": null,
+    "physicalM1SteadyStateFootprintBytes": null,
     "qualityReportSHA256": null
   }
 }

@@ -44,6 +44,11 @@ public actor MLXCleanupModel: CleanupModelBoundary {
     _ = try await loadedContainer()
   }
 
+  /// Diagnostics for the development benchmark; reading these does not load a model.
+  public var memoryState: (resident: Bool, activeBytes: Int) {
+    (container != nil, Memory.activeMemory)
+  }
+
   /// Cancels generation, releases the resident Cleanup model, and returns MLX cache memory.
   public func unload() {
     activeGeneration?.task.cancel()

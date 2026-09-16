@@ -317,6 +317,8 @@ class ToolingTests(unittest.TestCase):
                     "/missing",
                     "--model",
                     "/missing",
+                    "--audio",
+                    "/missing",
                     "--output",
                     str(Path(temporary) / "out.json"),
                 ],
@@ -325,6 +327,68 @@ class ToolingTests(unittest.TestCase):
                 text=True,
             )
         self.assertNotEqual(result.returncode, 0)
+
+
+class BenchmarkPrivacyTests(unittest.TestCase):
+    @staticmethod
+    def row():
+        return dict(id="fixture", elapsedMilliseconds=800, finalRecognitionMilliseconds=100,
+                    cleanupMilliseconds=650, deliveryMilliseconds=50, footprintBytes=1000,
+                    peakFootprintBytes=1200, mlxActiveBytes=500, bothModelsResident=True,
+                    historyReadback=True, settingsReadback=True, historyRecordID="record",
+                    outcome="cleaned", deliveredText="Hello.", deliveryMode="controlled", cleanupTokenCeiling=512)
+
+    def test_benchmark_summary_and_release_measurements(self):
+        sys.path.insert(0, str(ROOT / "Scripts/release"))
+        from benchmark_release import summarize
+        from verify_release_inputs import validate_measurements
+        row = self.row()
+        summary = summarize([row], ["fixture"])
+        self.assertEqual(summary["p99Milliseconds"], 800)
+        self.assertEqual(summary["peakFootprintBytes"], 1200)
+        report = dict(summary, hardware="8 GB Apple M1", results=[row])
+        measurements = dict(physicalM1P99Milliseconds=800, physicalM1PeakFootprintBytes=1200,
+                            physicalM1SteadyStateFootprintBytes=1000, cleanupTokenCeiling=512)
+        validate_measurements(measurements, report, ["fixture"])
+        for key in measurements:
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                validate_measurements(dict(measurements, **{key: 999}), report, ["fixture"])
+        with self.assertRaises(ValueError):
+            validate_measurements(measurements, dict(report, p99Milliseconds=1), ["fixture"])
+
+    def test_incomplete_or_invalid_benchmark_evidence_is_rejected(self):
+        from benchmark_release import summarize
+        for rows in ([], [self.row(), self.row()], [dict(self.row(), id="other")]):
+            with self.assertRaises(ValueError):
+                summarize(rows, ["fixture"])
+        for patch in (dict(elapsedMilliseconds=float("nan")), dict(cleanupMilliseconds=-1),
+                      dict(footprintBytes=True), dict(peakFootprintBytes=1), dict(bothModelsResident=False),
+                      dict(historyReadback=False), dict(settingsReadback=False), dict(deliveredText="")):
+            with self.subTest(patch=patch), self.assertRaises(ValueError):
+                summarize([dict(self.row(), **patch)], ["fixture"])
+        rows = [dict(self.row(), id=str(i), historyRecordID=str(i), elapsedMilliseconds=i+1) for i in range(100)]
+        self.assertEqual(summarize(rows, [str(i) for i in range(100)])["p99Milliseconds"], 99)
+
+    def test_deny_requires_successful_model_cleanup(self):
+        sys.path.insert(0, str(ROOT / "Scripts/privacy"))
+        from verify_evidence import deny_results
+        self.assertTrue(deny_results([self.row()], ["fixture"])["dictationProven"])
+        with self.assertRaises(ValueError):
+            deny_results([dict(self.row(), outcome="rawTranscript")], ["fixture"])
+
+    def test_traffic_requires_complete_capture_and_download(self):
+        sys.path.insert(0, str(ROOT / "Scripts/privacy"))
+        from verify_evidence import traffic_results
+        phases = dict(captureReady=1, appStarted=2, downloadStarted=3, downloadFinished=4, captureFinished=5)
+        stats = "1 packets captured\n0 packets dropped by kernel\n"
+        self.assertTrue(traffic_results(["3.5 packet"], stats, phases, True)["passed"])
+        self.assertFalse(traffic_results(["2.5 packet", "3.5 packet"], stats.replace("1 packets", "2 packets"), phases, True)["passed"])
+        for lines, log, marks, installed in (([], stats, phases, True), (["3.5 packet"], "", phases, True),
+            (["3.5 packet"], stats.replace("0 packets", "1 packets"), phases, True),
+            (["3.5 packet"], stats, {}, True), (["3.5 packet"], stats, phases, False),
+            (["garbage"], stats, phases, True)):
+            with self.assertRaises(ValueError):
+                traffic_results(lines, log, marks, installed)
 
 
 if __name__ == "__main__":

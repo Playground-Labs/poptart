@@ -60,6 +60,21 @@ final class AppRoot {
     func start() async {
         guard !started else { return }
         started = true
+        #if DEBUG
+        // The privacy deny test has no one watching the menu bar, so it reads the status from a file.
+        if let path = ProcessInfo.processInfo.environment["POPTART_STATUS_FILE"], !path.isEmpty {
+            Task {
+                var last = ""
+                while !Task.isCancelled {
+                    if statusMessage != last {
+                        last = statusMessage
+                        try? Data(last.utf8).write(to: URL(fileURLWithPath: path), options: .atomic)
+                    }
+                    try? await Task.sleep(for: .milliseconds(250))
+                }
+            }
+        }
+        #endif
         do {
             let environment = try AppEnvironment.make(downloader: .system)
             self.environment = environment

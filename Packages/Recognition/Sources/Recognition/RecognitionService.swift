@@ -9,11 +9,12 @@ public actor RecognitionService: SpeechInputBoundary {
         let processing: Task<RecognitionFailure?, Never>
     }
 
-    private let capture: any RecognitionAudioCapturing
+    private var capture: any RecognitionAudioCapturing
     private let recognizer: any IncrementalSpeechRecognizing
     private let onEvent: EventHandler
     private var active: ActiveRecording?
     private var currentID: DictationID?
+    public private(set) var modelsPrepared = false
 
     init(
         capture: any RecognitionAudioCapturing,
@@ -39,9 +40,47 @@ public actor RecognitionService: SpeechInputBoundary {
         self.onEvent = onEvent
     }
 
+    /// Replays decoded audio through the recognizer in place of the microphone, at the pace a
+    /// microphone would deliver it, so a benchmark measures the same pipeline a Dictation uses.
+    public init(
+        modelLayout: RecognitionModelLayout,
+        replaying samples: [Float],
+        sampleRate: Double,
+        clock: any MonotonicClock = UptimeMonotonicClock(),
+        onEvent: @escaping EventHandler
+    ) throws {
+        _ = try RecognitionModelValidator.validate(modelLayout)
+        guard sampleRate.isFinite, sampleRate > 0, !samples.isEmpty, samples.allSatisfy(\.isFinite) else {
+            throw RecognitionCaptureError.unavailable
+        }
+        self.capture = ReplayAudioCapture(samples: samples, sampleRate: sampleRate)
+        self.recognizer = FluidAudioIncrementalRecognizer(
+            modelLayout: modelLayout,
+            clock: clock
+        )
+        self.onEvent = onEvent
+    }
+
+    /// Reuses the warm recognizer for the next fixture; unavailable during a recording or on live input.
+    public func setReplay(samples: [Float], sampleRate: Double) throws {
+        guard capture is ReplayAudioCapture, currentID == nil,
+              sampleRate.isFinite, sampleRate > 0, !samples.isEmpty,
+              samples.allSatisfy(\.isFinite) else { throw RecognitionCaptureError.unavailable }
+        capture = ReplayAudioCapture(samples: samples, sampleRate: sampleRate)
+    }
+
+    /// Waits only for audio arrival, not recognition processing, so pending recognition remains timed.
+    public func waitForReplayCompletion() async throws {
+        guard let replay = capture as? ReplayAudioCapture, currentID != nil else {
+            throw RecognitionCaptureError.unavailable
+        }
+        await replay.waitForCompletion()
+    }
+
     /// Loads the staged local models before the first Dictation.
     public func prepare() async throws {
         try await recognizer.prepare()
+        modelsPrepared = true
     }
 
     public func capabilities() async -> RecognitionCapabilities {

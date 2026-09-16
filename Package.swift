@@ -8,6 +8,7 @@ let package = Package(
     products: [
         .library(name: "PoptartApplication", targets: ["PoptartApplication"]),
         .executable(name: "Poptart", targets: ["Poptart"]),
+        .executable(name: "PoptartBenchmark", targets: ["PoptartBenchmark"]),
         // Compatibility harness. Deliberately separate products so that no shipping target ever
         // depends on them.
         .executable(name: "PoptartCompatHost", targets: ["PoptartCompatHost"]),
@@ -41,6 +42,12 @@ let package = Package(
             path: "App/Poptart"
         ),
         .executableTarget(
+            name: "PoptartBenchmark",
+            dependencies: ["PoptartApplication", "DictationCore", "Recognition", "Cleanup",
+                .product(name: "CleanupMLX", package: "Cleanup"), "ModelRuntime", "Persistence"],
+            path: "Tools/Benchmark"
+        ),
+        .executableTarget(
             name: "PoptartVerifier",
             path: "Scripts/PoptartVerifier"
         ),
@@ -61,6 +68,7 @@ let package = Package(
         .testTarget(
             name: "IntegrationTests",
             dependencies: [
+                "PoptartBenchmark",
                 "PoptartApplication",
                 "DictationCore",
                 "Persistence",

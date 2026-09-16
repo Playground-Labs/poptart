@@ -46,7 +46,17 @@ final class AppEnvironment {
             appropriateFor: nil,
             create: true
         )
-        let support = base.appendingPathComponent("Playground Labs/Poptart", isDirectory: true)
+        var support = base.appendingPathComponent("Playground Labs/Poptart", isDirectory: true)
+        #if DEBUG
+        // The privacy deny test runs Poptart against a throwaway support directory so a test run
+        // cannot read or overwrite a real person's history, the same development-only seam
+        // ApplicationModelPackLocator opens for a Model Pack directory.
+        if let path = ProcessInfo.processInfo.environment["POPTART_SUPPORT_DIRECTORY"],
+           !path.isEmpty
+        {
+            support = URL(fileURLWithPath: path, isDirectory: true)
+        }
+        #endif
         try FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
         self.supportDirectory = support
 
@@ -144,6 +154,15 @@ final class AppEnvironment {
     /// already in place. Onboarding runs against the live runtime once it is up.
     func start() async {
         await shortcut.load()
+        #if DEBUG
+        // The privacy deny test has to see settings persistence actually happen while the network
+        // is denied, and nothing on a normal launch writes settings on its own. Storing the binding
+        // the store just handed back is a real round trip through the real file; it changes nothing
+        // the person chose, and it only runs when a throwaway support directory is in force.
+        if ProcessInfo.processInfo.environment["POPTART_SUPPORT_DIRECTORY"]?.isEmpty == false {
+            try? await settingsStore.setShortcutBinding(shortcut.binding)
+        }
+        #endif
         await onboarding.load()
         await settings.load()
         await settings.restorePreferredMicrophone()

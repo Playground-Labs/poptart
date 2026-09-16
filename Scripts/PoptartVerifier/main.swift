@@ -96,9 +96,9 @@ struct Verifier {
       let source = try String(contentsOf: file, encoding: .utf8)
       let relative = file.path.replacingOccurrences(of: root.path + "/", with: "")
       if source.contains("URLSession") && relative != "Packages/ModelRuntime/Sources/ModelRuntime/URLSessionResumableDownloader.swift" { throw VerificationError.failed("network API outside explicit downloader: \(relative)") }
-      for token in ["Sentry", "Crashlytics", "TelemetryClient", "AnalyticsClient", "AVAudioFile", "write(from:"] where source.contains(token) { throw VerificationError.failed("privacy-forbidden production API \(token) in \(relative)") }
+      for token in ["Sentry", "Crashlytics", "TelemetryClient", "AnalyticsClient", "NWConnection", "AVAudioFile", "write(from:"] where source.contains(token) { throw VerificationError.failed("privacy-forbidden production API \(token) in \(relative)") }
       if relative.hasPrefix("Packages/Recognition/") || relative.hasPrefix("Packages/Cleanup/") {
-        for token in ["downloadAndLoad", "ModelHub", "loadModels(to:"] where source.contains(token) { throw VerificationError.failed("inference network helper \(token) in \(relative)") }
+        for token in ["downloadAndLoad", "ModelHub", "loadModels(to:", "loadModels()"] where source.contains(token) { throw VerificationError.failed("inference network helper \(token) in \(relative)") }
       }
     }
     try expect(true, "privacy scan")
