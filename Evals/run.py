@@ -327,11 +327,12 @@ def score(gold, adversarial, predictions):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--gold", type=Path, default=ROOT / "Evals/fixtures/gold.jsonl")
     parser.add_argument("--predictions", type=Path, help="JSONL of production-model results")
     parser.add_argument("--output", type=Path, help="write the JSON report here as well as stdout")
     arguments = parser.parse_args()
 
-    gold = load(ROOT / "Evals/fixtures/gold.jsonl")
+    gold = load(arguments.gold)
     adversarial = load(ROOT / "Evals/fixtures/adversarial.jsonl")
     validate_fixtures(gold, adversarial)
 

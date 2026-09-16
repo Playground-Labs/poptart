@@ -4,15 +4,16 @@
 set -euo pipefail
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO"
+FIXTURES="$REPO/Evals/fixtures/gold.jsonl"
 MODEL="" AUDIO="" OUTPUT="$REPO/.build/network-deny.json" STARTUP_ONLY=0
-usage() { echo "usage: ${0:t} [--startup-only | --model DIR --audio DIR] [--output FILE]" >&2; exit 2; }
+usage() { echo "usage: ${0:t} [--startup-only | --model DIR --audio DIR] [--fixtures PATH] [--output FILE]" >&2; exit 2; }
 while (( $# )); do
   case "$1" in
     --startup-only) STARTUP_ONLY=1; shift ;;
-    --model|--audio|--output)
+    --model|--audio|--output|--fixtures)
       (( $# >= 2 )) || usage
       case "$1" in
-        --model) MODEL="$2" ;; --audio) AUDIO="$2" ;; --output) OUTPUT="$2" ;;
+        --model) MODEL="$2" ;; --audio) AUDIO="$2" ;; --output) OUTPUT="$2" ;; --fixtures) FIXTURES="$2" ;;
       esac
       shift 2 ;;
     *) usage ;;
@@ -91,10 +92,10 @@ PY
 fi
 swift build --product PoptartBenchmark >/dev/null
 RUNNER="$(swift build --show-bin-path)/PoptartBenchmark"
-sandbox-exec -f "$PROFILE" "$RUNNER" --fixtures "$REPO/Evals/fixtures/gold.jsonl" \
+sandbox-exec -f "$PROFILE" "$RUNNER" --fixtures "$FIXTURES" \
   --model "$MODEL" --audio "$AUDIO" --jsonl --history-directory "$TMP/runner" \
   >.build/network-deny-benchmark.jsonl 2>.build/network-deny-benchmark.stderr.log
-python3 Scripts/privacy/verify_evidence.py deny .build/network-deny-benchmark.jsonl Evals/fixtures/gold.jsonl >"$TMP/results.json"
+python3 Scripts/privacy/verify_evidence.py deny .build/network-deny-benchmark.jsonl "$FIXTURES" >"$TMP/results.json"
 python3 - "$TMP/results.json" "$TMP/status" "$OUTPUT" "$PROFILE" <<'PY'
 import hashlib,json,sys
 report=json.load(open(sys.argv[1]))

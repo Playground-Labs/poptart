@@ -66,6 +66,7 @@ Pass the same `--fixtures PATH` to the benchmark and release verifier when using
 zsh Scripts/privacy/network_deny.sh --startup-only
 # Requires real audio and the complete local pack; expected exit 0 only after successful Cleanup.
 zsh Scripts/privacy/network_deny.sh --model /path/to/pack --audio /path/to/audio
+# Optional --fixtures PATH selects the corpus matching those audio files.
 # Interactive clean-install capture; authorize native packet capture first.
 sudo -v
 zsh Scripts/privacy/traffic_capture.sh

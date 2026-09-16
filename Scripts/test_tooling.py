@@ -255,6 +255,28 @@ class ToolingTests(unittest.TestCase):
             result = evaluate(["--predictions", str(path)], expect_success=False)
         self.assertNotEqual(result.returncode, 0)
 
+    def test_corpus_and_evaluation_utterances_do_not_leak_across_splits(self):
+        corpus = load(CORPUS)
+        evaluation = [record for path in (ROOT / "Evals/fixtures").glob("*.jsonl") for record in load(path)]
+        prepare_corpus.validate_partitions(corpus, evaluation)
+        duplicate = dict(corpus[0], id="leaked", split="test", raw=corpus[0]["raw"].upper())
+        with self.assertRaises(ValueError):
+            prepare_corpus.validate_partitions(corpus + [duplicate], evaluation)
+        with self.assertRaises(ValueError):
+            prepare_corpus.validate_partitions(corpus + [dict(corpus[0], id="eval-leak", raw=evaluation[0]["raw"])], evaluation)
+
+    def test_spoken_fixtures_are_valid_and_synthesis_refuses_unsafe_inputs(self):
+        import synthesize_audio
+        spoken = load(ROOT / "Evals/fixtures/spoken.jsonl")
+        synthesize_audio.validate(spoken)
+        result = evaluate(["--gold", "Evals/fixtures/spoken.jsonl"])
+        self.assertFalse(json.loads(result.stdout)["qualityClaim"])
+        for records in ([], [spoken[0], spoken[0]], [dict(spoken[0], id="../outside")],
+                        [dict(spoken[0], provenance={})], [dict(spoken[0], historyRecord="private")],
+                        [dict(spoken[0], raw="[[slnc 1000]]")]):
+            with self.assertRaises(ValueError):
+                synthesize_audio.validate(records)
+
     def test_training_targets_are_edit_plans_that_reproduce_the_clean_text(self):
         build_corpus()
         corpus = {record["id"]: record for record in load(CORPUS)}

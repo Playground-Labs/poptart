@@ -44,3 +44,24 @@ Training the model on a plan the runtime would reject teaches it to produce fall
 6. Run the exact production prompt/tokenizer/artifact evaluation and physical 8 GB M1 benchmark. Only the release script may populate hashes and measurements.
 
 The repository currently contains no trained weights and makes no quality or latency claim.
+
+## Seed expansion
+
+The first authored expansion brings the corpus to **81 records**: 54 train, 14 valid,
+13 test. `coverage` is optional authoring metadata; it is not included in the model prompt.
+The new examples cover punctuation and capitalization, questions, filler removal, adjacent
+repetitions, vocabulary spelling, mid-sentence joins, deterministic Explicit Corrections,
+and no-op preservation of negation, identifiers, amounts, URLs, and ordinary uses of “like”
+and “I mean.” All names, contexts, and utterances are invented.
+
+`prepare_corpus.py` rejects duplicate utterances (case/punctuation/whitespace normalized)
+within the corpus and direct overlap with any evaluation fixture. This catches exact leakage,
+not semantic paraphrases; authors must still review topic and template overlap across splits.
+The native Cleanup test also runs every training/gold label through the actual Swift validator
+and requires reserved corrections to equal what the runtime derives from the transcript.
+
+This is a seed set, not a sufficient fine-tuning or release dataset. Next expand independently
+reviewed examples, especially longer Dictations, punctuation ambiguity, correction boundaries,
+and preservation cases. Keep validation/test text out of training and freeze a larger release
+evaluation set before comparing models. Do not interpret the default 1,200 training iterations
+as a tuned schedule for this small seed. No training run or model-quality claim has been made.

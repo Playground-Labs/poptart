@@ -57,3 +57,38 @@ SPEC requires exact edit-plan correctness, meaning preservation, vocabulary pres
 ```
 
 With predictions, `mode` becomes `model-results`, `qualityClaim` becomes `true`, and the five figures are added. Release evidence must identify the exact prompt, tokenizer, quantized artifact SHA-256, runtime pins, hardware, OS, and invocation that produced the prediction file.
+
+## Spoken smoke fixtures
+
+`fixtures/spoken.jsonl` is a separate set of 12 authored utterances, with no normalized text
+overlap with training, validation, or test records. It covers fillers, repetitions, a question,
+a deterministic correction, context joins, vocabulary, negation, a number, and one longer
+utterance. Its labels describe Cleanup of the listed `raw` transcript; they do not assert what
+a recognizer will transcribe from audio.
+
+```sh
+python3 Evals/run.py --gold Evals/fixtures/spoken.jsonl
+python3 Evals/synthesize_audio.py
+swift build --product PoptartBenchmark
+"$(swift build --show-bin-path)/PoptartBenchmark" \
+  --fixtures Evals/fixtures/spoken.jsonl --model /path/to/pack \
+  --audio .build/audio-smoke --jsonl
+zsh Scripts/privacy/network_deny.sh --fixtures Evals/fixtures/spoken.jsonl \
+  --model /path/to/pack --audio .build/audio-smoke
+```
+
+The synthesizer uses installed macOS `say` under the network-deny profile: Samantha at 170
+words/minute by default, configurable with `--voice` and `--rate`. It writes mono 16 kHz PCM16
+WAVs named for fixture IDs and a manifest of text/audio hashes, durations, voice, speech rate,
+and OS version/build. No microphone, account, external speech API, or model download is used.
+Re-run output can change with installed voice/OS revisions; retain the manifest with evidence.
+
+Generated WAVs stay in gitignored `.build/audio-smoke/`. They are local synthetic smoke
+artifacts, excluded from the training and release datasets. A single TTS voice does not
+represent accents, natural corrections, hesitation, microphone noise, or real-world timing.
+Use separately sourced, consented, provenance-tracked human audio across speakers and devices
+for release evaluation; these twelve files cannot establish the M1 p99 or speech quality gate.
+
+The original gold fixtures now encode actual `café` and `👍` characters. Their correction
+example includes the punctuation boundary the native deterministic correction rule requires;
+the checked-in reserved edit is derived from that same boundary.

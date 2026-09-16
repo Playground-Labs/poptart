@@ -129,12 +129,34 @@ def build(record, seen):
     }
 
 
+def validate_partitions(records, evaluation_records):
+    """Reject duplicate examples and direct leakage into held-out evaluation data."""
+    seen_ids = set()
+    seen_text = {}
+    for record in evaluation_records + records:
+        identifier = record["id"]
+        if identifier in seen_ids:
+            raise ValueError(f"duplicate corpus/evaluation id: {identifier}")
+        seen_ids.add(identifier)
+        normalized = tuple(editplan.word_list(record["raw"]))
+        previous = seen_text.get(normalized)
+        if previous is not None and ("split" in record or "split" in previous):
+            raise ValueError(f"duplicate utterance or split leakage: {previous['id']} and {identifier}")
+        seen_text[normalized] = record
+
+
 def main() -> None:
     records = [
         json.loads(line)
         for line in SOURCE.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
+    evaluation_records = [
+        json.loads(line)
+        for path in sorted((ROOT / "Evals/fixtures").glob("*.jsonl"))
+        for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
+    validate_partitions(records, evaluation_records)
     splits = {"train": [], "valid": [], "test": []}
     seen = set()
     for record in records:
