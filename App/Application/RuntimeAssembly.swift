@@ -12,6 +12,7 @@ public struct ApplicationModelPackLayout: Equatable, Sendable {
     public let root: URL
     public let unifiedRecognition: URL
     public let optionalCTC: URL?
+    public let optionalVAD: URL?
     public let cleanup: URL
 
     public init(root: URL) {
@@ -19,6 +20,8 @@ public struct ApplicationModelPackLayout: Equatable, Sendable {
         self.unifiedRecognition = root.appendingPathComponent("recognition/unified", isDirectory: true)
         let ctc = root.appendingPathComponent("recognition/ctc", isDirectory: true)
         self.optionalCTC = FileManager.default.fileExists(atPath: ctc.path) ? ctc : nil
+        let vad = root.appendingPathComponent("vad", isDirectory: true)
+        self.optionalVAD = FileManager.default.fileExists(atPath: vad.path) ? vad : nil
         self.cleanup = root.appendingPathComponent("cleanup", isDirectory: true)
     }
 }
@@ -191,7 +194,8 @@ public final class RuntimeAssembly: @unchecked Sendable {
         let recognition = try RecognitionService(
             modelLayout: .init(
                 unifiedModelDirectory: modelPack.unifiedRecognition,
-                ctcModelDirectory: modelPack.optionalCTC
+                ctcModelDirectory: modelPack.optionalCTC,
+                vadModelDirectory: modelPack.optionalVAD
             ),
             clock: clock,
             onEvent: { [relay] event in await relay.send(event) }

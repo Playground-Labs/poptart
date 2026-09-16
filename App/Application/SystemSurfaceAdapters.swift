@@ -328,7 +328,8 @@ public struct LocalModelPackSmokeTest: ModelPackSmokeTesting {
         let recognition = try RecognitionService(
             modelLayout: .init(
                 unifiedModelDirectory: layout.unifiedRecognition,
-                ctcModelDirectory: layout.optionalCTC
+                ctcModelDirectory: layout.optionalCTC,
+                vadModelDirectory: layout.optionalVAD
             ),
             onEvent: { _ in }
         )

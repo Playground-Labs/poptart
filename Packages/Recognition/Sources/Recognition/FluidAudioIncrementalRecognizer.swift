@@ -25,6 +25,9 @@ actor FluidAudioIncrementalRecognizer: IncrementalSpeechRecognizing {
     private let clock: any MonotonicClock
     private let manager: StreamingUnifiedAsrManager
     private let latestHypothesis: LatestHypothesisStore
+    /// Starts as a pass-through so audio reaches the recognizer even if `prepare()` never gets as
+    /// far as loading a voice activity model.
+    private var gate = SpeechGate(detector: nil)
     private var ctcModels: CtcModels?
     private var ctcTokenizer: CtcTokenizer?
     private var isPrepared = false
@@ -57,6 +60,7 @@ actor FluidAudioIncrementalRecognizer: IncrementalSpeechRecognizing {
         guard !isPrepared else { return }
         _ = try RecognitionModelValidator.validate(modelLayout)
         try await manager.loadModels(from: modelLayout.unifiedModelDirectory)
+        gate = await SpeechGate.make(modelDirectory: modelLayout.vadModelDirectory)
         if let ctcDirectory = modelLayout.ctcModelDirectory {
             async let models = CtcModels.loadDirect(from: ctcDirectory)
             async let tokenizer = CtcTokenizer.load(from: ctcDirectory)
@@ -72,6 +76,7 @@ actor FluidAudioIncrementalRecognizer: IncrementalSpeechRecognizing {
     ) async throws {
         try await prepare()
         try await manager.reset()
+        await gate.reset()
         latestHypothesis.clear()
         let latestHypothesis = latestHypothesis
         await manager.setPartialTranscriptCallback { text in
@@ -92,11 +97,18 @@ actor FluidAudioIncrementalRecognizer: IncrementalSpeechRecognizing {
     }
 
     func accept(_ audio: RecognitionAudioBuffer) async throws {
-        try await manager.appendAudio(audio.buffer)
+        for buffer in await gate.gate(audio).buffers {
+            try await manager.appendAudio(buffer)
+        }
         try await manager.processBufferedAudio()
     }
 
     func finish(deadline: MonotonicInstant) async -> IncrementalRecognitionFinalization {
+        // The gate holds back a chunk of pre-roll; the end of the utterance lives in it.
+        for buffer in await gate.flush().buffers {
+            try? await manager.appendAudio(buffer)
+        }
+        try? await manager.processBufferedAudio()
         let race = FirstFinalizationOutcome()
         let manager = manager
         let finishTask = Task<Result<String, RecognitionFailure>, Never> {
@@ -181,6 +193,7 @@ actor FluidAudioIncrementalRecognizer: IncrementalSpeechRecognizing {
         }
         await manager.setPartialTranscriptCallback { _ in }
         try? await manager.reset()
+        await gate.reset()
         latestHypothesis.clear()
     }
 }

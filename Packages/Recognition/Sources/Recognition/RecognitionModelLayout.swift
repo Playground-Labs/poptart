@@ -24,13 +24,23 @@ public struct RecognitionModelLayout: Equatable, Sendable {
         "AudioEncoder.mlmodelc",
     ]
     public static let ctcJSONAssetNames = ["vocab.json", "tokenizer.json"]
+    public static let vadModelBundleName = ModelNames.VAD.sileroVadFile
 
     public let unifiedModelDirectory: URL
     public let ctcModelDirectory: URL?
+    /// Deliberately absent from `RecognitionModelValidator`: a validation failure refuses to start
+    /// recognition at all, and noise rejection must never be able to do that. A missing or broken
+    /// voice activity model leaves the speech gate as a pass-through instead.
+    public let vadModelDirectory: URL?
 
-    public init(unifiedModelDirectory: URL, ctcModelDirectory: URL? = nil) {
+    public init(
+        unifiedModelDirectory: URL,
+        ctcModelDirectory: URL? = nil,
+        vadModelDirectory: URL? = nil
+    ) {
         self.unifiedModelDirectory = unifiedModelDirectory
         self.ctcModelDirectory = ctcModelDirectory
+        self.vadModelDirectory = vadModelDirectory
     }
 }
 
