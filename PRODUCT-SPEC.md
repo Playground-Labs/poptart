@@ -127,7 +127,7 @@ The application installs one signed Model Pack during onboarding. That pack cont
 - Cap one Recording at five minutes and begin a visual warning at four minutes and thirty seconds.
 - Keep one persistent, compact, nonactivating Indicator visible while Poptart runs, at the bottom of the screen just above the Dock.
 - Give the Indicator a monochrome shape vocabulary: a blank collapsed sliver when ready, a twenty-one bar waveform during Recording, and a spinner while finalizing, cleaning, and delivering. Color carries no meaning and no outcome has a shape of its own.
-- Drive waveform bars from measured microphone frequency bands before speech gating, with fast attack and slower decay. Keep these levels ephemeral and never store them.
+- Drive waveform energy from microphone loudness before speech gating, with smoothly randomized bar heights, fast attack, and slower decay. Individual bars do not map to frequencies. Keep these levels ephemeral and never store them.
 - Show state and audio activity only; never show partial or completed transcript text in the Indicator or the Outcome Toast.
 - Report a result with a brief Outcome Toast directly above the Indicator. It carries one short fixed message, dismisses itself, and never puts words inside the Indicator.
 - Limit the Outcome Toast to the four results a person cannot already see: copied to clipboard, Dictation failed, unavailable in a password field, and thirty seconds left in a Recording. Stay silent for inserted text, for every Fallback that still delivers words, and for cancellation.

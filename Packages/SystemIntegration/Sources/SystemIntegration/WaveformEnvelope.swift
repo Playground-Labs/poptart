@@ -1,43 +1,33 @@
 import DictationCore
+import Foundation
 
-/// Holds the level each waveform bar is currently drawn at, and walks it toward what the
-/// microphone last reported.
-///
-/// Measured bands jump between one buffer and the next, and drawing them raw makes the bars strobe
-/// rather than move. A meter rises almost as fast as the sound arriving and falls slowly, which is
-/// what lets an eye read a syllable: the rise is the event, the fall is the trail that makes the
-/// rise legible.
+/// Smooth, decorative bars driven by microphone loudness, not individual frequencies.
 struct WaveformEnvelope {
-  private(set) var levels: [Double]
-  private let attack: Double
-  private let release: Double
+  private(set) var levels = Array(repeating: 0.0, count: AudioLevels.bandCount)
+  private var weights = Array(repeating: 0.0, count: AudioLevels.bandCount)
+  private var framesUntilRefresh = 0
 
-  init(
-    bandCount: Int = AudioLevels.bandCount,
-    attack: Double = 0.55,
-    release: Double = 0.12
+  /// Pick new independent heights every four display frames, then ease toward them.
+  /// Multiplying by microphone energy keeps silence still and speech in control.
+  mutating func advance(
+    overall: Double,
+    randomWeight: () -> Double = { Double.random(in: 0.12...1) }
   ) {
-    precondition(bandCount > 0)
-    precondition(attack > 0 && attack <= 1)
-    precondition(release > 0 && release <= 1)
-    levels = Array(repeating: 0, count: bandCount)
-    self.attack = attack
-    self.release = release
-  }
-
-  /// Moves every bar one frame's worth toward `target`. A bar never passes its target, so a step up
-  /// cannot overshoot into a level the microphone never heard.
-  mutating func advance(toward target: [Double]) {
-    guard target.count == levels.count else { return }
+    if framesUntilRefresh == 0 {
+      weights = weights.map { _ in randomWeight() }
+      framesUntilRefresh = 4
+    }
+    framesUntilRefresh -= 1
+    let energy = 1 - exp(-32 * min(1, max(0, overall)))
     for index in levels.indices {
-      let destination = target[index]
-      let rate = destination > levels[index] ? attack : release
-      levels[index] += (destination - levels[index]) * rate
+      let target = energy * weights[index]
+      let rate = target > levels[index] ? 0.75 : 0.20
+      levels[index] += (target - levels[index]) * rate
     }
   }
 
-  /// Drops every bar back to silence, so a new recording does not open on the last one's tail.
   mutating func reset() {
     levels = Array(repeating: 0, count: levels.count)
+    framesUntilRefresh = 0
   }
 }

@@ -31,7 +31,7 @@ private final class IndicatorUI {
   private static func size(for shape: IndicatorShape) -> NSSize {
     switch shape {
     case .collapsed: NSSize(width: 51, height: 10)
-    case .waveform: NSSize(width: 98, height: 26)
+    case .waveform: NSSize(width: 128, height: 40)
     case .spinner: NSSize(width: 43, height: 26)
     }
   }
@@ -125,10 +125,6 @@ private final class IndicatorView: NSView {
     }
   }
 
-  /// The shortest a bar is ever drawn. With nothing to hear the waveform rests at this height
-  /// rather than collapsing: an empty pill would read as a dead microphone.
-  private static let restingLevel = 0.12
-
   private let spinnerLayer = CAShapeLayer()
   private var waveformTimer: Timer?
   private var envelope = WaveformEnvelope()
@@ -197,19 +193,16 @@ private final class IndicatorView: NSView {
   }
 
   private func drawWaveform() {
-    let inset: CGFloat = 7
+    let inset: CGFloat = 9
     let available = max(0, bounds.width - inset * 2)
     let levels = envelope.levels
     let pitch = available / CGFloat(levels.count)
-    let barWidth = max(1, pitch * 0.5)
+    let barWidth = max(1, pitch * 0.55)
     let resting: CGFloat = 2
-    let tallest = max(resting, bounds.height - bounds.height * 0.42)
+    let tallest = max(resting, bounds.height - 8)
     NSColor.labelColor.setFill()
     for (index, level) in levels.enumerated() {
-      // Speech sits low in a linear 0...1 scale, so a raw band leaves every bar pinned near the
-      // floor and the waveform looks frozen. The curve lifts ordinary talking into the visible part
-      // of the pill; the floor keeps it alive between syllables.
-      let amplitude = min(1, max(IndicatorView.restingLevel, pow(min(1, max(0, level)), 0.45)))
+      let amplitude = min(1, max(0, level))
       let height = resting + (tallest - resting) * CGFloat(amplitude)
       let rect = NSRect(
         x: inset + pitch * CGFloat(index) + (pitch - barWidth) / 2,
@@ -221,13 +214,11 @@ private final class IndicatorView: NSView {
     }
   }
 
-  /// What the bars are heading for: the levels the microphone last reported, or silence when there
-  /// is nothing yet to draw.
-  private var waveformTarget: [Double] {
+  private var microphoneLevel: Double {
     guard case .waveform(let levels) = visual.shape, let levels else {
-      return Array(repeating: 0, count: AudioLevels.bandCount)
+      return 0
     }
-    return levels.bands
+    return levels.overall
   }
 
   private func cornerRadius(for shape: IndicatorShape) -> CGFloat {
@@ -260,7 +251,7 @@ private final class IndicatorView: NSView {
       [weak self] _ in
       MainActor.assumeIsolated {
         guard let self else { return }
-        self.envelope.advance(toward: self.waveformTarget)
+        self.envelope.advance(overall: self.microphoneLevel)
         self.needsDisplay = true
       }
     }

@@ -263,7 +263,7 @@ The Indicator is persistent, compact, nonactivating, and never displays live or 
 The shapes are:
 
 - a blank collapsed sliver when Poptart is ready and between Dictations;
-- a twenty-one bar waveform driven by measured, logarithmically spaced microphone frequency bands during Recording, with fast attack and slower decay;
+- a twenty-one bar waveform driven by microphone loudness during Recording, with smoothly randomized individual heights, fast attack, and slower decay; bars are decorative and do not correspond to specific frequencies;
 - a spinner while finalizing, cleaning, and delivering.
 
 No outcome has a shape of its own. The Indicator returns to the collapsed sliver as soon as a Dictation ends, however it ended, without stealing focus.

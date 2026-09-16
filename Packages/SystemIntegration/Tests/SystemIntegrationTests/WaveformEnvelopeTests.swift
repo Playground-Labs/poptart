@@ -5,72 +5,66 @@ import Testing
 
 @Suite("Waveform envelope")
 struct WaveformEnvelopeTests {
-  @Test("a new envelope rests at silence")
-  func startsSilent() {
-    #expect(WaveformEnvelope().levels == Array(repeating: 0, count: AudioLevels.bandCount))
-  }
-
-  @Test("a bar rises faster than it falls")
-  func risesFastAndFallsSlow() {
-    let full = Array(repeating: 1.0, count: AudioLevels.bandCount)
-    var rising = WaveformEnvelope()
-    rising.advance(toward: full)
-    let gained = rising.levels[0]
-
-    var falling = WaveformEnvelope()
-    for _ in 0..<40 { falling.advance(toward: full) }
-    let beforeFall = falling.levels[0]
-    falling.advance(toward: Array(repeating: 0.0, count: AudioLevels.bandCount))
-    let lost = beforeFall - falling.levels[0]
-
-    #expect(gained > lost)
-  }
-
-  @Test("a step up never overshoots the level the microphone reported")
-  func neverExceedsItsInput() {
+  @Test("random heights stay silent without microphone energy")
+  func silenceStaysStill() {
     var envelope = WaveformEnvelope()
-    let target = Array(repeating: 0.4, count: AudioLevels.bandCount)
-    for _ in 0..<100 {
-      envelope.advance(toward: target)
-      #expect(envelope.levels.allSatisfy { $0 <= 0.4 })
+    for _ in 0..<20 { envelope.advance(overall: 0, randomWeight: { 1 }) }
+    #expect(envelope.levels == Array(repeating: 0, count: AudioLevels.bandCount))
+  }
+
+  @Test("bars vary independently without mirroring or frequency input")
+  func independentHeights() {
+    var envelope = WaveformEnvelope()
+    var index = 0
+    envelope.advance(overall: 0.1) {
+      index += 1
+      return Double(index) / Double(AudioLevels.bandCount)
     }
+    #expect(envelope.levels.count == AudioLevels.bandCount)
+    #expect(Set(envelope.levels).count == AudioLevels.bandCount)
+    #expect(envelope.levels != Array(envelope.levels.reversed()))
+    #expect(envelope.levels.allSatisfy { (0...1).contains($0) })
   }
 
-  @Test("a held level converges on itself")
-  func convergesOnAHeldLevel() {
+  @Test("random targets refresh every four frames and ease between heights")
+  func refreshAndSmooth() {
     var envelope = WaveformEnvelope()
-    let target = Array(repeating: 0.7, count: AudioLevels.bandCount)
-    for _ in 0..<200 { envelope.advance(toward: target) }
-    #expect(envelope.levels.allSatisfy { abs($0 - 0.7) < 0.001 })
-
-    for _ in 0..<400 {
-      envelope.advance(toward: Array(repeating: 0.0, count: AudioLevels.bandCount))
+    var calls = 0
+    for _ in 0..<4 {
+      envelope.advance(overall: 1) {
+        calls += 1
+        return 0.2
+      }
     }
-    #expect(envelope.levels.allSatisfy { $0 < 0.001 })
+    #expect(calls == AudioLevels.bandCount)
+    let previous = envelope.levels[0]
+    envelope.advance(overall: 1, randomWeight: { 1 })
+    #expect(envelope.levels[0] > previous)
+    #expect(envelope.levels[0] < 1)
   }
 
-  @Test("each band follows its own band and no other")
-  func bandsAreIndependent() {
-    var envelope = WaveformEnvelope()
-    var target = Array(repeating: 0.0, count: AudioLevels.bandCount)
-    target[3] = 1
-    for _ in 0..<20 { envelope.advance(toward: target) }
-    #expect(envelope.levels[3] > 0.9)
-    #expect(envelope.levels.enumerated().allSatisfy { $0.offset == 3 || $0.element == 0 })
+  @Test("louder speech raises the waveform and silence lets it decay")
+  func followsMicrophoneEnergy() {
+    var quiet = WaveformEnvelope()
+    var loud = WaveformEnvelope()
+    quiet.advance(overall: 0.01, randomWeight: { 1 })
+    loud.advance(overall: 0.1, randomWeight: { 1 })
+    #expect(loud.levels[0] > quiet.levels[0])
+    let peak = loud.levels[0]
+    loud.advance(overall: 0, randomWeight: { 1 })
+    #expect(loud.levels[0] > 0)
+    #expect(loud.levels[0] < peak)
+    for _ in 0..<60 { loud.advance(overall: 0, randomWeight: { 1 }) }
+    #expect(loud.levels.allSatisfy { $0 < 0.001 })
   }
 
-  @Test("a reset drops the tail of the last recording")
-  func resetReturnsToSilence() {
+  @Test("reset clears the previous recording and requests fresh heights")
+  func resets() {
     var envelope = WaveformEnvelope()
-    envelope.advance(toward: Array(repeating: 1.0, count: AudioLevels.bandCount))
+    envelope.advance(overall: 0.1, randomWeight: { 1 })
     envelope.reset()
     #expect(envelope.levels == Array(repeating: 0, count: AudioLevels.bandCount))
-  }
-
-  @Test("a target of the wrong width is ignored rather than crashing the Indicator")
-  func ignoresAMismatchedTarget() {
-    var envelope = WaveformEnvelope()
-    envelope.advance(toward: [1, 1, 1])
-    #expect(envelope.levels == Array(repeating: 0, count: AudioLevels.bandCount))
+    envelope.advance(overall: 0.1, randomWeight: { 0 })
+    #expect(envelope.levels.allSatisfy { $0 == 0 })
   }
 }
