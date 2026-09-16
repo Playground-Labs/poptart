@@ -416,6 +416,116 @@ struct OnboardingSurfaceTests {
         #expect(harness.microphone.requests.value == 1)
     }
 
+    @Test("Continue on the explanation acknowledges it and moves to the microphone step")
+    func continueAcknowledgesTheExplanation() async {
+        let harness = OnboardingHarness()
+        await harness.model.load()
+        #expect(harness.model.step == .explanation)
+        #expect(harness.model.canContinue)
+        #expect(harness.model.nextStep == .microphonePermission)
+
+        await harness.model.continueOnboarding()
+
+        #expect(harness.model.progress.explanationAcknowledged)
+        #expect(await harness.settings.stored.onboarding.explanationAcknowledged)
+        #expect(harness.model.step == .microphonePermission)
+    }
+
+    @Test("Continue names what the current step is still waiting for")
+    func continueNamesTheBlockerForTheCurrentStep() async {
+        let harness = OnboardingHarness(
+            progress: .init(
+                explanationAcknowledged: true,
+                offlineReadinessConfirmed: false,
+                shortcutTestPassed: false,
+                firstDictationCompleted: false
+            ))
+        await harness.model.load()
+
+        #expect(harness.model.step == .microphonePermission)
+        #expect(harness.model.canContinue == false)
+        #expect(harness.model.continueBlocker == "Microphone access is not granted.")
+    }
+
+    @Test("Continue waits on the shortcut step for Input Monitoring and a passing test")
+    func continueIsBlockedUntilTheShortcutTestPasses() async {
+        let harness = OnboardingHarness(
+            progress: .init(
+                explanationAcknowledged: true,
+                offlineReadinessConfirmed: true,
+                shortcutTestPassed: false,
+                firstDictationCompleted: false
+            ),
+            microphone: .granted,
+            accessibilityGranted: true,
+            keyboardGranted: false,
+            pack: .stub()
+        )
+        await harness.model.load()
+        #expect(harness.model.step == .shortcutTest)
+        #expect(harness.model.canContinue == false)
+        #expect(harness.model.continueBlocker == "Input Monitoring is not granted.")
+
+        await harness.model.requestKeyboardMonitoringPermission()
+        #expect(harness.model.canContinue == false)
+        #expect(harness.model.continueBlocker == "The shortcut test has not succeeded.")
+
+        harness.model.shortcutPressed()
+        await harness.model.shortcutReleased()
+
+        #expect(harness.model.canContinue)
+        #expect(harness.model.continueBlocker == nil)
+    }
+
+    @Test("the footer names the Model Pack, not a permission a later step asks for")
+    func continueIgnoresBlockersFromLaterSteps() async {
+        let harness = OnboardingHarness(
+            progress: .init(
+                explanationAcknowledged: true,
+                offlineReadinessConfirmed: false,
+                shortcutTestPassed: false,
+                firstDictationCompleted: false
+            ),
+            microphone: .granted,
+            accessibilityGranted: true,
+            keyboardGranted: false
+        )
+        await harness.model.load()
+
+        #expect(harness.model.step == .modelPack)
+        #expect(harness.model.blockers.first == .keyboardMonitoringPermission)
+        #expect(harness.model.continueBlocker == "No verified Model Pack is active.")
+    }
+
+    @Test("Continue on the last step confirms the first Dictation")
+    func continueConfirmsTheFirstDictation() async {
+        let started = Date(timeIntervalSince1970: 5_000)
+        let harness = OnboardingHarness(
+            progress: .init(
+                explanationAcknowledged: true,
+                offlineReadinessConfirmed: true,
+                shortcutTestPassed: true,
+                firstDictationCompleted: false
+            ),
+            microphone: .granted,
+            accessibilityGranted: true,
+            keyboardGranted: true,
+            pack: .stub(),
+            now: { started }
+        )
+        await harness.model.load()
+        #expect(harness.model.step == .firstDictation)
+        #expect(harness.model.nextStep == nil, "the last step has nothing after it")
+        #expect(harness.model.canContinue)
+
+        harness.model.beginFirstDictationTest()
+        await harness.probe.complete(at: started.addingTimeInterval(2))
+        await harness.model.continueOnboarding()
+
+        #expect(harness.model.progress.firstDictationCompleted)
+        #expect(harness.model.isComplete)
+    }
+
     @Test("an installed pack is reported without asking the release channel")
     func installedPackIsReportedOffline() async {
         let harness = OnboardingHarness(pack: .stub(version: "3.1.0"))

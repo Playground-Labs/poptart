@@ -2,34 +2,67 @@ import PoptartApplication
 import SwiftUI
 import SystemIntegration
 
-/// A thin projection of ``SettingsModel``.
+/// A thin projection of ``SettingsModel``. The window borrows the Indicator's vocabulary: one ink
+/// on the window ground, sections laid flat and parted by hairlines, every control on one edge.
 struct SettingsView: View {
     @Bindable var model: SettingsModel
     let launch: ApplicationLaunchModel
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Label(launch.status.message, systemImage: "waveform")
-                    .font(.headline)
-
-                dictationSection
-                modelPackSection
-                vocabularySection
-                historySection
-                permissionsSection
-                aboutSection
+            VStack(alignment: .leading, spacing: 0) {
+                header
+                section { dictationSection }
+                section { modelPackSection }
+                section { vocabularySection }
+                section { historySection }
+                section { permissionsSection }
+                section { aboutSection }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(4)
+        }
+        .buttonStyle(.outlined)
+    }
+
+    private var header: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Image(systemName: "waveform")
+            Text(launch.status.message)
+                .font(.system(size: 15, weight: .semibold))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 12)
+            Text("Poptart \(model.applicationVersion)")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 16)
+    }
+
+    /// Every section: a hairline, then its rows on the ground. No box, no fill, no colour.
+    private func section<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            SectionDivider()
+            VStack(alignment: .leading, spacing: Theme.sectionSpacing) {
+                content()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 13)
         }
     }
 
-    private var dictationSection: some View {
-        GroupBox("Dictation") {
-            VStack(alignment: .leading, spacing: 12) {
-                MicrophoneInputPicker(model: model)
+    // MARK: Dictation
 
+    @ViewBuilder private var dictationSection: some View {
+        SectionLabel("Dictation")
+
+        LabeledRow(label: "Microphone") {
+            MicrophoneInputPicker(model: model)
+        }
+
+        LabeledRow(label: "Shortcut") {
+            VStack(alignment: .leading, spacing: 6) {
                 Picker(
                     "Dictation shortcut",
                     selection: Binding(
@@ -41,134 +74,198 @@ struct SettingsView: View {
                         Text(binding.displayName).tag(binding)
                     }
                 }
-                if let message = model.shortcut.deferredMessage {
-                    Text(message).font(.caption).foregroundStyle(.secondary)
-                }
+                .labelsHidden()
+                .frame(width: Theme.controlWidth)
 
+                hint("Hold to record, release to insert")
+                if let message = model.shortcut.deferredMessage { hint(message) }
+            }
+        }
+
+        LabeledRow(label: "Open at login") {
+            VStack(alignment: .leading, spacing: 6) {
                 Toggle(
-                    "Launch Poptart at login",
+                    "Open at login",
                     isOn: Binding(
                         get: { model.launchesAtLogin },
                         set: { enabled in Task { await model.setLaunchesAtLogin(enabled) } }
                     )
                 )
-                if let message = model.launchAtLoginMessage {
-                    Text(message).font(.caption).foregroundStyle(.secondary)
-                }
+                .labelsHidden()
+                .toggleStyle(.switch)
+
+                if let message = model.launchAtLoginMessage { hint(message) }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
-    private var modelPackSection: some View {
-        GroupBox("Model Pack") {
-            VStack(alignment: .leading, spacing: 10) {
+    // MARK: Model Pack
+
+    @ViewBuilder private var modelPackSection: some View {
+        HStack(spacing: 8) {
+            SectionLabel("Model Pack")
+            Spacer(minLength: 12)
+            HStack(spacing: 8) {
+                Button("Check for Updates") { Task { await model.checkForModelPackUpdate() } }
+                Button("Update") { Task { await model.updateModelPack() } }
+                    .disabled(model.availableModelPack == nil)
+                Button("Repair") { Task { await model.repairModelPack() } }
+            }
+            .disabled(model.modelPackActivity.isWorking)
+        }
+
+        LabeledRow(label: "Installed") {
+            VStack(alignment: .leading, spacing: 4) {
                 if let pack = model.modelPack {
-                    Text("Version \(pack.version)")
-                    Text("\(pack.storageDescription) on this Mac")
-                        .font(.caption).foregroundStyle(.secondary)
-                    Text(pack.cleanupDescription)
-                        .font(.caption).foregroundStyle(.secondary)
-                    ForEach(pack.licenses) { license in
-                        Link("\(license.role): \(license.name)", destination: license.url)
-                            .font(.caption)
-                    }
+                    Text("Version \(pack.version) · \(pack.storageDescription)")
+                        .fixedSize(horizontal: false, vertical: true)
+                    hint(pack.cleanupDescription)
                 } else {
-                    Text("No verified Model Pack is active.").foregroundStyle(.secondary)
-                }
-                HStack {
-                    Button("Check for Updates") { Task { await model.checkForModelPackUpdate() } }
-                    Button("Update Model Pack") { Task { await model.updateModelPack() } }
-                        .disabled(model.availableModelPack == nil)
-                    Button("Repair Model Pack") { Task { await model.repairModelPack() } }
-                }
-                .disabled(model.modelPackActivity.isWorking)
-                if let status = model.modelPackActivity.statusText {
-                    Text(status).font(.caption).foregroundStyle(.secondary)
+                    Text("No verified Model Pack is active.")
+                        .foregroundStyle(.secondary)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+
+        if let pack = model.modelPack, !pack.licenses.isEmpty {
+            LabeledRow(label: "Licenses") {
+                HStack(spacing: 12) {
+                    ForEach(pack.licenses) { license in
+                        Link(destination: license.url) {
+                            Text("\(license.role.capitalized): \(license.name)").underline()
+                        }
+                        .buttonStyle(.plain)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.primary)
+                    }
+                }
+            }
+        }
+
+        if let status = model.modelPackActivity.statusText { hint(status) }
+    }
+
+    // MARK: Personal Vocabulary
+
+    @ViewBuilder private var vocabularySection: some View {
+        HStack(spacing: 8) {
+            SectionLabel("Personal Vocabulary")
+            Spacer(minLength: 12)
+            Button("Save") { Task { await model.saveVocabulary() } }
+                .buttonStyle(.filled)
+            Button("Revert") { Task { await model.loadVocabulary() } }
+        }
+
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Terms")
+                hint("One per line. Encrypted on this Mac.")
+            }
+            .frame(width: Theme.labelWidth, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: 6) {
+                TextEditor(text: $model.vocabularyDraft)
+                    .font(.system(size: 12, design: .monospaced))
+                    .scrollContentBackground(.hidden)
+                    .padding(4)
+                    .frame(minHeight: 76)
+                    .background(Color(nsColor: .textBackgroundColor))
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadius))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.cornerRadius)
+                            .stroke(.primary, lineWidth: 1)
+                    )
+                if let message = model.vocabularyMessage { hint(message) }
+            }
         }
     }
 
-    private var vocabularySection: some View {
-        GroupBox("Personal Vocabulary") {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("One name, acronym, or term per line. Terms stay encrypted on this Mac.")
-                    .font(.caption).foregroundStyle(.secondary)
-                TextEditor(text: $model.vocabularyDraft)
-                    .font(.body.monospaced())
-                    .frame(minHeight: 110)
-                    .border(.quaternary)
-                HStack {
-                    Button("Save Vocabulary") { Task { await model.saveVocabulary() } }
-                    Button("Revert") { Task { await model.loadVocabulary() } }
-                }
-                if let message = model.vocabularyMessage {
-                    Text(message).font(.caption).foregroundStyle(.secondary)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
+    // MARK: History
 
     private var historySection: some View {
-        GroupBox("History") {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(model.historyRetentionDescription)
-                    .font(.caption).foregroundStyle(.secondary)
-                Button("Clear History", role: .destructive) {
-                    Task { await model.clearHistory() }
-                }
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            SectionLabel("History")
+                .frame(width: Theme.labelWidth, alignment: .leading)
+            hint(model.historyRetentionDescription)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button("Clear History…", role: .destructive) {
+                Task { await model.clearHistory() }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
-    private var permissionsSection: some View {
-        GroupBox("Permissions") {
-            VStack(alignment: .leading, spacing: 8) {
-                permissionRow("Microphone", model.permissions.microphone)
-                permissionRow("Accessibility", model.permissions.accessibility)
-                permissionRow("Input Monitoring", model.permissions.keyboardMonitoring)
-                HStack {
-                    Button("Request Missing Permissions") {
-                        Task { await model.requestMissingPermissions() }
-                    }
-                    Button("Refresh") { Task { await model.refreshPermissions() } }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+    // MARK: Permissions
+
+    @ViewBuilder private var permissionsSection: some View {
+        HStack(spacing: 8) {
+            SectionLabel("Permissions")
+            Spacer(minLength: 12)
+            Button("Request Missing") { Task { await model.requestMissingPermissions() } }
+            Button("Refresh") { Task { await model.refreshPermissions() } }
+        }
+
+        HStack(spacing: 0) {
+            permissionItem("Microphone", model.permissions.microphone)
+            permissionItem("Accessibility", model.permissions.accessibility)
+            permissionItem("Input Monitoring", model.permissions.keyboardMonitoring)
         }
     }
 
-    private func permissionRow(_ title: String, _ state: PermissionState) -> some View {
-        Label(
-            "\(title): \(state.rawValue)",
-            systemImage: state.isGranted ? "checkmark.circle" : "exclamationmark.circle"
-        )
+    /// Granted reads as a filled mark, denied as a crossed one, and not yet asked as an empty one:
+    /// a silhouette, never a colour. The spoken label carries the state in words.
+    private func permissionItem(_ title: String, _ state: PermissionState) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: permissionSymbol(state))
+            Text(title)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title): \(state.rawValue)")
     }
 
-    private var aboutSection: some View {
-        GroupBox("About") {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Poptart \(model.applicationVersion)")
-                Link("Source code", destination: model.sourceURL)
-                Button("Check for Poptart Updates") { model.checkForApplicationUpdate() }
-                if let message = model.applicationUpdateMessage {
-                    Text(message).font(.caption).foregroundStyle(.secondary)
-                }
-                Text(
-                    """
-                    Poptart makes no background network requests. Downloads, repairs, and update \
-                    checks happen only when you start them.
-                    """
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+    private func permissionSymbol(_ state: PermissionState) -> String {
+        switch state {
+        case .granted: "checkmark.circle.fill"
+        case .denied: "xmark.circle"
+        case .undetermined: "circle"
         }
+    }
+
+    // MARK: About
+
+    @ViewBuilder private var aboutSection: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            hint(
+                """
+                Poptart makes no background network requests. Downloads, repairs, and update \
+                checks happen only when you start them.
+                """
+            )
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Link(destination: model.sourceURL) {
+                Text("Source code").underline()
+            }
+            .buttonStyle(.plain)
+            .font(.system(size: 11))
+            .foregroundStyle(.primary)
+
+            Button { model.checkForApplicationUpdate() } label: {
+                Text("Check for Poptart Updates").underline()
+            }
+            .buttonStyle(.plain)
+            .font(.system(size: 11))
+        }
+
+        if let message = model.applicationUpdateMessage { hint(message) }
+    }
+
+    /// The quiet line under a control: what a setting means, or what the Mac just said about it.
+    private func hint(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11))
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
 
@@ -194,8 +291,14 @@ struct MicrophoneInputPicker: View {
                     Text(device.name).tag(device.id)
                 }
             }
+            .labelsHidden()
+            .frame(width: Theme.controlWidth)
+
             if let message = model.microphoneMessage {
-                Text(message).font(.caption).foregroundStyle(.secondary)
+                Text(message)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .task { await model.refreshMicrophones() }

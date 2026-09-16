@@ -96,6 +96,18 @@ public enum OnboardingBlocker: String, Equatable, Sendable, CaseIterable {
         case .shortcutTest: "The shortcut test has not succeeded."
         }
     }
+
+    /// The step that asks for this, so a surface showing one step can tell whether a blocker is
+    /// its own business or something a later step will handle.
+    public var step: OnboardingStep {
+        switch self {
+        case .microphonePermission: .microphonePermission
+        case .accessibilityPermission: .accessibilityPermission
+        case .keyboardMonitoringPermission: .shortcutTest
+        case .activeModelPack: .modelPack
+        case .shortcutTest: .shortcutTest
+        }
+    }
 }
 
 /// The rules that decide where onboarding resumes and whether it may report completion.
@@ -272,6 +284,64 @@ public final class OnboardingModel {
 
     public var blockers: [OnboardingBlocker] {
         OnboardingPolicy.blockers(progress: progress, requirements: requirements)
+    }
+
+    /// The step that follows the one being viewed, or nil on the last one.
+    public var nextStep: OnboardingStep? {
+        guard let index = OnboardingStep.allCases.firstIndex(of: step) else { return nil }
+        let next = OnboardingStep.allCases.index(after: index)
+        guard next < OnboardingStep.allCases.endIndex else { return nil }
+        return OnboardingStep.allCases[next]
+    }
+
+    /// Whether the one Continue button may act. The explanation and the first Dictation are steps
+    /// Continue itself answers, so it is always live there; everywhere else Continue only moves
+    /// forward, which the step rules already decide.
+    public var canContinue: Bool {
+        switch step {
+        case .explanation, .firstDictation: true
+        default: nextStep.map(canVisit) ?? false
+        }
+    }
+
+    /// What the footer prints when Continue cannot act: the first missing prerequisite that the
+    /// step being viewed, or a step before it, is responsible for. Naming a later step's work here
+    /// would ask for something this surface is not showing yet, so the microphone step prints
+    /// "Microphone access is not granted." and the shortcut test step prints "Input Monitoring is
+    /// not granted." rather than both printing whichever blocker happens to be first in the list.
+    ///
+    /// A step whose own work is not a completion prerequisite — the offline readiness check —
+    /// prints nothing; its body already says what is left to do.
+    public var continueBlocker: String? {
+        guard !canContinue, let current = OnboardingStep.allCases.firstIndex(of: step) else {
+            return nil
+        }
+        return blockers.first { blocker in
+            guard let asked = OnboardingStep.allCases.firstIndex(of: blocker.step) else {
+                return false
+            }
+            return asked <= current
+        }?.description
+    }
+
+    /// What the one Continue button does on each step: the explanation is acknowledged, the first
+    /// Dictation is confirmed, and every other step simply moves on. Acknowledging also advances,
+    /// so Continue still leaves a step that was revisited through Back.
+    public func continueOnboarding() async {
+        switch step {
+        case .explanation:
+            await acknowledgeExplanation()
+            advance()
+        case .firstDictation:
+            await confirmFirstDictation()
+        default:
+            advance()
+        }
+    }
+
+    private func advance() {
+        guard let next = nextStep else { return }
+        visit(next)
     }
 
     public var isComplete: Bool {

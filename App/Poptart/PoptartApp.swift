@@ -17,9 +17,9 @@ struct PoptartApp: App {
     var body: some Scene {
         Window("Poptart", id: "poptart") {
             RootView(root: root)
-                .frame(minWidth: 720, minHeight: 560)
+                .frame(minWidth: 560, minHeight: 560)
         }
-        .defaultSize(width: 860, height: 660)
+        .defaultSize(width: 560, height: 720)
 
         MenuBarExtra("Poptart", systemImage: root.menuBarSymbol) {
             PoptartMenu(root: root)
@@ -121,8 +121,8 @@ private struct MainWindow: View {
             SettingsView(model: environment.settings, launch: environment.launch)
                 .tabItem { Label("Settings", systemImage: "gearshape") }
             HistoryView(model: environment.history)
+                .padding(16)
                 .tabItem { Label("History", systemImage: "clock") }
         }
-        .padding(16)
     }
 }
