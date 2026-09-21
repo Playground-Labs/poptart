@@ -259,33 +259,7 @@ hashes, and are comparison evidence only: the Qwen release verifier rejects them
 inference or quality claim is established by argument/architecture checks alone. Compare on
 development fixtures first; do not query the frozen release set during training iteration.
 
-The [cache comparison](../Training/experiments/cache-release-2026-09-16.json) found accumulating
-unused MLX buffers across varying prompts. Returning that cache after joined generation reduced
-Cleanup-only peak physical footprint from 7.10 GB to 1.26 GB for recovery Qwen and from 5.31 GB to
-1.25 GB for the trained Gemma challenger (decimal GB). All 46 outputs were unchanged and both
-models remained resident at every observation. These are single Cleanup-only development runs on
-an M5 Pro, not a full-pipeline memory limit or release result.
-
-## Optimized build comparison
-
-The [paired comparison](../Training/experiments/optimized-recovery-2026-09-17.json) uses retained
-debug/release runners, identical model files, and the same 23 development/adversarial cases.
-All output text, plans, outcomes, and token counts agreed between builds for both models.
-
-| Model | Build | Median ms | p99 ms | Peak physical GB |
-| --- | --- | ---: | ---: | ---: |
-| Composition | Debug | 1072 | 3110 | 1.818 |
-| Composition | Release | 288 | 2200 | 1.825 |
-| Preservation 500 | Release | 286 | 459 | 1.824 |
-| Preservation 500 | Debug | 1104 | 1781 | 1.801 |
-
-These are single M5 Pro Cleanup-only runs in the listed order, with decimal GB and kernel warmup
-included in the first request. Both composition maxima occurred on that first request. Host/cache
-conditions were uncontrolled; these results do not establish the physical release baseline or full-app latency.
-Models remained resident. Accuracy stayed at 11/12 and 10/12 respectively; neither qualifies.
-
-The [initial comparison](../Training/experiments/optimized-eval-2026-09-17.json) stopped at native
-rejection probes before optimized inference. Whole-module optimization exposed incorrect bound
-CharacterSet predicate behavior in the validator; explicit closures fixed it without weakening
-the safety policy. [Regression evidence](evidence/optimized-validator-2026-09-17.json) retains the
-failure and verification. `Scripts/verify.sh` now runs the full Cleanup suite in release mode too.
+Whole-module optimization previously exposed incorrect bound `CharacterSet` predicate behavior
+in the validator; explicit closures fixed it without weakening the safety policy.
+[Regression evidence](evidence/optimized-validator-2026-09-17.json) retains the failure and
+verification. `Scripts/verify.sh` runs the full Cleanup suite in release mode too.

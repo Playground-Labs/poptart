@@ -1,8 +1,0 @@
-{
-  "reviewedAt": "2026-09-18",
-  "result": "CLEAR",
-  "reviews": {
-    "specCompliance": "CLEAR. Disk hashes, fresh output paths, interruption artifacts, unchanged validation/test splits, 2,688 unique chats and prompts, and exact reviewed source ordering were verified. Pinned batching gives two complete passes at batch size two. Selection is validation-only across all eight checkpoints before diagnostics and development. No Evals overlap exists; only the eight documented legacy physical training-fit overlaps remain.",
-    "standards": "CLEAR. All frozen hashes, base and runner inventories, and interruption artifacts were verified. Fresh seeded LoRA uses no resume checkpoint; restarting is required because optimizer state was not retained. Checkpoint parsing, all 16 evaluations, physical audits, and failure and collision handling are consistent."
-  }
-}

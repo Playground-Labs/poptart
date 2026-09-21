@@ -1,6 +1,0 @@
-{
-  "resultIntegrity": "CLEAR: all three adapter tensors were independently verified as exact 25%, 50%, and 75% interpolation between the declared parent and child; model/runtime identities and all validation reports are internally consistent.",
-  "specCompliance": "CLEAR: the 25% blend only tied the parent, so the strict-improvement gate correctly selected no blend; no diagnostic, promotion, or frozen release query occurred.",
-  "reviewedResult": "context-blends-2026-09-17.json",
-  "reviewedResultSHA256": "1ba380d7855cf3bf3edd86d6c0872e55f2251bceb820a21e18dcda9fe74a57e6"
-}

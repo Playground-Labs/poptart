@@ -1,5 +1,0 @@
-{
-  "dataReview": "CLEAR: 128 validated mechanics chats plus 256 byte-preserved context replays; every style/frame/distractor-style/domain/target-position cell occurs once; validation/test bytes are unchanged.",
-  "protocolReview": "CLEAR: inputs and implementations are frozen, selection and safety ranking are checked, physical auditing includes the designated legacy suite, and diagnostics/training-fit follow selection. No prospective or release query is implemented.",
-  "reviewedPlan": "mechanics-recovery-plan-2026-09-17.json"
-}

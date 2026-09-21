@@ -26,7 +26,7 @@ for configuration in debug release; do
   swiftc "${FLAGS[@]}" -parse-as-library "$CHECKOUT/Sources/FluidAudio/Shared/AppLogger.swift" \
     "$TEMPORARY/Probe.swift" -o "$TEMPORARY/probe"
   "$TEMPORARY/probe" > "$TEMPORARY/enabled" 2>&1
-  rg -q synthetic-private-vocabulary "$TEMPORARY/enabled"
+  grep -q synthetic-private-vocabulary "$TEMPORARY/enabled"
   "$TEMPORARY/probe" --disabled > "$TEMPORARY/disabled" 2>&1
   [[ ! -s "$TEMPORARY/disabled" ]]
 done

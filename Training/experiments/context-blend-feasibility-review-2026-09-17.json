@@ -1,5 +1,0 @@
-{
-  "resultIntegrity": "CLEAR: all four reports, predictions, resources, model/runtime identities, and casing-sensitive physical audits were independently verified. Contexts has 29 accepted physical-name substitutions, including five casing-only; canonical has two, including one casing-only.",
-  "specCompliance": "CLEAR: the failed development and meaning gates correctly produce advance=false; no prospective or frozen release inference or promotion occurred.",
-  "reviewedResult": "context-blend-feasibility-2026-09-17.json"
-}

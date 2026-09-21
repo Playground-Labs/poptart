@@ -1,5 +1,0 @@
-{
-  "dataReview": "CLEAR: the input contains exactly 1,024 byte-preserved records from each reviewed source in deterministic alternation; validation and test are unchanged.",
-  "protocolReview": "CLEAR: selection labels, training implementation/config/environment, source and generated data, model/runtime inputs, ordering, acceptance gates, and the prospective/release prohibition are frozen and internally consistent.",
-  "reviewedPlan": "rehearsal-recovery-plan-2026-09-17.json"
-}
