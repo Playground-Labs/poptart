@@ -1,0 +1,237 @@
+{
+  "command": [
+    "/usr/bin/sandbox-exec",
+    "-p",
+    "(version 1) (allow default) (deny network*)",
+    "xcrun",
+    "xctest",
+    "-XCTest",
+    "RecognitionTests.VocabularyAssetSmokeTests/testPinnedVocabularyChangesAndRemoval",
+    "Packages/Recognition/.build/out/Products/Debug/RecognitionTests.xctest"
+  ],
+  "exitCode": 0,
+  "identity": {
+    "files": {
+      ".context/VocabularyAssetSmokeTests.swift": "ee1795aeefc5f2b66f466e838f09c017008147245b53b0a142d17a99c5d73c54",
+      "/Users/brandon/Development/conductor/workspaces/poptart/bogota/.build/audio-smoke/spoken-006.wav": "3eef9b49d45d0f78096903cd58d6e3453a4bf1f6faf60005ce9147439b923bc0",
+      "/Users/brandon/Development/conductor/workspaces/poptart/bogota/.build/audio-smoke/spoken-010.wav": "b107bbf4f92d6b23dc6f3142c9ac05030718c648407b5fbb7087ab0c409e166c",
+      "Packages/DictationCore/Sources/DictationCore/BoundaryProtocols.swift": "5ae2039b45e7d55662416655c35f5ede0e84375eeb74204919896a1f1799e0e1",
+      "Packages/DictationCore/Sources/DictationCore/DictationSessionActor.swift": "2b9f5d9a5fbeb52875784b11e9bdd7d76ed6973fb3e0b1b6fde6e6f886a8b393",
+      "Packages/DictationCore/Sources/DictationCore/DomainTypes.swift": "ff7e33aa20ef0d47723f56b747beec91b8f5c45c7640ea1d87698d6bdf191b6a",
+      "Packages/DictationCore/Sources/DictationCore/SessionContract.swift": "fed0326bd06050c4efedb0620eeefe04ee3a539b79f95ed487b48b5c8966126b",
+      "Packages/DictationCore/Sources/DictationCore/Time.swift": "d9920afbf36d4bb489803bf35f24b3c764f5daad4c50e778d4112202ba1f578b",
+      "Packages/Recognition/.build/out/Products/Debug/RecognitionTests.xctest/Contents/MacOS/RecognitionTests": "4ec426d92d82be121f1eb7b7bd541b3d79fabf2864805bee621fc83a5350b3ee",
+      "Packages/Recognition/Package.resolved": "c08908a65347b59bf7ece66eee3fb1eb404cbd568501e7faf6a081f18691adb5",
+      "Packages/Recognition/Package.swift": "5a297182cbc69089f5ab77d0f52487339f3485b1f397fcc21191e0b03bfceeab",
+      "Packages/Recognition/Sources/Recognition/AVAudioEngineCapture.swift": "0cdd003846e38f9d286fc073665b7cf47357fc2c0b9aaafccb402c86059f05cb",
+      "Packages/Recognition/Sources/Recognition/FluidAudioIncrementalRecognizer.swift": "8a4ab12110e3dbf106d9d854c0f0aa8b067c906d2f062b58919827d25a8f7b3f",
+      "Packages/Recognition/Sources/Recognition/RecognitionContracts.swift": "f53a0eb10c65e950ff6c8a99ef831085cfd857ece77c875edf7ffc283c92a636",
+      "Packages/Recognition/Sources/Recognition/RecognitionModelLayout.swift": "047beef6b450a94c171edd3e579457d031f8fd10cced2802b3f00050af156d81",
+      "Packages/Recognition/Sources/Recognition/RecognitionService.swift": "0922c1ceb533ce7d12a11babc420a6570d45dc1aec5900752862fd21293a8dda",
+      "Packages/Recognition/Sources/Recognition/ReplayAudioCapture.swift": "8e3f57182129c51c4b1b5e4cefcea9d8ca673acc275663529f283aeac42ecc1e",
+      "Packages/Recognition/Sources/Recognition/SpeechBandAnalyzer.swift": "cb9c42dfdc1424092e9d0e9c00b49d219154160e634f077eeb4c16f9fea98a6a",
+      "Packages/Recognition/Sources/Recognition/SpeechGate.swift": "cd2df1baa313b3dd75c75b8adcaf656616d5ba760ae6bcc92091ecd1af021e48",
+      "Packages/Recognition/Sources/Recognition/SpeechGatePolicy.swift": "d08e2a2b559d828d6bc7700e6b80b1f454fd2747065465b7bf8e79d9172250d1",
+      "Scripts/model_files.py": "f7980e17147f4bb28212d8ab35ddff707f3c02ee2a17866f5bf1db66a5733599"
+    },
+    "models": {
+      "recognition": {
+        "ctc/AudioEncoder.mlmodelc/analytics/coremldata.bin": {
+          "byteSize": 243,
+          "sha256": "8906c823e9bb3bf6b16d9f0308f98cd70573526333ad85dd767dc3f9ae6b25fa"
+        },
+        "ctc/AudioEncoder.mlmodelc/coremldata.bin": {
+          "byteSize": 505,
+          "sha256": "a88b002b58193b4c31211754cdfdf220a85f9651dc61caf336ab84400cbc191a"
+        },
+        "ctc/AudioEncoder.mlmodelc/metadata.json": {
+          "byteSize": 3456,
+          "sha256": "4f288bfe5cbe867ef1e592cdae33578b2fe59ada69182fc12209879558f985c2"
+        },
+        "ctc/AudioEncoder.mlmodelc/model.mil": {
+          "byteSize": 1060924,
+          "sha256": "2f84ef93a69115e55f3b5d8ce695b3c937de1833d4d229620634fae967cd587e"
+        },
+        "ctc/AudioEncoder.mlmodelc/weights/weight.bin": {
+          "byteSize": 100778304,
+          "sha256": "af0734b4a5d7465ad9e8bb170f0c53c5e6b91ebb75a9bdf88d3f59ae4ad6aebd"
+        },
+        "ctc/MelSpectrogram.mlmodelc/analytics/coremldata.bin": {
+          "byteSize": 243,
+          "sha256": "22f2a8cba1de25c984050566b534a1d8caf22a82f9fe6c1c6f3149a0dd7e8ae3"
+        },
+        "ctc/MelSpectrogram.mlmodelc/coremldata.bin": {
+          "byteSize": 330,
+          "sha256": "3a32ec67c76aa0aa2faef518413c311493e89aeb7fa11289fa4b8653ab8a160c"
+        },
+        "ctc/MelSpectrogram.mlmodelc/metadata.json": {
+          "byteSize": 1962,
+          "sha256": "5e11d21a65c02bcfc37db43e941978e5d60d59e0efeadfda08e41f33b4f835d3"
+        },
+        "ctc/MelSpectrogram.mlmodelc/model.mil": {
+          "byteSize": 12584,
+          "sha256": "0a7cb5693b39667295218bac5c7c09053f6bcd4b32699a83d06ac35d14ac6b79"
+        },
+        "ctc/MelSpectrogram.mlmodelc/weights/weight.bin": {
+          "byteSize": 567712,
+          "sha256": "0a89c055bfde9022029d3cc59a23e949385e063974460d8eaec3a7614c3eaaa8"
+        },
+        "ctc/README.md": {
+          "byteSize": 7419,
+          "sha256": "1aa99e33e37d4d36f01f15b7d81f878a43a85210c184aebebf1f27d5a4c3b189"
+        },
+        "ctc/source.json": {
+          "byteSize": 2386,
+          "sha256": "b4751bf05195a0825d50535d80c11d6733b4235f4df2f38535c6af3c0dc3ea7c"
+        },
+        "ctc/tokenizer.json": {
+          "byteSize": 360106,
+          "sha256": "9f7c517c0bf644b1b690ab037bab4d4c53aecd38e047e7154d011013ab9160db"
+        },
+        "ctc/vocab.json": {
+          "byteSize": 16086,
+          "sha256": "319d386eead79aadc80df9c3ecc8340d1a727efb7c02a8847eb940380dd61e1f"
+        },
+        "unified/README.md": {
+          "byteSize": 5323,
+          "sha256": "348925632679d32b9fc4d153f6c255f6450bcb83044065a5fa2918c53a1029e0"
+        },
+        "unified/metadata.json": {
+          "byteSize": 1046,
+          "sha256": "2b26a96b76fe1f7a04d3e867f50c75d6ce5dd1650d0dbcd4c35b591b22305f0e"
+        },
+        "unified/parakeet_unified_decoder.mlmodelc/analytics/coremldata.bin": {
+          "byteSize": 243,
+          "sha256": "9ae70f6559989f88b856b326e59315798f9f0d08207a19fcc2dd3287a30088a5"
+        },
+        "unified/parakeet_unified_decoder.mlmodelc/coremldata.bin": {
+          "byteSize": 560,
+          "sha256": "ce99c4488840fc463d59f8d4d6d2a9e8ceae8138ead51e3c265dde4d2ba4a0e9"
+        },
+        "unified/parakeet_unified_decoder.mlmodelc/model.mil": {
+          "byteSize": 13102,
+          "sha256": "6e60965b89c93943aa2be2d991c2461108145851fde05e1d048223a32d4cb20d"
+        },
+        "unified/parakeet_unified_decoder.mlmodelc/weights/weight.bin": {
+          "byteSize": 14429952,
+          "sha256": "96f990461a5986d5e7309ad1a0f36084fbf0f4b28aec35948f8b8d0dcbf8599e"
+        },
+        "unified/parakeet_unified_encoder_streaming_70_7_1_int8.mlmodelc/analytics/coremldata.bin": {
+          "byteSize": 243,
+          "sha256": "532a29eef8fb961a6670b82912bcfba6c5969de5f2a444192df917ba6f68ba24"
+        },
+        "unified/parakeet_unified_encoder_streaming_70_7_1_int8.mlmodelc/coremldata.bin": {
+          "byteSize": 513,
+          "sha256": "aebf6dec20848b9d6412e8a6643925479159314fcbee15ea0363350ce9fe732b"
+        },
+        "unified/parakeet_unified_encoder_streaming_70_7_1_int8.mlmodelc/model.mil": {
+          "byteSize": 928896,
+          "sha256": "6a26ecda0a7c19e0caec5640ac3c49c2111496e63230ec9e146f391f10f456e8"
+        },
+        "unified/parakeet_unified_encoder_streaming_70_7_1_int8.mlmodelc/weights/weight.bin": {
+          "byteSize": 589683392,
+          "sha256": "4d2056957de09ac202ffd17127e32acfe7e8c381978bf727400de64f88c7c4ff"
+        },
+        "unified/parakeet_unified_joint_decision_single_step.mlmodelc/analytics/coremldata.bin": {
+          "byteSize": 243,
+          "sha256": "163877ad14af97ec4107cd854fd1c6d336ee5d40ad25a657cc764fb763f452f5"
+        },
+        "unified/parakeet_unified_joint_decision_single_step.mlmodelc/coremldata.bin": {
+          "byteSize": 556,
+          "sha256": "68a081570a48b52ec9379e153bd56748a5408a50be16767601563f231eaeff03"
+        },
+        "unified/parakeet_unified_joint_decision_single_step.mlmodelc/model.mil": {
+          "byteSize": 9611,
+          "sha256": "03c21096090bcd0b71c896c5ae0eb815db31a91c6676f572a7868eee4299abe3"
+        },
+        "unified/parakeet_unified_joint_decision_single_step.mlmodelc/weights/weight.bin": {
+          "byteSize": 3446978,
+          "sha256": "06831afa6d1beb0c0b10350ebf7886bc37638e951d14e738d7e06fbd2a05012f"
+        },
+        "unified/source.json": {
+          "byteSize": 3049,
+          "sha256": "54d01aebd200fe2d7e086a45b3158734ee343e7cb43fce03b243f9c5bb6fe847"
+        },
+        "unified/vocab.json": {
+          "byteSize": 15088,
+          "sha256": "e1a7bff4f5df133c0f4ad47b8e43c96f6bf1865d99126a4c4725ef51d0108bec"
+        }
+      },
+      "vad": {
+        "LICENSE.txt": {
+          "byteSize": 1075,
+          "sha256": "2e63e9a38b6e8fc0c7bc37ce174caca1862870856c6daf5697cfb785e925520b"
+        },
+        "silero-vad-unified-256ms-v6.2.1.mlmodelc/analytics/coremldata.bin": {
+          "byteSize": 243,
+          "sha256": "8067594eb3126ab8318af507f0c00cabfed40d5fedb8a0ee5075dd02e903d909"
+        },
+        "silero-vad-unified-256ms-v6.2.1.mlmodelc/coremldata.bin": {
+          "byteSize": 625,
+          "sha256": "7db35a4fd995222a7fb0129713473b15d1462572ab4a2e5e4d56bcaad9e40f41"
+        },
+        "silero-vad-unified-256ms-v6.2.1.mlmodelc/metadata.json": {
+          "byteSize": 3335,
+          "sha256": "2740be542c611e1ba358e1849b4e265c65cdf0b17192767e1e5de86a31ac94d6"
+        },
+        "silero-vad-unified-256ms-v6.2.1.mlmodelc/model.mil": {
+          "byteSize": 176918,
+          "sha256": "c6a9d1bf22d413265da0a07a1d14151c3ea2fad296b3aa5859275b33ef1c3270"
+        },
+        "silero-vad-unified-256ms-v6.2.1.mlmodelc/weights/weight.bin": {
+          "byteSize": 882304,
+          "sha256": "53ecc8b5081146140ab654c89109cf001f2183abddd7a2411c5081feeffff063"
+        }
+      }
+    }
+  },
+  "limitations": [
+    "Synthetic audio only.",
+    "VAD may fall back; its activity is not established by this probe.",
+    "Input pacing adds processing time; no latency claim.",
+    "Network-denied subprocess; no separate IP control probe."
+  ],
+  "log": "Test Suite 'Selected tests' started at 2026-09-16 23:01:38.346.\nTest Suite 'RecognitionTests.xctest' started at 2026-09-16 23:01:38.347.\nTest Suite 'VocabularyAssetSmokeTests' started at 2026-09-16 23:01:38.347.\nTest Case '-[RecognitionTests.VocabularyAssetSmokeTests testPinnedVocabularyChangesAndRemoval]' started.\nTest Case '-[RecognitionTests.VocabularyAssetSmokeTests testPinnedVocabularyChangesAndRemoval]' passed (41.086 seconds).\nTest Suite 'VocabularyAssetSmokeTests' passed at 2026-09-16 23:02:19.433.\n\t Executed 1 test, with 0 failures (0 unexpected) in 41.086 (41.086) seconds\nTest Suite 'RecognitionTests.xctest' passed at 2026-09-16 23:02:19.433.\n\t Executed 1 test, with 0 failures (0 unexpected) in 41.086 (41.086) seconds\nTest Suite 'Selected tests' passed at 2026-09-16 23:02:19.433.\n\t Executed 1 test, with 0 failures (0 unexpected) in 41.086 (41.087) seconds\n",
+  "passed": true,
+  "probeSource": "import AVFoundation\nimport DictationCore\nimport Foundation\nimport XCTest\n@testable import Recognition\n\nfinal class VocabularyAssetSmokeTests: XCTestCase {\n    func testPinnedVocabularyChangesAndRemoval() async throws {\n        let environment = ProcessInfo.processInfo.environment\n        let root = URL(fileURLWithPath: try XCTUnwrap(environment[\"POPTART_VOCAB_SMOKE_PACK\"]))\n        let audio = URL(fileURLWithPath: try XCTUnwrap(environment[\"POPTART_VOCAB_SMOKE_AUDIO\"]))\n        let destination = URL(fileURLWithPath: try XCTUnwrap(environment[\"POPTART_VOCAB_SMOKE_OUTPUT\"]))\n        let clock = UptimeMonotonicClock()\n        let recognizer = FluidAudioIncrementalRecognizer(modelLayout: .init(\n            unifiedModelDirectory: root.appendingPathComponent(\"recognition/unified\"),\n            ctcModelDirectory: root.appendingPathComponent(\"recognition/ctc\"),\n            vadModelDirectory: root.appendingPathComponent(\"vad\")), clock: clock)\n        try await recognizer.prepare()\n        XCTAssertTrue(recognizer.capabilities.personalVocabularyAvailable)\n        var records: [[String: String]] = []\n        for (fixture, term) in [(\"spoken-006\", \"MapleKrest\"), (\"spoken-010\", \"LindenHarbor\")] {\n            let file = try AVAudioFile(forReading: audio.appendingPathComponent(fixture + \".wav\"),\n                                      commonFormat: .pcmFormatFloat32, interleaved: false)\n            XCTAssertEqual(file.processingFormat.sampleRate, 16_000)\n            XCTAssertEqual(file.processingFormat.channelCount, 1)\n            let recording = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: file.processingFormat,\n                frameCapacity: AVAudioFrameCount(file.length)))\n            try file.read(into: recording)\n            let samples = try XCTUnwrap(recording.floatChannelData)[0]\n            var transcripts: [String] = []\n            for phase in [\"before\", \"configured\", \"removed\"] {\n                let terms = phase == \"configured\" ? [term] : []\n                try await recognizer.begin(personalVocabulary: .init(entries: terms), onPartial: { _ in })\n                for start in stride(from: 0, to: Int(recording.frameLength), by: 1_600) {\n                    let count = min(1_600, Int(recording.frameLength) - start)\n                    let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: file.processingFormat,\n                        frameCapacity: AVAudioFrameCount(count)))\n                    buffer.frameLength = buffer.frameCapacity\n                    try XCTUnwrap(buffer.floatChannelData)[0].update(from: samples + start, count: count)\n                    try await recognizer.accept(.init(buffer: buffer, audioActivity: nil))\n                    try await Task.sleep(for: .milliseconds(100))\n                }\n                let result = await recognizer.finish(deadline: clock.now().advanced(by: .seconds(30)))\n                guard case let .final(text) = result else {\n                    XCTFail(\"\\(fixture)/\\(phase) did not finalize: \\(result)\")\n                    return\n                }\n                XCTAssertFalse(text.isEmpty)\n                transcripts.append(text)\n                records.append([\"fixture\": fixture, \"phase\": phase, \"term\": terms.first ?? \"\", \"transcript\": text])\n                try JSONSerialization.data(withJSONObject: records, options: [.prettyPrinted, .sortedKeys])\n                    .write(to: destination, options: .atomic)\n            }\n            XCTAssertEqual(transcripts[0], transcripts[2], \"Removed vocabulary must not leak across recordings\")\n        }\n        await recognizer.cancel()\n    }\n}\n",
+  "results": [
+    {
+      "fixture": "spoken-006",
+      "phase": "before",
+      "term": "",
+      "transcript": "Our new client at Maplecrest needs the complete packing list this afternoon."
+    },
+    {
+      "fixture": "spoken-006",
+      "phase": "configured",
+      "term": "MapleKrest",
+      "transcript": "Our new client at MapleKrest needs the complete packing list this afternoon."
+    },
+    {
+      "fixture": "spoken-006",
+      "phase": "removed",
+      "term": "",
+      "transcript": "Our new client at Maplecrest needs the complete packing list this afternoon."
+    },
+    {
+      "fixture": "spoken-010",
+      "phase": "before",
+      "term": "",
+      "transcript": "The package for Linden Harbor arrived before the rain."
+    },
+    {
+      "fixture": "spoken-010",
+      "phase": "configured",
+      "term": "LindenHarbor",
+      "transcript": "The package for LindenHarbor arrived before the rain."
+    },
+    {
+      "fixture": "spoken-010",
+      "phase": "removed",
+      "term": "",
+      "transcript": "The package for Linden Harbor arrived before the rain."
+    }
+  ],
+  "runnerSource": "\"\"\"Retain a bounded real-asset vocabulary diagnostic after MLX work finishes.\"\"\"\nimport hashlib,json,os,signal,subprocess,sys,time\nfrom pathlib import Path\nsys.path.insert(0,str(Path('Scripts').resolve()))\nfrom model_files import inventory\nfor pid in (59527,66006):\n    while True:\n        try: os.kill(pid,0)\n        except ProcessLookupError: break\n        time.sleep(5)\nroot=Path.cwd()\npack=root/'Models/Artifacts/composition-adapter-development-pack'\naudio=root/'.build/audio-smoke'\noutput=root/'.build/vocabulary-asset-probe.json'\nassert not output.exists()\nprobe=Path('.context/VocabularyAssetSmokeTests.swift')\nbinary=Path('Packages/Recognition/.build/out/Products/Debug/RecognitionTests.xctest/Contents/MacOS/RecognitionTests')\nassert binary.is_file()\nfiles=[probe,binary,Path('Packages/Recognition/Package.resolved'),Path('Packages/Recognition/Package.swift'),Path('Scripts/model_files.py')]\nfiles+=list(Path('Packages/Recognition/Sources').rglob('*.swift'))\nfiles+=list(Path('Packages/DictationCore/Sources').rglob('*.swift'))\nfiles += [audio/(name+'.wav') for name in ('spoken-006','spoken-010')]\ndef hashes():return {str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in files}\nidentity=dict(files=hashes(),models={name:inventory(pack/name) for name in ['recognition','vad']})\ncommand=['/usr/bin/sandbox-exec','-p','(version 1) (allow default) (deny network*)','xcrun','xctest','-XCTest','RecognitionTests.VocabularyAssetSmokeTests/testPinnedVocabularyChangesAndRemoval',str(binary.parents[2])]\nenv={**os.environ,'POPTART_VOCAB_SMOKE_PACK':str(pack),'POPTART_VOCAB_SMOKE_AUDIO':str(audio),'POPTART_VOCAB_SMOKE_OUTPUT':str(output)}\nlog=Path('.build/vocabulary-asset-probe-run.log')\nwith log.open('w') as stream:\n    process=subprocess.Popen(command,env=env,stdout=stream,stderr=subprocess.STDOUT,start_new_session=True)\n    try: status=process.wait(timeout=600)\n    except BaseException:\n        os.killpg(process.pid,signal.SIGKILL);process.wait();raise\nassert identity['files']==hashes()\nassert identity['models']=={name:inventory(pack/name) for name in ['recognition','vad']}\nrows=json.loads(output.read_text()) if output.exists() else []\npassed=status==0 and len(rows)==6 and 'Executed 1 test' in log.read_text()\nrecord=dict(status='Diagnostic only; not general recognition quality or M1 timing evidence.',\n    passed=passed,exitCode=status,identity=identity,results=rows,command=command,\n    limitations=['Synthetic audio only.','VAD may fall back; its activity is not established by this probe.',\n                 'Input pacing adds processing time; no latency claim.','Network-denied subprocess; no separate IP control probe.'],\n    probeSource=probe.read_text(),runnerSource=Path(__file__).read_text(),log=log.read_text())\nPath('Models/evidence/vocabulary-assets-2026-09-16.json').write_text(json.dumps(record,indent=2,sort_keys=True)+'\\n')\nprint(json.dumps(dict(passed=passed,exitCode=status,results=rows)),flush=True)\nif not passed:sys.exit(1)\n",
+  "status": "Diagnostic only; not general recognition quality or M1 timing evidence."
+}

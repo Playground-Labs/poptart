@@ -16,13 +16,16 @@ public struct URLSessionResumableDownloader: ResumableArtifactDownloading, Senda
 
   public func download(_ request: ResumableDownloadRequest) async throws -> ResumableDownloadResult
   {
+    guard request.expectedSize > 0, request.resumeOffset >= 0,
+      request.resumeOffset <= request.expectedSize else { throw ModelPackError.downloadFailed }
     var urlRequest = URLRequest(url: request.source)
     urlRequest.httpMethod = "GET"
     if request.resumeOffset > 0 {
       urlRequest.setValue("bytes=\(request.resumeOffset)-", forHTTPHeaderField: "Range")
     }
 
-    let (temporaryURL, response) = try await session.download(for: urlRequest)
+    let (bytes, response) = try await session.bytes(for: urlRequest)
+    defer { bytes.task.cancel() }
     guard let http = response as? HTTPURLResponse else { throw ModelPackError.downloadFailed }
     let shouldAppend: Bool
     switch (request.resumeOffset, http.statusCode) {
@@ -41,40 +44,42 @@ public struct URLSessionResumableDownloader: ResumableArtifactDownloading, Senda
       throw ModelPackError.downloadFailed
     }
 
-    try FileManager.default.createDirectory(
-      at: request.destination.deletingLastPathComponent(),
-      withIntermediateDirectories: true
-    )
-    if shouldAppend {
-      try appendFile(at: temporaryURL, to: request.destination)
-    } else {
-      if FileManager.default.fileExists(atPath: request.destination.path) {
-        try FileManager.default.removeItem(at: request.destination)
-      }
-      try FileManager.default.moveItem(at: temporaryURL, to: request.destination)
-    }
-    let size = try storedSize(at: request.destination)
-    guard size <= request.expectedSize else {
+    let initialSize = shouldAppend ? request.resumeOffset : 0
+    guard response.expectedContentLength < 0
+      || response.expectedContentLength <= request.expectedSize - initialSize else {
       throw ModelPackError.downloadExceededExpectedSize
     }
+    try FileManager.default.createDirectory(
+      at: request.destination.deletingLastPathComponent(), withIntermediateDirectories: true)
+    if !FileManager.default.fileExists(atPath: request.destination.path) {
+      FileManager.default.createFile(atPath: request.destination.path, contents: nil)
+    }
+    let output = try FileHandle(forWritingTo: request.destination)
+    defer { try? output.close() }
+    if shouldAppend {
+      guard try storedSize(at: request.destination) == initialSize else {
+        throw ModelPackError.downloadFailed
+      }
+      try output.seekToEnd()
+    } else {
+      try output.truncate(atOffset: 0)
+    }
+    var size = initialSize
+    var chunk = Data()
+    chunk.reserveCapacity(65_536)
+    for try await byte in bytes {
+      guard size < request.expectedSize else { throw ModelPackError.downloadExceededExpectedSize }
+      size += 1
+      chunk.append(byte)
+      if chunk.count == 65_536 {
+        try Task.checkCancellation()
+        try output.write(contentsOf: chunk)
+        chunk.removeAll(keepingCapacity: true)
+      }
+    }
+    try Task.checkCancellation()
+    if !chunk.isEmpty { try output.write(contentsOf: chunk) }
     return .init(bytesStored: size, isComplete: size == request.expectedSize)
-  }
-
-  private func appendFile(at source: URL, to destination: URL) throws {
-    if !FileManager.default.fileExists(atPath: destination.path) {
-      FileManager.default.createFile(atPath: destination.path, contents: nil)
-    }
-    let input = try FileHandle(forReadingFrom: source)
-    let output = try FileHandle(forWritingTo: destination)
-    defer {
-      try? input.close()
-      try? output.close()
-      try? FileManager.default.removeItem(at: source)
-    }
-    try output.seekToEnd()
-    while let chunk = try input.read(upToCount: 1_048_576), !chunk.isEmpty {
-      try output.write(contentsOf: chunk)
-    }
   }
 
   private func storedSize(at url: URL) throws -> Int64 {

@@ -1,0 +1,170 @@
+{
+  "conclusion": "Disabling VAD did not reduce aggregate word errors in this16-clip probe. No production gate change is supported by these observations.",
+  "inputsSHA256": {
+    "Models/evidence/public-speech-vad-disabled-2026-09-17.json": "417e9a6937b18afa62ae15a4e0232aee6426ba1cf1201e343e65816ae4658352",
+    "Models/evidence/public-speech-vad-enabled-2026-09-17.json": "2bf8f4d11c6ef07b2bcbb65bd6a9e61decc15171825b89ef0b53b234ae84826d"
+  },
+  "limitations": [
+    "Small ordered read-audiobook sample, not representative spontaneous Dictation or live microphone evidence.",
+    "Upstream ASR training overlap is not established; this is an adapter execution probe, not an independent model benchmark.",
+    "No Cleanup training data or frozen Cleanup evaluation labels changed.",
+    "Recognition-only replay, empty Personal Vocabulary,30second finalization allowance; no Cleanup, insertion, history, full privacy, live microphone or physicalM1 timing claim.",
+    "One enabled-then-disabled pair; uncontrolled host/cache conditions prevent causal timing conclusions."
+  ],
+  "normalizedIdentical": 16,
+  "order": [
+    "enabled",
+    "disabled"
+  ],
+  "pairs": [
+    {
+      "disabledErrors": 0,
+      "enabledErrors": 0,
+      "id": "61-70968-0000",
+      "normalizedTranscriptIdentical": true,
+      "rawTranscriptIdentical": true
+    },
+    {
+      "disabledErrors": 1,
+      "enabledErrors": 1,
+      "id": "61-70968-0001",
+      "normalizedTranscriptIdentical": true,
+      "rawTranscriptIdentical": true
+    },
+    {
+      "disabledErrors": 0,
+      "enabledErrors": 0,
+      "id": "121-121726-0000",
+      "normalizedTranscriptIdentical": true,
+      "rawTranscriptIdentical": true
+    },
+    {
+      "disabledErrors": 0,
+      "enabledErrors": 0,
+      "id": "121-121726-0001",
+      "normalizedTranscriptIdentical": true,
+      "rawTranscriptIdentical": true
+    },
+    {
+      "disabledErrors": 0,
+      "enabledErrors": 0,
+      "id": "237-126133-0000",
+      "normalizedTranscriptIdentical": true,
+      "rawTranscriptIdentical": true
+    },
+    {
+      "disabledErrors": 0,
+      "enabledErrors": 0,
+      "id": "237-126133-0001",
+      "normalizedTranscriptIdentical": true,
+      "rawTranscriptIdentical": true
+    },
+    {
+      "disabledErrors": 0,
+      "enabledErrors": 0,
+      "id": "260-123286-0000",
+      "normalizedTranscriptIdentical": true,
+      "rawTranscriptIdentical": true
+    },
+    {
+      "disabledErrors": 0,
+      "enabledErrors": 0,
+      "id": "260-123286-0001",
+      "normalizedTranscriptIdentical": true,
+      "rawTranscriptIdentical": true
+    },
+    {
+      "disabledErrors": 0,
+      "enabledErrors": 0,
+      "id": "672-122797-0000",
+      "normalizedTranscriptIdentical": true,
+      "rawTranscriptIdentical": true
+    },
+    {
+      "disabledErrors": 0,
+      "enabledErrors": 0,
+      "id": "672-122797-0001",
+      "normalizedTranscriptIdentical": true,
+      "rawTranscriptIdentical": true
+    },
+    {
+      "disabledErrors": 3,
+      "enabledErrors": 3,
+      "id": "908-157963-0000",
+      "normalizedTranscriptIdentical": true,
+      "rawTranscriptIdentical": true
+    },
+    {
+      "disabledErrors": 1,
+      "enabledErrors": 1,
+      "id": "908-157963-0001",
+      "normalizedTranscriptIdentical": true,
+      "rawTranscriptIdentical": true
+    },
+    {
+      "disabledErrors": 0,
+      "enabledErrors": 0,
+      "id": "1221-135766-0000",
+      "normalizedTranscriptIdentical": true,
+      "rawTranscriptIdentical": true
+    },
+    {
+      "disabledErrors": 1,
+      "enabledErrors": 1,
+      "id": "1221-135766-0001",
+      "normalizedTranscriptIdentical": true,
+      "rawTranscriptIdentical": true
+    },
+    {
+      "disabledErrors": 0,
+      "enabledErrors": 0,
+      "id": "1284-1180-0000",
+      "normalizedTranscriptIdentical": true,
+      "rawTranscriptIdentical": true
+    },
+    {
+      "disabledErrors": 0,
+      "enabledErrors": 0,
+      "id": "1284-1180-0001",
+      "normalizedTranscriptIdentical": true,
+      "rawTranscriptIdentical": true
+    }
+  ],
+  "rawIdentical": 16,
+  "source": "\"\"\"Summarize the retained ordered pair without rerunning or altering either probe.\"\"\"\nimport hashlib\nimport json\nimport math\nimport re\nfrom pathlib import Path\n\npaths = {mode: Path(f'Models/evidence/public-speech-vad-{mode}-2026-09-17.json') for mode in ['enabled', 'disabled']}\nruns = {mode: json.loads(path.read_text()) for mode, path in paths.items()}\nsha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()\nenabled, disabled = runs.values()\nassert disabled['predecessor'] == dict(path=str(paths['enabled']), sha256=sha(paths['enabled']))\nfor field in ['inputs', 'models', 'sourceSHA256', 'normalization', 'hardware', 'partialTimingOrigin']:\n    assert enabled[field] == disabled[field], field\nwords = lambda text: re.findall(r\"[A-Z0-9]+(?:'[A-Z0-9]+)?\", text.upper().replace('\u2019', \"'\"))\nsummaries = {}\nfixtures = enabled['inputs']['fixtures']\nfor mode, run in runs.items():\n    assert run['executionComplete'] is True and run['exitCode'] == 0\n    assert [r['id'] for r in run['rows']] == [r['id'] for r in fixtures]\n    for row, fixture in zip(run['rows'], fixtures, strict=True):\n        assert row['reference'] == fixture['reference'] and row['final'] is True\n        assert row['detectorActiveBefore'] is (mode == 'enabled')\n        assert row['detectorActiveAfter'] is (mode == 'enabled')\n    summaries[mode] = {key: run[key] for key in ['wordErrors', 'referenceWords', 'wordErrorRate',\n        'normalizedExactUtterances', 'utterancesWithPreReleasePartials']}\n    summaries[mode]['partialCount'] = sum(r['partialCount'] for r in run['rows'])\n    for field in ['firstPartialMilliseconds', 'finalizationMilliseconds']:\n        values = [r[field] for r in run['rows']]\n        assert all(type(v) in [int, float] and math.isfinite(v) and v >= 0 for v in values)\n        summaries[mode][field] = dict(minimum=min(values), maximum=max(values))\npairs = [dict(id=a['id'], rawTranscriptIdentical=a['transcript'] == b['transcript'],\n              normalizedTranscriptIdentical=words(a['transcript']) == words(b['transcript']),\n              enabledErrors=a['wordErrors'], disabledErrors=b['wordErrors'])\n         for a, b in zip(enabled['rows'], disabled['rows'], strict=True)]\nrecord = dict(status='Completed ordered VAD comparison; no release claim.',\n    inputsSHA256={str(path): sha(path) for path in paths.values()}, order=['enabled', 'disabled'],\n    summaries=summaries, pairs=pairs,\n    rawIdentical=sum(p['rawTranscriptIdentical'] for p in pairs),\n    normalizedIdentical=sum(p['normalizedTranscriptIdentical'] for p in pairs),\n    limitations=enabled['limitations'] + ['One enabled-then-disabled pair; uncontrolled host/cache conditions prevent causal timing conclusions.'],\n    conclusion='Disabling VAD did not reduce aggregate word errors in this16-clip probe. No production gate change is supported by these observations.',\n    source=Path(__file__).read_text())\noutput = Path('Models/evidence/public-speech-vad-comparison-2026-09-17.json')\nassert not output.exists()\noutput.write_text(json.dumps(record, indent=2, sort_keys=True) + '\\n')\nprint(json.dumps({key: record[key] for key in ['summaries', 'rawIdentical', 'normalizedIdentical']}, indent=2))\n",
+  "status": "Completed ordered VAD comparison; no release claim.",
+  "summaries": {
+    "disabled": {
+      "finalizationMilliseconds": {
+        "maximum": 552.031125,
+        "minimum": 230.563958
+      },
+      "firstPartialMilliseconds": {
+        "maximum": 1856.870875,
+        "minimum": 1254.743958
+      },
+      "normalizedExactUtterances": 12,
+      "partialCount": 210,
+      "referenceWords": 361,
+      "utterancesWithPreReleasePartials": 16,
+      "wordErrorRate": 0.01662049861495845,
+      "wordErrors": 6
+    },
+    "enabled": {
+      "finalizationMilliseconds": {
+        "maximum": 612.69725,
+        "minimum": 233.669459
+      },
+      "firstPartialMilliseconds": {
+        "maximum": 1859.572292,
+        "minimum": 1319.519334
+      },
+      "normalizedExactUtterances": 12,
+      "partialCount": 210,
+      "referenceWords": 361,
+      "utterancesWithPreReleasePartials": 16,
+      "wordErrorRate": 0.01662049861495845,
+      "wordErrors": 6
+    }
+  }
+}

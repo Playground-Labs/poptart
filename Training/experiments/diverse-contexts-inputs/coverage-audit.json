@@ -1,0 +1,21 @@
+{
+  "allTargetsValidated": true,
+  "diagnosticTerms": 8,
+  "domains": 2,
+  "focusedContinuation": true,
+  "frames": 4,
+  "limitations": [
+    "Authored synthetic contrasts cover eight prospective concepts, not 256 independent concepts.",
+    "This focused continuation trains only on the 1,024 new records and relies on frozen validation plus regressions to detect forgetting.",
+    "The prospective diagnostic was frozen before inference and is excluded from training and checkpoint selection."
+  ],
+  "mechanicsOrderCombinations": 8,
+  "partitionGuardPassed": true,
+  "priorTrainingExcludedFromThisContinuation": true,
+  "prospectiveDiagnosticRecords": 256,
+  "styles": 4,
+  "testSHA256": "d498484d91fb42cc84c5266eaf09e06a25921e5ca39ed3557280901eaa09bbed",
+  "trainingRecords": 1024,
+  "trainingTerms": 32,
+  "validSHA256": "5bad72da383034295263eb3169b80ce81516b5308137c209d6bb8bf17214adcb"
+}

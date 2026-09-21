@@ -345,6 +345,7 @@ struct OnboardingSurfaceTests {
             pack: .stub(version: "1.2.0"),
             readiness: InstalledPackOfflineReadiness(
                 modelRuntimeDirectory: root.url,
+                manifestPublicKey: root.publicKey,
                 permissions: {
                     .init(
                         microphone: microphone.state(),

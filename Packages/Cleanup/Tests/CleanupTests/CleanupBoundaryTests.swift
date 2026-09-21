@@ -6,6 +6,71 @@ import Testing
 
 @Suite("Cleanup boundary")
 struct CleanupBoundaryTests {
+  @Test("Symbol preservation accepts mechanics and rejects symbol loss in optimized builds")
+  func symbolPreservationAcrossBuilds() throws {
+    let validator = CleanupEditPlanValidator(configuration: .init(maximumInputTokens: 1_024))
+    let context = request(text: "").targetContext
+    let transcript = StableTranscript("alpha beta gamma")
+    let capitalization = CleanupEdit(startSpan: 0, endSpan: 1, replacement: "Alpha", category: .capitalization)
+    let punctuation = CleanupEdit(startSpan: 0, endSpan: 0, replacement: ".", category: .punctuation)
+    for edit in [capitalization, punctuation] {
+      #expect(try validator.validate(.init(edits: [edit]), transcript: transcript,
+        reservedEdits: [], targetContext: context, personalVocabulary: .init(entries: [])) == [edit])
+      #expect(throws: CleanupEditValidationError.unorderedOrOverlapping) {
+        try validator.validate(.init(edits: [edit, edit]), transcript: transcript,
+          reservedEdits: [], targetContext: context, personalVocabulary: .init(entries: []))
+      }
+    }
+    for raw in ["um 😀", "um $"] {
+      let source = StableTranscript(raw)
+      let deletion = CleanupEdit(startSpan: 0, endSpan: source.spans.count,
+        replacement: "", category: .filler)
+      #expect(throws: CleanupEditValidationError.unsafeCategory) {
+        try validator.validate(.init(edits: [deletion]), transcript: source,
+          reservedEdits: [], targetContext: context, personalVocabulary: .init(entries: []))
+      }
+    }
+  }
+
+  @Test("Deleting a filler preserves punctuation spacing after earlier edits")
+  func deletionSpacing() {
+    for (raw, expected) in [("go um.", "Go."), ("go um", "Go"),
+                            ("go um now", "Go now"), ("go um (later)", "Go (later)"),
+                            ("go um, please", "Go, please"), ("go um.\u{301} now", "Go .\u{301} now")] {
+      let edits = [CleanupEdit(startSpan: 0, endSpan: 1, replacement: "Go", category: .capitalization),
+                   CleanupEdit(startSpan: 1, endSpan: 2, replacement: "", category: .filler)]
+      #expect(CleanupEditApplier.apply(edits, to: StableTranscript(raw)) == expected)
+    }
+    for (raw, replacement, expected) in [("go um, now", "", "go now"),
+                                        ("go um uh.", "", "go."),
+                                        ("go um uh", "", "go"),
+                                        ("go um, now", "(", "go ( now"),
+                                        ("go um, now", ".", "go. now")] {
+      let edits = [CleanupEdit(startSpan: 1, endSpan: 2, replacement: "", category: .filler),
+                   CleanupEdit(startSpan: 2, endSpan: 3, replacement: replacement, category: .punctuation)]
+      #expect(CleanupEditApplier.apply(edits, to: StableTranscript(raw)) == expected)
+    }
+  }
+
+  @Test("Unsafe original scalars cannot be certified by an empty or punctuation-only plan")
+  func rejectsUnsafeOriginalText() async {
+    for raw in ["approve\u{200B} the change", "hello\u{7}world", "route\u{202E} reversed",
+                "first\nsecond", "first\tsecond", "family 👨‍👩‍👧", "joining می\u{200C}روم"] {
+      let count = StableTranscript(raw).spans.count
+      for plan in [#"{"v":1,"e":[]}"#,
+                   "{\"v\":1,\"e\":[{\"s\":\(count),\"e\":\(count),\"r\":\".\",\"c\":\"punctuation\"}]}"] {
+        let cleanup = CleanupEngine(model: ScriptedModel(output: plan + CleanupPrompt.stopMarker),
+          deadlineWaiter: NeverDeadlineWaiter(), configuration: .init(maximumInputTokens: 1_024))
+        #expect(await cleanup.clean(request(text: raw)) == .rawTranscriptFallback(.unsafeEditPlan))
+      }
+    }
+    let safe = "The café is open 👍"
+    let cleanup = CleanupEngine(model: ScriptedModel(output: #"{"v":1,"e":[]}"# + CleanupPrompt.stopMarker),
+      deadlineWaiter: NeverDeadlineWaiter(), configuration: .init(maximumInputTokens: 1_024))
+    #expect(await cleanup.clean(request(text: safe)) == .cleaned(.init(text: safe,
+      metadata: .init(changed: false, editCount: 0))))
+  }
+
   @Test("An unmistakable spoken correction is applied deterministically")
   func explicitCorrection() async {
     let model = ScriptedModel(output: #"{"v":1,"e":[]}"# + CleanupPrompt.stopMarker)
@@ -234,6 +299,23 @@ struct CleanupBoundaryTests {
 
     #expect(
       await cleanup.clean(request(text: "um 😀 uh")) == .rawTranscriptFallback(.unsafeEditPlan))
+  }
+
+  @Test("Mechanical edits cannot erase symbols while retaining other words")
+  func rejectsSymbolsHiddenAmongMechanicalEdits() async {
+    let cases: [(String, String, [String])] = [
+      ("um 😀 send the message", #"{"v":1,"e":[{"s":0,"e":2,"r":"","c":"filler"}]}"#, []),
+      ("yes 😀 yes send the message", #"{"v":1,"e":[{"s":0,"e":2,"r":"","c":"repetition"}]}"#, []),
+      ("Use pop 😀 tart for the announcement tomorrow", #"{"v":1,"e":[{"s":1,"e":4,"r":"Poptart","c":"vocabulary"}]}"#, ["Poptart"]),
+    ]
+    for (raw, plan, vocabulary) in cases {
+      let cleanup = CleanupEngine(
+        model: ScriptedModel(output: plan + CleanupPrompt.stopMarker),
+        deadlineWaiter: NeverDeadlineWaiter(),
+        configuration: .init(maximumInputTokens: 1_024))
+      #expect(await cleanup.clean(request(text: raw, vocabulary: vocabulary))
+        == .rawTranscriptFallback(.unsafeEditPlan))
+    }
   }
 
   @Test("Substantive wording can never be emptied by otherwise-valid removals")

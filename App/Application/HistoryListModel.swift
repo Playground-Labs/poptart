@@ -30,7 +30,9 @@ public enum DictationRecordPresenter {
     public static func classification(
         outcome: Persistence.DictationOutcome,
         cleanupChangedText: Bool,
-        fallbackReason: Persistence.RawTranscriptFallbackReason? = nil
+        fallbackReason: Persistence.RawTranscriptFallbackReason? = nil,
+        recordingEnd: Persistence.DictationRecordingEnd? = nil,
+        textSource: Persistence.DictationTextSource? = nil
     ) -> String {
         let named: String =
             switch outcome {
@@ -47,8 +49,21 @@ public enum DictationRecordPresenter {
             case .recordingFailure: "Recording failed"
             case .deliveryFailure: "Delivery failed"
             }
-        guard let fallbackReason else { return named }
-        return "\(named) — \(reason(fallbackReason))"
+        var parts = [named]
+        if let textSource, [.copiedTargetChanged, .copiedNoTarget, .deliveryFailure].contains(outcome) {
+            let sourceOutcome: Persistence.DictationOutcome = switch textSource {
+            case .cleaned: .cleaned
+            case .rawTranscript: .rawTranscript
+            case .oversized: .oversized
+            case .recognitionHypothesis: .recognitionHypothesis
+            }
+            parts.append(classification(outcome: sourceOutcome, cleanupChangedText: cleanupChangedText))
+        }
+        if let fallbackReason { parts.append(reason(fallbackReason)) }
+        if recordingEnd == .fiveMinuteSafetyLimit, outcome != .safetyStop {
+            parts.append("Stopped at the five-minute limit")
+        }
+        return parts.joined(separator: " — ")
     }
 
     /// Names why Cleanup gave the Raw Transcript back unchanged.
@@ -83,7 +98,9 @@ public enum DictationRecordPresenter {
             classification: classification(
                 outcome: record.outcome,
                 cleanupChangedText: record.cleanupChangedText,
-                fallbackReason: record.fallbackReason
+                fallbackReason: record.fallbackReason,
+                recordingEnd: record.recordingEnd,
+                textSource: record.textSource
             ),
             outcome: record.outcome,
             cleanupChangedText: record.cleanupChangedText,

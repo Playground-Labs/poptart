@@ -1,0 +1,4 @@
+{
+  "protocolReview": "CLEAR: the wrapper applies its mid-protocol overrides to the reused runner's actual globals; frozen hashes,25/50/75 weights, selection, destinations, and restricted scope are correct.",
+  "reviewedPlan": "mid-context-blend-plan-2026-09-17.json"
+}

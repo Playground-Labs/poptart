@@ -1,0 +1,303 @@
+{
+  "acceptance": "No automatic promotion. Require >=95% development exact and100% meaning/context/vocabulary/adversarial/runtime. Require all physical-object meanings preserved and no accepted name substitution in physical contexts; prospective canonical diagnostic >=95%exact and100%meaning/context/vocabulary/safety/runtime before considering release qualification. Original release/platform gates remain unchanged. Also require prospective diverse128 >=95%exact and100%meaning/context/vocabulary/safety/runtime, with zero accepted physical-name substitutions. All existing diagnostics and original release/platform gates remain in force.",
+  "adapterDirectory": ".build/diverse-objects-adapters",
+  "base": "Models/Artifacts/baseline-qwen-2b-4bit",
+  "baseFiles": {
+    "LICENSE": {
+      "byteSize": 11544,
+      "sha256": "bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a"
+    },
+    "README.md": {
+      "byteSize": 81,
+      "sha256": "748c964f9b7e5f2c3770ce013bbc0153be7c54311d9692c343b6188eefe77ac6"
+    },
+    "chat_template.jinja": {
+      "byteSize": 7755,
+      "sha256": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+    },
+    "config.json": {
+      "byteSize": 2625,
+      "sha256": "8893a91e9b7763d7b94c6db181f5b7c79c6f4881a69cefb11549eefcab1823bf"
+    },
+    "model.safetensors": {
+      "byteSize": 1059404951,
+      "sha256": "44610b29c3ce91189a28195a3ef4fc34634330a781b6faed61bcd4bf40855e39"
+    },
+    "model.safetensors.index.json": {
+      "byteSize": 60786,
+      "sha256": "3b2dffa510d1d73decdbc12d5e1bc7d6a9f7b2deb631bfd84238a1f8fc4e0fd1"
+    },
+    "tokenizer.json": {
+      "byteSize": 19989325,
+      "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+    },
+    "tokenizer_config.json": {
+      "byteSize": 1160,
+      "sha256": "386ba246ba3dfa4d3a21d8bc8712eba38de558e5ac94c2c90436d8f94d519d5e"
+    }
+  },
+  "batchSize": 2,
+  "checkpoints": [
+    256,
+    512,
+    768,
+    1024,
+    1280,
+    1536
+  ],
+  "command": [
+    ".build/training-venv/bin/python",
+    "Training/train.py",
+    "--config",
+    "Training/config/lora.yaml",
+    "--model",
+    "Models/Artifacts/baseline-qwen-2b-4bit",
+    "--data",
+    "Training/experiments/diverse-objects-inputs",
+    "--resume-adapter-file",
+    "Models/Artifacts/qwen-2b-training-step1024/adapters/adapters.safetensors",
+    "--learning-rate",
+    "0.000003",
+    "--batch-size",
+    "2",
+    "--iters",
+    "1536",
+    "--steps-per-eval",
+    "256",
+    "--save-every",
+    "256",
+    "--adapter-path",
+    ".build/diverse-objects-adapters",
+    "--test"
+  ],
+  "controlFiles": {
+    "adapters/adapter_config.json": {
+      "byteSize": 1090,
+      "sha256": "35582a2a68d4a83c9b1eaf37493b1ab6c7aab75fab42414061ecf1fdf8a2c265"
+    },
+    "adapters/adapters.safetensors": {
+      "byteSize": 22456574,
+      "sha256": "02c6b743d64d20168c37c410bdeb3b4100b592d99cb94a5af6ef3fb1d6e6de5d"
+    },
+    "base/LICENSE": {
+      "byteSize": 11544,
+      "sha256": "bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a"
+    },
+    "base/README.md": {
+      "byteSize": 81,
+      "sha256": "748c964f9b7e5f2c3770ce013bbc0153be7c54311d9692c343b6188eefe77ac6"
+    },
+    "base/chat_template.jinja": {
+      "byteSize": 7755,
+      "sha256": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+    },
+    "base/config.json": {
+      "byteSize": 2625,
+      "sha256": "8893a91e9b7763d7b94c6db181f5b7c79c6f4881a69cefb11549eefcab1823bf"
+    },
+    "base/model.safetensors": {
+      "byteSize": 1059404951,
+      "sha256": "44610b29c3ce91189a28195a3ef4fc34634330a781b6faed61bcd4bf40855e39"
+    },
+    "base/model.safetensors.index.json": {
+      "byteSize": 60786,
+      "sha256": "3b2dffa510d1d73decdbc12d5e1bc7d6a9f7b2deb631bfd84238a1f8fc4e0fd1"
+    },
+    "base/tokenizer.json": {
+      "byteSize": 19989325,
+      "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+    },
+    "base/tokenizer_config.json": {
+      "byteSize": 1160,
+      "sha256": "386ba246ba3dfa4d3a21d8bc8712eba38de558e5ac94c2c90436d8f94d519d5e"
+    }
+  },
+  "controlModel": "Models/Artifacts/qwen-2b-training-step1024",
+  "corpusReview": {
+    "details": "Training/experiments/diverse-objects-inputs/REVIEW.md",
+    "spec": "Clear after fixing global and template-conditioned distractor-style shortcuts; all640new labels reviewed.",
+    "standards": "Clear; independent style/mechanics/template balance, existing byte prefixes/splits and partitions verified."
+  },
+  "createdAt": "2026-09-17T14:45:56.766440+00:00",
+  "diagnostics": {
+    "canonical": "Training/experiments/canonical-copy-inputs/diagnostic-canonical.jsonl",
+    "diverse": "Training/experiments/diverse-objects-inputs/diagnostic-diverse.jsonl",
+    "novel": "Training/experiments/canonical-copy-inputs/diagnostic-novel.jsonl",
+    "physical": "Training/experiments/canonical-copy-inputs/diagnostic-physical.jsonl",
+    "position": "Training/experiments/canonical-copy-inputs/diagnostic-position.jsonl",
+    "spelling": "Training/experiments/canonical-copy-inputs/diagnostic-spelling.jsonl"
+  },
+  "driverSource": "\"\"\"Fixed development-only training and native checkpoint evaluation; never promote.\"\"\"\nimport json\nimport math\nimport os\nimport re\nimport shutil\nimport subprocess\nimport sys\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path('Scripts').resolve()))\nfrom model_files import digest, inventory\n\nPLAN = Path('Training/experiments/diverse-objects-plan-2026-09-17.json')\nOUTPUT = Path('Training/experiments/diverse-objects-2026-09-17.json')\nPREFIX = '.build/diverse-objects'\n\n\ndef select_checkpoint(runs, losses):\n    allowed = []\n    for step, run in runs.items():\n        report = run['report']\n        for field, count in [('meaningPreservation', 32), ('contextFit', 32),\n                             ('editPlanExact', 32), ('adversarialSafe', 11), ('runtimeConsistency', 43)]:\n            assert report[field]['applicable'] == count, (step, field)\n        if all(report[field]['passed'] == report[field]['applicable']\n               for field in ['adversarialSafe', 'runtimeConsistency']):\n            allowed.append(step)\n    assert allowed, 'No checkpoint passes native safety/runtime checks'\n    return max(allowed, key=lambda step: tuple(runs[step]['report'][key]['passed']\n               for key in ['meaningPreservation', 'contextFit', 'editPlanExact']) + (-losses[step], -step))\n\n\ndef main():\n    plan = json.loads(PLAN.read_text())\n\n    def verify():\n        for key in ['inputs', 'runtimeSourceSHA256', 'retainedFilesSHA256']:\n            for name, expected in plan[key].items():\n                assert digest(name) == expected, name\n        assert inventory(plan['base']) == plan['baseFiles']\n        assert inventory(Path(plan['runner']).parent) == plan['runnerFiles']\n\n    verify()\n    assert not OUTPUT.exists() and not Path(plan['adapterDirectory']).exists()\n    if sys.argv[1:] == ['--check-only']:\n        report = {key: {'passed': count, 'applicable': count} for key, count in [\n            ('meaningPreservation', 32), ('contextFit', 32), ('editPlanExact', 32),\n            ('adversarialSafe', 11), ('runtimeConsistency', 43)]}\n        runs = {256: {'report': report}, 512: {'report': report}}\n        assert select_checkpoint(runs, {256: .1, 512: .1}) == 256\n        assert select_checkpoint(runs, {256: .2, 512: .1}) == 512\n        unsafe = json.loads(json.dumps(report))\n        unsafe['adversarialSafe']['passed'] = 10\n        assert select_checkpoint({256: {'report': unsafe}, 512: {'report': report}},\n                                 {256: .01, 512: .1}) == 512\n        print('Frozen identities and checkpoint selection checks passed.', flush=True)\n        return\n    assert not sys.argv[1:]\n    Path(PREFIX + '-driver.pid').write_text(str(os.getpid()))\n    with Path(PREFIX + '-training.log').open('x') as stream:\n        subprocess.run(plan['command'], stdout=stream, stderr=subprocess.STDOUT, check=True)\n    verify()\n    log = Path(PREFIX + '-training.log').read_text()\n    assert 'Saved final weights' in log and 'Test loss ' in log\n    losses = {int(step): float(loss) for step, loss in re.findall(\n        r'Iter (\\d+): Val loss ([0-9.eE+-]+),', log) if int(step) in plan['checkpoints']}\n    assert sorted(losses) == plan['checkpoints'] and all(math.isfinite(v) for v in losses.values())\n    test_loss = float(re.search(r'Test loss ([0-9.eE+-]+),', log)[1])\n    assert math.isfinite(test_loss)\n    record = dict(status='Native validation in progress; no promotion.', plan=plan,\n                  trainingLog=log, loggedValidationLosses=losses, finalStepTestLoss=test_loss,\n                  validation={}, modelInventories={})\n\n    def retain():\n        OUTPUT.write_text(json.dumps(record, indent=2, sort_keys=True) + '\\n')\n\n    def evaluate(label, model, gold=None):\n        verify()\n        expected_model = record['modelInventories'][str(model)]\n        assert inventory(model) == expected_model\n        directory = Path(PREFIX + '-' + label)\n        command = [plan['command'][0], 'Evals/baseline.py', '--runner', plan['runner'],\n                   '--model', str(model), '--output-directory', str(directory)]\n        if gold is not None:\n            command.extend(['--gold', gold])\n        with Path(str(directory) + '.log').open('x') as stream:\n            subprocess.run(command, stdout=stream, stderr=subprocess.STDOUT, check=True)\n        verify()\n        assert inventory(model) == expected_model\n        result = {**{key: json.loads((directory / (key + '.json')).read_text())\n                   for key in ['report', 'evidence', 'failures']},\n                'predictions': [json.loads(line) for line in (directory / 'predictions.jsonl').read_text().splitlines()],\n                'nativeResources': (directory / 'native-resources.txt').read_text()}\n        assert result['evidence']['modelFiles'] == {name: item['sha256'] for name, item in expected_model.items()}\n        return result\n\n    models = {}\n    for step in plan['checkpoints']:\n        model = Path(f'Models/Artifacts/diverse-objects-step{step}')\n        model.mkdir()\n        models[step] = model\n        subprocess.run(['/bin/cp', '-cR', plan['base'], str(model / 'base')], check=True)\n        (model / 'adapters').mkdir()\n        weights = Path(plan['adapterDirectory']) / f'{step:07d}_adapters.safetensors'\n        shutil.copyfile(weights, model / 'adapters/adapters.safetensors')\n        config = Path(plan['adapterDirectory']) / 'adapter_config.json'\n        shutil.copyfile(config, model / 'adapters/adapter_config.json')\n        assert inventory(model / 'base') == plan['baseFiles']\n        assert digest(weights) == digest(model / 'adapters/adapters.safetensors')\n        assert digest(config) == digest(model / 'adapters/adapter_config.json')\n        record['modelInventories'][str(model)] = inventory(model)\n        record['validation'][step] = evaluate(f'{step}-validation', model, plan['validationGold'])\n        retain()\n        print(step, record['validation'][step]['report']['editPlanExact'], flush=True)\n    selected = select_checkpoint(record['validation'], losses)\n    record.update(selectedStep=selected, selectedModel=str(models[selected]))\n    retain()\n    print('Selected before diagnostics/development:', selected, flush=True)\n    for name, gold in plan['diagnostics'].items():\n        record['diagnostic' + name.title()] = evaluate('selected-diagnostic-' + name, models[selected], gold)\n        retain()\n    record['development'] = evaluate('selected-development', models[selected])\n    retain()\n    record['selectedTrainingFit'] = evaluate('selected-training-fit', models[selected], plan['trainingFitGold'])\n    retain()\n    control = Path(plan['controlModel'])\n    record['modelInventories'][str(control)] = plan['controlFiles']\n    record['controlDiverse'] = evaluate('control-diverse', control, plan['diagnostics']['diverse'])\n    record['status'] = 'Completed fixed development experiment; requires review; no promotion or frozen release query.'\n    retain()\n    print('Completed:', record['development']['report']['editPlanExact'], flush=True)\n\n\nif __name__ == '__main__':\n    main()\n",
+  "environment": {
+    "huggingface-hub": "1.31.0",
+    "mlx": "0.32.2",
+    "mlx-lm": "0.31.3",
+    "transformers": "5.17.0"
+  },
+  "export": "Unchanged4bit stock2B base with separate resumed F32 adapter, no fusion.",
+  "hypothesis": "512new train-only contrasts spanning32new terms, varied physical/application contexts and balanced mechanics/distractor styles may improve generalization beyond memorized physical examples.",
+  "inputs": {
+    ".context/DiverseCorpusContractTests.swift": "d600db6f3aca970f9f3e16d893f61b970d44767aa28247927be6effc9ae9b2b1",
+    ".context/run_diverse_objects.py": "df1a260d682195f5d0a1b716d613b06383549527f651e091333639793e569457",
+    "/Users/brandon/Development/conductor/workspaces/poptart/bogota/.build/training-venv/lib/python3.12/site-packages/mlx_lm/lora.py": "3f188fc6aef80efcb9938678af0548588122ed25845053cc555aece0ad2da5e7",
+    "/Users/brandon/Development/conductor/workspaces/poptart/bogota/.build/training-venv/lib/python3.12/site-packages/mlx_lm/tuner/datasets.py": "fa112840e6ea98a4ff18428792fe2ab023999c2da51ea64b3ebdf8657a152f17",
+    "/Users/brandon/Development/conductor/workspaces/poptart/bogota/.build/training-venv/lib/python3.12/site-packages/mlx_lm/tuner/trainer.py": "ee33ebdbd20a184108541cb490d08085485e71a82ffd6d68d7d216029ecd28fe",
+    "Evals/fixtures/adversarial.jsonl": "d2d68d0e84b8d5ddd43523404541cc5c76dcbc30b2e4e5034a13984d6adc48ab",
+    "Evals/fixtures/gold.jsonl": "b8c97e312b14e2327fc8544c995bdaa62b48dca64cc19c2d6981b75484289a55",
+    "Models/Artifacts/baseline-qwen-2b-4bit/LICENSE": "bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a",
+    "Models/Artifacts/baseline-qwen-2b-4bit/README.md": "748c964f9b7e5f2c3770ce013bbc0153be7c54311d9692c343b6188eefe77ac6",
+    "Models/Artifacts/baseline-qwen-2b-4bit/chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80",
+    "Models/Artifacts/baseline-qwen-2b-4bit/config.json": "8893a91e9b7763d7b94c6db181f5b7c79c6f4881a69cefb11549eefcab1823bf",
+    "Models/Artifacts/baseline-qwen-2b-4bit/model.safetensors": "44610b29c3ce91189a28195a3ef4fc34634330a781b6faed61bcd4bf40855e39",
+    "Models/Artifacts/baseline-qwen-2b-4bit/model.safetensors.index.json": "3b2dffa510d1d73decdbc12d5e1bc7d6a9f7b2deb631bfd84238a1f8fc4e0fd1",
+    "Models/Artifacts/baseline-qwen-2b-4bit/tokenizer.json": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523",
+    "Models/Artifacts/baseline-qwen-2b-4bit/tokenizer_config.json": "386ba246ba3dfa4d3a21d8bc8712eba38de558e5ac94c2c90436d8f94d519d5e",
+    "Models/Artifacts/qwen-2b-training-step1024/adapters/adapter_config.json": "35582a2a68d4a83c9b1eaf37493b1ab6c7aab75fab42414061ecf1fdf8a2c265",
+    "Models/Artifacts/qwen-2b-training-step1024/adapters/adapters.safetensors": "02c6b743d64d20168c37c410bdeb3b4100b592d99cb94a5af6ef3fb1d6e6de5d",
+    "Models/Artifacts/qwen-2b-training-step1024/base/LICENSE": "bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a",
+    "Models/Artifacts/qwen-2b-training-step1024/base/README.md": "748c964f9b7e5f2c3770ce013bbc0153be7c54311d9692c343b6188eefe77ac6",
+    "Models/Artifacts/qwen-2b-training-step1024/base/chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80",
+    "Models/Artifacts/qwen-2b-training-step1024/base/config.json": "8893a91e9b7763d7b94c6db181f5b7c79c6f4881a69cefb11549eefcab1823bf",
+    "Models/Artifacts/qwen-2b-training-step1024/base/model.safetensors": "44610b29c3ce91189a28195a3ef4fc34634330a781b6faed61bcd4bf40855e39",
+    "Models/Artifacts/qwen-2b-training-step1024/base/model.safetensors.index.json": "3b2dffa510d1d73decdbc12d5e1bc7d6a9f7b2deb631bfd84238a1f8fc4e0fd1",
+    "Models/Artifacts/qwen-2b-training-step1024/base/tokenizer.json": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523",
+    "Models/Artifacts/qwen-2b-training-step1024/base/tokenizer_config.json": "386ba246ba3dfa4d3a21d8bc8712eba38de558e5ac94c2c90436d8f94d519d5e",
+    "Training/config/lora.yaml": "7e1df156a526390a8f6abe8297ae6251b57dc219281e0aea8fc369439bb6dbba",
+    "Training/data/corpus.jsonl": "f38fb6adca3ebbb1028a7d2526eb9164107cafa93eb5ecb26f9bfc3265348f85",
+    "Training/experiments/canonical-copy-inputs/diagnostic-canonical.jsonl": "33c4242c45600f44b6669b7dab747f325d576d2ea41d50325dd0e0f5d32415f5",
+    "Training/experiments/canonical-copy-inputs/diagnostic-novel.jsonl": "892f9e1176457193c3eb038913934b5471d3fe465337b73ebf6dfc10661f715a",
+    "Training/experiments/canonical-copy-inputs/diagnostic-physical.jsonl": "6a0b64c998efa128b77df60aedf2d1ef81a1a25a25591d0a216cf8ed7a2bb2d1",
+    "Training/experiments/canonical-copy-inputs/diagnostic-position.jsonl": "27b1740f5f0731b0f9cbc4f4fadb306c5f57cf2874f2af644b50e2ef138d9fba",
+    "Training/experiments/canonical-copy-inputs/diagnostic-spelling.jsonl": "d83a949444253e2ac547840dbc78e821d50b6214dbb9462250f1f5b0234733c4",
+    "Training/experiments/canonical-copy-inputs/validation-gold.jsonl": "ecd5af86280dad908757f522d0f717597d0c166b65af11c552aacac53327d610",
+    "Training/experiments/diverse-objects-inputs/REVIEW.md": "0b8f04795b30738cdac23292ece0429737453b782c7542bd48995bbeb83d3e22",
+    "Training/experiments/diverse-objects-inputs/added-training-gold.jsonl": "b911d89b075f35ff517354cb7688de4415ab7fb4e8ecf787351a111f516f99d2",
+    "Training/experiments/diverse-objects-inputs/added-training.jsonl": "b3aa4b7e2359ef7425b9c1203f4e414ef642227abecfc680cd194f21ece6f0fc",
+    "Training/experiments/diverse-objects-inputs/author_diverse_objects.py": "642dfe6aa2cea9e6547b959f4fa0176eb97deac7e6594940068ab0fec62fe39b",
+    "Training/experiments/diverse-objects-inputs/corpus.jsonl": "7a67d5e0b315d28b80c4dac77fbbdc75b70d80eee75907eb364fdff0cbd4c4a0",
+    "Training/experiments/diverse-objects-inputs/coverage-audit.json": "08b7e02394045174d7b54f5dd3bccd42c30184d61767d042f09b09dbfdebfd00",
+    "Training/experiments/diverse-objects-inputs/diagnostic-diverse.jsonl": "e7628c4399fe2740eca6208c9e6e8d8d68bbe114213acf7a11721705f12ec4c2",
+    "Training/experiments/diverse-objects-inputs/test.jsonl": "d498484d91fb42cc84c5266eaf09e06a25921e5ca39ed3557280901eaa09bbed",
+    "Training/experiments/diverse-objects-inputs/train.jsonl": "7f6b0997a45337139c53e9e05442cf061e63ed0873c373992ecb8dabcc8063f4",
+    "Training/experiments/diverse-objects-inputs/valid.jsonl": "5bad72da383034295263eb3169b80ce81516b5308137c209d6bb8bf17214adcb",
+    "Training/experiments/qwen-2b-training-2026-09-17.json": "011e8757abf9a8cf1f6f115eacbafbdd0e76897e18bd7e6b8859bc2764fbb39c",
+    "Training/prepare_corpus.py": "2e0290b195bde0c79b2f13d183806ac94c3927c7c625b46faae290f6656b31af",
+    "Training/requirements-macos26-arm64.lock": "6b503f9a82f56a19fda8a0a50b94cc7415d425a5571a24892b2bd2cb5d356195",
+    "Training/train.py": "26e80d3160e9f6932d1dd15541c2cdc9bc85f2d69d7f4fb9aeba60ca491ffb96"
+  },
+  "iterations": 1536,
+  "layers": 16,
+  "learningRate": 3e-06,
+  "limitations": [
+    "Continuation resets optimizer state; not an uninterrupted extension or isolated causal estimate of data effects.",
+    "Existing diagnostics have been observed repeatedly; new prospective128covers8synthetic terms, not128independent concepts. Not representative human/live speech evidence.",
+    "Validation has no applicable vocabulary denominator. All physical-name substitutions must be checked separately, including casing-only changes missed by the word-list meaning metric.",
+    "M5Pro48GiB Cleanup-only observations; no physical8GBM1/fullDictation/signing/networkcapture qualification.",
+    "ADR0039production0.8B decision unchanged; shipping2B would require revisiting it. Frozen release modelinference remains unqueried."
+  ],
+  "nativeLabelLog": "Building for debugging...\n[Computing dependencies]\n[Using on-disk description]\n[1\u2009/\u200963] Cmlx\n[2\u2009/\u20097] CleanupTests-product\n[5\u2009/\u200910] CleanupTests-product\n[10\u2009/\u200912] CleanupTests-product\nwarning: missing creator for mutated node: ('/Users/brandon/Development/conductor/workspaces/poptart/bogota/Packages/Cleanup/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')\nBuild complete! (1.23 sec)\n\u25c7 Test run started.\n\u21b3 Testing Library Version: 2084\n\u21b3 Target Platform: arm64e-apple-macos14.0\n\u25c7 Test \"Diverse-object corpus and prospective labels match native prompts and cleanup\" started.\n\u2714 Test \"Diverse-object corpus and prospective labels match native prompts and cleanup\" passed after 0.242 seconds.\n\u2714 Test run with 1 test in 0 suites passed after 0.243 seconds.\n",
+  "preflightLog": "[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.\nValidated 1536/32/32 records; longest sequence 427 tokens.\n",
+  "protocolReview": {
+    "reviewedAt": "2026-09-17T14:49:43.979856+00:00",
+    "spec": "Clear: six fixed checkpoints, selection before diagnostics, selected/control identity, complete diagnostic/training-fit coverage, original gates and limitations verified.",
+    "standards": "Clear: control equals prior selected2B1024, all input/model bindings and fresh destinations verified; retained model identity checks unchanged."
+  },
+  "purpose": "Broaden application/ordinary-object contrasts and mechanics after2B passed development but failed unseen physical-object preservation.",
+  "rank": 8,
+  "resumeAdapter": "Models/Artifacts/qwen-2b-training-step1024/adapters/adapters.safetensors",
+  "retainedFilesSHA256": {
+    ".build/optimized-recovery-release-runner/FluidAudio_FluidAudio.bundle/Contents/Info.plist": "d1a52bdf42e5bbf40cdb20d7c25d07bff9ff31023ee6ffc1472aac7856a17dba",
+    ".build/optimized-recovery-release-runner/FluidAudio_FluidAudio.bundle/Contents/Resources/luxtts_en_us_g2p_aux.json": "e67d7d3097daf9e14f56f81c64109d44dc5bca2d60252b1724282ce1065b029a",
+    ".build/optimized-recovery-release-runner/FluidAudio_FluidAudio.bundle/Contents/Resources/luxtts_en_us_lexicon.tsv.zz": "c6caf56e109a87a4fd8244fa722389a9091e4b6071279b77e3a97e96601fa79e",
+    ".build/optimized-recovery-release-runner/PoptartCleanupEval": "6e6f183f50d2c1c059e1475e7aff0e66c5c06547731b1170f7e526de7291345c",
+    ".build/optimized-recovery-release-runner/mlx-swift_Cmlx.bundle/Contents/Info.plist": "3554585cfb6507f310890090a1e050305517faaa6fb1fb591853e324eef7943d",
+    ".build/optimized-recovery-release-runner/mlx-swift_Cmlx.bundle/Contents/Resources/default.metallib": "0214ad23cc2fa1df961eb7e2118881bd4b2bdb0183546ef537fff1a2a61e2ada",
+    ".build/optimized-recovery-release-runner/swift-crypto_Crypto.bundle/Contents/Info.plist": "50793fe2391f389930a814cba624de824235d3266307270c02ed9f564505656a",
+    ".build/optimized-recovery-release-runner/swift-crypto_Crypto.bundle/Contents/Resources/PrivacyInfo.xcprivacy": "42fb8a30dd8d7ba0900e1bf17fe64ed8c12cfdb8a9c791ab6b4e1eceb0f299c0",
+    ".build/optimized-recovery-release-runner/swift-transformers_Hub.bundle/Contents/Info.plist": "71bf803e8f033ebfa74aa44bb66310f5298f1924532a9025ca69d93b32db5411",
+    ".build/optimized-recovery-release-runner/swift-transformers_Hub.bundle/Contents/Resources/gpt2_tokenizer_config.json": "551e26ec611d8d0c8edc3ef72e518a38418cb71f40de1347dd486a595e1557d7",
+    ".build/optimized-recovery-release-runner/swift-transformers_Hub.bundle/Contents/Resources/t5_tokenizer_config.json": "e0aff0b1de9071e30d9a60a199303b6abe916a64a19932bd1c46992279b41a1f"
+  },
+  "runner": ".build/optimized-recovery-release-runner/PoptartCleanupEval",
+  "runnerEvidence": "Training/experiments/optimized-recovery-2026-09-17.json: matching debug/release outputs for both control models; fixed optimized validator predicates.",
+  "runnerFiles": {
+    "FluidAudio_FluidAudio.bundle/Contents/Info.plist": {
+      "byteSize": 1137,
+      "sha256": "d1a52bdf42e5bbf40cdb20d7c25d07bff9ff31023ee6ffc1472aac7856a17dba"
+    },
+    "FluidAudio_FluidAudio.bundle/Contents/Resources/luxtts_en_us_g2p_aux.json": {
+      "byteSize": 37000,
+      "sha256": "e67d7d3097daf9e14f56f81c64109d44dc5bca2d60252b1724282ce1065b029a"
+    },
+    "FluidAudio_FluidAudio.bundle/Contents/Resources/luxtts_en_us_lexicon.tsv.zz": {
+      "byteSize": 982385,
+      "sha256": "c6caf56e109a87a4fd8244fa722389a9091e4b6071279b77e3a97e96601fa79e"
+    },
+    "PoptartCleanupEval": {
+      "byteSize": 39029248,
+      "sha256": "6e6f183f50d2c1c059e1475e7aff0e66c5c06547731b1170f7e526de7291345c"
+    },
+    "mlx-swift_Cmlx.bundle/Contents/Info.plist": {
+      "byteSize": 1123,
+      "sha256": "3554585cfb6507f310890090a1e050305517faaa6fb1fb591853e324eef7943d"
+    },
+    "mlx-swift_Cmlx.bundle/Contents/Resources/default.metallib": {
+      "byteSize": 3836652,
+      "sha256": "0214ad23cc2fa1df961eb7e2118881bd4b2bdb0183546ef537fff1a2a61e2ada"
+    },
+    "swift-crypto_Crypto.bundle/Contents/Info.plist": {
+      "byteSize": 1133,
+      "sha256": "50793fe2391f389930a814cba624de824235d3266307270c02ed9f564505656a"
+    },
+    "swift-crypto_Crypto.bundle/Contents/Resources/PrivacyInfo.xcprivacy": {
+      "byteSize": 398,
+      "sha256": "42fb8a30dd8d7ba0900e1bf17fe64ed8c12cfdb8a9c791ab6b4e1eceb0f299c0"
+    },
+    "swift-transformers_Hub.bundle/Contents/Info.plist": {
+      "byteSize": 1139,
+      "sha256": "71bf803e8f033ebfa74aa44bb66310f5298f1924532a9025ca69d93b32db5411"
+    },
+    "swift-transformers_Hub.bundle/Contents/Resources/gpt2_tokenizer_config.json": {
+      "byteSize": 234,
+      "sha256": "551e26ec611d8d0c8edc3ef72e518a38418cb71f40de1347dd486a595e1557d7"
+    },
+    "swift-transformers_Hub.bundle/Contents/Resources/t5_tokenizer_config.json": {
+      "byteSize": 20746,
+      "sha256": "e0aff0b1de9071e30d9a60a199303b6abe916a64a19932bd1c46992279b41a1f"
+    }
+  },
+  "runtimeSourceSHA256": {
+    "Evals/baseline.py": "c3c6abac9332e4c58496b1e67763f2a08b7d5220b8eba7c359239beee1556a15",
+    "Evals/editplan.py": "d310aed37db6f9ef42e962efa815456497fc2bc620eca0691e57250b13747777",
+    "Evals/run.py": "5db545e69ca6cce928a5fde788a1311da91bece33c13e1491388186cf65d9440",
+    "Package.resolved": "1f28a476049646105e9b0bf48665da852046fd1b00bc7dd587153b01fbf36dea",
+    "Package.swift": "e75c618f0cd015d87cd1717e9ab89224cba69a469c908b7b21d5beab6799bfd1",
+    "Packages/Cleanup/Package.swift": "ecc96bbddd48e82cb6118f6ed6a4daccd32d1646552411747c6cc4ab13b7e151",
+    "Packages/Cleanup/Sources/Cleanup/CleanupEngine.swift": "a7263f48820747a27d4198fc27db9c71ddb5ac2ca627493c62dedb4428688b3a",
+    "Packages/Cleanup/Sources/Cleanup/CleanupModel.swift": "75d4f2784ecbfe7c38685f486de871ff481731b5f559db59a0edd706c885cb9e",
+    "Packages/Cleanup/Sources/Cleanup/CleanupPrompt.swift": "edf170c63c3e24d7148c2c4c3aa4d30037acc3e4b8e45994d372e1bb4d8d3130",
+    "Packages/Cleanup/Sources/Cleanup/EditPlan.swift": "79ebc733919b3532c3cbb642a7693026ef90a8ff3e12e6a766d40ff5cabe9405",
+    "Packages/Cleanup/Sources/Cleanup/EditPlanValidator.swift": "1d8813df41fd1fdc152feae06e2b48d7c35d1e1ae4c1424e377ef493a327eb59",
+    "Packages/Cleanup/Sources/Cleanup/ExplicitCorrections.swift": "443c4fae01c0968c29cbd5053247386f6709243f4fa54ed1f06ae19669654420",
+    "Packages/Cleanup/Sources/Cleanup/StableTranscript.swift": "9f3dbd9a182d59a5a0bbac310ddd39ac50165434d52a58a3f4a7114f550f3835",
+    "Packages/Cleanup/Sources/CleanupMLX/MLXCleanupModel.swift": "25ab8dab5db06df416fd3b4e44eb6d625ea310fd7d0b1a1b6f24e81ab74fadfd",
+    "Packages/DictationCore/Package.swift": "60fa1a7a3c879b9821dfa8c48d3230c1dfe12a415cebd6e44edb5d5941141814",
+    "Packages/DictationCore/Sources/DictationCore/BoundaryProtocols.swift": "5ae2039b45e7d55662416655c35f5ede0e84375eeb74204919896a1f1799e0e1",
+    "Packages/DictationCore/Sources/DictationCore/DictationSessionActor.swift": "2b9f5d9a5fbeb52875784b11e9bdd7d76ed6973fb3e0b1b6fde6e6f886a8b393",
+    "Packages/DictationCore/Sources/DictationCore/DomainTypes.swift": "ff7e33aa20ef0d47723f56b747beec91b8f5c45c7640ea1d87698d6bdf191b6a",
+    "Packages/DictationCore/Sources/DictationCore/SessionContract.swift": "fed0326bd06050c4efedb0620eeefe04ee3a539b79f95ed487b48b5c8966126b",
+    "Packages/DictationCore/Sources/DictationCore/Time.swift": "d9920afbf36d4bb489803bf35f24b3c764f5daad4c50e778d4112202ba1f578b",
+    "Scripts/model_files.py": "f7980e17147f4bb28212d8ab35ddff707f3c02ee2a17866f5bf1db66a5733599",
+    "Tools/CleanupEval/CleanupEval.swift": "3d0a1cca57034068028543cd07bd6240a536493c405a1c7cecbe51065e7d546b"
+  },
+  "scale": 20,
+  "seed": 20260824,
+  "selection": "Six additional-step256..1536 checkpoints on unchanged native validation32+adversarial11. Require all safety/runtime; maximize meaning, context, exact; lower logged loss then earlier step. Persist selection BEFORE six diagnostics and development, then added-training-fit512. Finally evaluate unchanged parent2B1024 on prospective diverse128 as control. No reselection from diagnostics.",
+  "status": "Frozen before continuation training and new diagnostic inference; no automatic promotion.",
+  "trainingFitGold": "Training/experiments/diverse-objects-inputs/added-training-gold.jsonl",
+  "unchangedHeldOutHashes": {
+    "test": "d498484d91fb42cc84c5266eaf09e06a25921e5ca39ed3557280901eaa09bbed",
+    "valid": "5bad72da383034295263eb3169b80ce81516b5308137c209d6bb8bf17214adcb"
+  },
+  "validationGold": "Training/experiments/canonical-copy-inputs/validation-gold.jsonl"
+}

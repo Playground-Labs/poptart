@@ -1,0 +1,249 @@
+{
+  "adapterSHA256": "4c1eabd18c6eb3c0b345aab0fa752679695871f8d43b04ce2232e2a13bcba08c",
+  "aggregateObserved": {
+    "contextFit": {
+      "applicable": 564,
+      "passed": 561,
+      "rate": 0.9946808510638298
+    },
+    "editPlanExact": {
+      "applicable": 564,
+      "passed": 555,
+      "rate": 0.9840425531914894
+    },
+    "meaningPreservation": {
+      "applicable": 564,
+      "passed": 558,
+      "rate": 0.9893617021276596
+    }
+  },
+  "allAdversarialAndRuntimeChecksPassed": true,
+  "baseModel": "Qwen/Qwen3.5-2B",
+  "baseRevision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+  "candidate": "Models/Artifacts/diverse-contexts-step128",
+  "cleanupOnlyM5Milliseconds": {
+    "maximum": 756.981959,
+    "median": 364.431437
+  },
+  "createdAt": "2026-09-18T18:45:03.437019+00:00",
+  "knownResiduals": [
+    "Five accepted physical-object vocabulary substitutions among 128 focused physical cases.",
+    "Development misses capitalization/punctuation for gold-004 and safely falls back for gold-012.",
+    "Observed synthetic diagnostics are iteration evidence, not an independent release estimate."
+  ],
+  "modelFiles": {
+    "adapters/adapter_config.json": {
+      "byteSize": 1160,
+      "sha256": "863fcca07229a87ad1e0f9ec46c6ece7478e1b4dc067aebfc82b6e4a0f2ed1b8"
+    },
+    "adapters/adapters.safetensors": {
+      "byteSize": 22456574,
+      "sha256": "4c1eabd18c6eb3c0b345aab0fa752679695871f8d43b04ce2232e2a13bcba08c"
+    },
+    "base/LICENSE": {
+      "byteSize": 11544,
+      "sha256": "bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a"
+    },
+    "base/README.md": {
+      "byteSize": 81,
+      "sha256": "748c964f9b7e5f2c3770ce013bbc0153be7c54311d9692c343b6188eefe77ac6"
+    },
+    "base/chat_template.jinja": {
+      "byteSize": 7755,
+      "sha256": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+    },
+    "base/config.json": {
+      "byteSize": 2625,
+      "sha256": "8893a91e9b7763d7b94c6db181f5b7c79c6f4881a69cefb11549eefcab1823bf"
+    },
+    "base/model.safetensors": {
+      "byteSize": 1059404951,
+      "sha256": "44610b29c3ce91189a28195a3ef4fc34634330a781b6faed61bcd4bf40855e39"
+    },
+    "base/model.safetensors.index.json": {
+      "byteSize": 60786,
+      "sha256": "3b2dffa510d1d73decdbc12d5e1bc7d6a9f7b2deb631bfd84238a1f8fc4e0fd1"
+    },
+    "base/tokenizer.json": {
+      "byteSize": 19989325,
+      "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+    },
+    "base/tokenizer_config.json": {
+      "byteSize": 1160,
+      "sha256": "386ba246ba3dfa4d3a21d8bc8712eba38de558e5ac94c2c90436d8f94d519d5e"
+    }
+  },
+  "physicalVocabularyAudits": {
+    "diagnosticCanonical": {
+      "acceptedPhysicalWordSubstitutionIDs": [],
+      "casingOnlySubstitutionIDsMissedByMeaningMetric": [],
+      "physicalFixtures": 32
+    },
+    "diagnosticContexts": {
+      "acceptedPhysicalWordSubstitutionIDs": [
+        "diverse-context-probe-02-3-2-0",
+        "diverse-context-probe-03-1-0-0",
+        "diverse-context-probe-03-2-2-0",
+        "diverse-context-probe-03-3-2-0",
+        "diverse-context-probe-07-3-0-0"
+      ],
+      "casingOnlySubstitutionIDsMissedByMeaningMetric": [
+        "diverse-context-probe-03-1-0-0"
+      ],
+      "physicalFixtures": 128
+    },
+    "diagnosticDiverse": {
+      "acceptedPhysicalWordSubstitutionIDs": [],
+      "casingOnlySubstitutionIDsMissedByMeaningMetric": [],
+      "physicalFixtures": 64
+    },
+    "diagnosticNovel": {
+      "acceptedPhysicalWordSubstitutionIDs": [],
+      "casingOnlySubstitutionIDsMissedByMeaningMetric": [],
+      "physicalFixtures": 16
+    },
+    "diagnosticPhysical": {
+      "acceptedPhysicalWordSubstitutionIDs": [],
+      "casingOnlySubstitutionIDsMissedByMeaningMetric": [],
+      "physicalFixtures": 8
+    }
+  },
+  "quantization": {
+    "bits": 4,
+    "groupSize": 64,
+    "mode": "affine"
+  },
+  "rejectedAlternatives": {
+    "joint-08b-step2016": "Worse development and context generalization.",
+    "joint-2b-step1008": "Worse context generalization: 239/256 meaning and 17 physical substitutions.",
+    "qwen-2b-training-step1024": "Perfect development but substantially worse unseen physical preservation."
+  },
+  "releaseQualification": {
+    "qualified": false,
+    "remaining": [
+      "untouched release evaluation",
+      "physical 8 GB M1 latency and memory",
+      "signed/notarized distribution",
+      "hosted signed model-pack capture",
+      "manual live microphone and update smoke"
+    ]
+  },
+  "sourceResult": "Training/experiments/diverse-contexts-2026-09-17.json",
+  "sourceResultSHA256": "90f27ca66375431b34d6f901263ed1989f9b6d7118515ed47dfea58baca99d9d",
+  "status": "Selected as the practical MVP Cleanup candidate; not release-qualified.",
+  "suiteSummaries": {
+    "development": {
+      "contextFit": {
+        "applicable": 12,
+        "passed": 10
+      },
+      "editPlanExact": {
+        "applicable": 12,
+        "passed": 10
+      },
+      "meaningPreservation": {
+        "applicable": 12,
+        "passed": 12
+      }
+    },
+    "diagnosticCanonical": {
+      "contextFit": {
+        "applicable": 64,
+        "passed": 64
+      },
+      "editPlanExact": {
+        "applicable": 64,
+        "passed": 64
+      },
+      "meaningPreservation": {
+        "applicable": 64,
+        "passed": 64
+      }
+    },
+    "diagnosticContexts": {
+      "contextFit": {
+        "applicable": 256,
+        "passed": 255
+      },
+      "editPlanExact": {
+        "applicable": 256,
+        "passed": 250
+      },
+      "meaningPreservation": {
+        "applicable": 256,
+        "passed": 251
+      }
+    },
+    "diagnosticDiverse": {
+      "contextFit": {
+        "applicable": 128,
+        "passed": 128
+      },
+      "editPlanExact": {
+        "applicable": 128,
+        "passed": 127
+      },
+      "meaningPreservation": {
+        "applicable": 128,
+        "passed": 127
+      }
+    },
+    "diagnosticNovel": {
+      "contextFit": {
+        "applicable": 32,
+        "passed": 32
+      },
+      "editPlanExact": {
+        "applicable": 32,
+        "passed": 32
+      },
+      "meaningPreservation": {
+        "applicable": 32,
+        "passed": 32
+      }
+    },
+    "diagnosticPhysical": {
+      "contextFit": {
+        "applicable": 8,
+        "passed": 8
+      },
+      "editPlanExact": {
+        "applicable": 8,
+        "passed": 8
+      },
+      "meaningPreservation": {
+        "applicable": 8,
+        "passed": 8
+      }
+    },
+    "diagnosticPosition": {
+      "contextFit": {
+        "applicable": 32,
+        "passed": 32
+      },
+      "editPlanExact": {
+        "applicable": 32,
+        "passed": 32
+      },
+      "meaningPreservation": {
+        "applicable": 32,
+        "passed": 32
+      }
+    },
+    "diagnosticSpelling": {
+      "contextFit": {
+        "applicable": 32,
+        "passed": 32
+      },
+      "editPlanExact": {
+        "applicable": 32,
+        "passed": 32
+      },
+      "meaningPreservation": {
+        "applicable": 32,
+        "passed": 32
+      }
+    }
+  },
+  "userDirection": "Prefer a usable product and post-MVP iteration over repeated training for perfect synthetic scores."
+}

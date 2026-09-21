@@ -19,11 +19,13 @@ final class AppEnvironment {
 
     private let supportDirectory: URL
     private let settingsStore: AppSettingsStore
+    private let historyStore: HistoryStore
+    private var retentionTask: Task<Void, Never>?
     private let modelPacks: LocatedModelPackProvider
     private var runtime: RuntimeAssembly?
 
     /// - Parameter downloader: the resumable downloader Model Pack actions use. ModelRuntime owns
-    ///   the only component in Poptart allowed to reach the network, and the repository privacy scan
+    ///   the only Model Pack component allowed to reach the network, and the repository privacy scan
     ///   forbids naming a network client anywhere under `App/`, so a packaged build injects it here.
     ///   Without one, Model Pack download, update, and repair report that they are unavailable
     ///   instead of pretending to work.
@@ -35,6 +37,11 @@ final class AppEnvironment {
             modelPacks: environment.modelPacks
         ) { [unowned environment] pack in
             try await environment.startRuntime(with: pack)
+        }
+        environment.settings.connectModelPackActivation { [weak environment] in
+            guard let environment else { return "Restart Poptart to activate the installed Model Pack." }
+            await environment.launch.restart()
+            return environment.launch.status.isReady ? nil : environment.launch.status.message
         }
         return environment
     }
@@ -70,8 +77,10 @@ final class AppEnvironment {
 
         // The surfaces read the same encrypted files the runtime writes. Both stores write
         // atomically, so a second handle only ever sees a complete record.
-        let keyProvider = KeychainEncryptionKeyProvider(service: "labs.playground.Poptart")
+        let keyProvider = KeychainEncryptionKeyProvider(service: applicationKeychainService(
+            developmentDirectory: ProcessInfo.processInfo.environment["POPTART_SUPPORT_DIRECTORY"]))
         let historyStore = try HistoryStore(directory: support, keyProvider: keyProvider)
+        self.historyStore = historyStore
         let vocabularyStore = try PersonalVocabularyStore(
             directory: support, keyProvider: keyProvider)
         let records = HistoryStoreRecords(store: historyStore)
@@ -84,18 +93,20 @@ final class AppEnvironment {
         // or fetched, so Model Pack actions report that rather than installing an unverified pack.
         let installer: any ModelPackInstalling
         let manifests: any ModelPackManifestSourcing
-        if let downloader,
-           let key = try? ModelPackTrust.embeddedPublicKey(),
-           let verifying = try? ModelPackInstaller(
-               rootDirectory: modelRuntimeDirectory,
-               applicationVersion: PoptartRelease.version(),
-               manifestPublicKey: key,
-               downloader: downloader,
-               smokeTester: LocalModelPackSmokeTest()
-           )
-        {
-            installer = verifying
-            manifests = DownloadedModelPackManifestSource(downloader: downloader)
+        if let downloader, let key = try? ModelPackTrust.embeddedPublicKey() {
+            do {
+                installer = try ModelPackInstaller(
+                    rootDirectory: modelRuntimeDirectory,
+                    applicationVersion: PoptartRelease.version(),
+                    manifestPublicKey: key,
+                    downloader: downloader,
+                    smokeTester: LocalModelPackSmokeTest())
+                manifests = DownloadedModelPackManifestSource(downloader: downloader)
+            } catch {
+                let failure = (error as? ModelPackError) ?? .fileSystemFailure
+                installer = UnavailableModelPackInstaller(failure: failure)
+                manifests = UnavailableModelPackManifestSource(failure: failure)
+            }
         } else {
             installer = UnavailableModelPackInstaller()
             manifests = UnavailableModelPackManifestSource()
@@ -130,6 +141,7 @@ final class AppEnvironment {
             ),
             dictationProbe: records
         )
+        let applicationUpdater = ApplicationUpdater()
         self.settings = SettingsModel(
             shortcut: shortcut,
             history: history,
@@ -146,13 +158,16 @@ final class AppEnvironment {
             installer: installer,
             storage: FileSystemModelPackStorage(),
             vocabulary: PersonalVocabularyStoreEditor(store: vocabularyStore),
-            links: WorkspaceLinkOpener()
+            applicationUpdate: { applicationUpdater.check() }
         )
     }
 
     /// Loads persisted state, then starts the runtime if a verified pack and the permissions are
     /// already in place. Onboarding runs against the live runtime once it is up.
     func start() async {
+        if retentionTask == nil {
+            retentionTask = Task { [historyStore] in await historyStore.maintainRetention() }
+        }
         await shortcut.load()
         #if DEBUG
         // The privacy deny test has to see settings persistence actually happen while the network
@@ -174,7 +189,7 @@ final class AppEnvironment {
         await onboarding.refresh()
         await settings.refreshPermissions()
         await settings.refreshModelPack()
-        if !launch.status.isReady { await launch.restart() }
+        if !launch.status.isReady, launch.status != .starting { await launch.restart() }
     }
 
     private func startRuntime(with pack: ActiveApplicationModelPack) async throws {
@@ -209,4 +224,6 @@ final class AppEnvironment {
         await runtime?.stop()
         runtime = nil
     }
+
+    isolated deinit { retentionTask?.cancel() }
 }

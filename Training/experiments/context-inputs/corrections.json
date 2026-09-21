@@ -1,0 +1,622 @@
+[
+  {
+    "before": {
+      "id": "train-spelling-join-001",
+      "split": "train",
+      "provenance": {
+        "kind": "authoredSynthetic",
+        "author": "Playground Labs",
+        "license": "CC0-1.0",
+        "source": "repository"
+      },
+      "raw": "Put the invoice in blue envelope after reviewing it.",
+      "clean": "Put the invoice in Blueenvelope after reviewing it.",
+      "editPlan": {
+        "v": 1,
+        "e": [
+          {
+            "s": 4,
+            "e": 6,
+            "r": "Blueenvelope",
+            "c": "vocabulary"
+          }
+        ]
+      },
+      "vocabularyTerms": [
+        "mintledger",
+        "Blueenvelope"
+      ],
+      "coverage": [
+        "literal-vocabulary-spelling",
+        "join"
+      ]
+    },
+    "after": {
+      "id": "train-spelling-join-001",
+      "split": "train",
+      "provenance": {
+        "kind": "authoredSynthetic",
+        "author": "Playground Labs",
+        "license": "CC0-1.0",
+        "source": "repository"
+      },
+      "raw": "Put the invoice in the blue envelope application after reviewing it.",
+      "clean": "Put the invoice in the Blueenvelope application after reviewing it.",
+      "editPlan": {
+        "v": 1,
+        "e": [
+          {
+            "s": 5,
+            "e": 7,
+            "r": "Blueenvelope",
+            "c": "vocabulary"
+          }
+        ]
+      },
+      "vocabularyTerms": [
+        "STARCRATE",
+        "Blueenvelope"
+      ],
+      "coverage": [
+        "literal-vocabulary-spelling",
+        "join"
+      ]
+    }
+  },
+  {
+    "before": {
+      "id": "train-spelling-join-003",
+      "split": "train",
+      "provenance": {
+        "kind": "authoredSynthetic",
+        "author": "Playground Labs",
+        "license": "CC0-1.0",
+        "source": "repository"
+      },
+      "raw": "Attach the revised diagram to the green basket workspace",
+      "clean": "Attach the revised diagram to the Greenbasket workspace.",
+      "editPlan": {
+        "v": 1,
+        "e": [
+          {
+            "s": 6,
+            "e": 8,
+            "r": "Greenbasket",
+            "c": "vocabulary"
+          },
+          {
+            "s": 9,
+            "e": 9,
+            "r": ".",
+            "c": "punctuation"
+          }
+        ]
+      },
+      "vocabularyTerms": [
+        "Greenbasket",
+        "covegrid"
+      ],
+      "coverage": [
+        "literal-vocabulary-spelling",
+        "join"
+      ]
+    },
+    "after": {
+      "id": "train-spelling-join-003",
+      "split": "train",
+      "provenance": {
+        "kind": "authoredSynthetic",
+        "author": "Playground Labs",
+        "license": "CC0-1.0",
+        "source": "repository"
+      },
+      "raw": "Attach the revised diagram to the green basket workspace",
+      "clean": "Attach the revised diagram to the Greenbasket workspace.",
+      "editPlan": {
+        "v": 1,
+        "e": [
+          {
+            "s": 6,
+            "e": 8,
+            "r": "Greenbasket",
+            "c": "vocabulary"
+          },
+          {
+            "s": 9,
+            "e": 9,
+            "r": ".",
+            "c": "punctuation"
+          }
+        ]
+      },
+      "vocabularyTerms": [
+        "OAKSIGNAL",
+        "Greenbasket"
+      ],
+      "coverage": [
+        "literal-vocabulary-spelling",
+        "join"
+      ]
+    }
+  },
+  {
+    "before": {
+      "id": "train-spelling-join-005",
+      "split": "train",
+      "provenance": {
+        "kind": "authoredSynthetic",
+        "author": "Playground Labs",
+        "license": "CC0-1.0",
+        "source": "repository"
+      },
+      "raw": "Our reading list appears in stone bridge beside the archive",
+      "clean": "Our reading list appears in Stonebridge beside the archive.",
+      "editPlan": {
+        "v": 1,
+        "e": [
+          {
+            "s": 5,
+            "e": 7,
+            "r": "Stonebridge",
+            "c": "vocabulary"
+          },
+          {
+            "s": 10,
+            "e": 10,
+            "r": ".",
+            "c": "punctuation"
+          }
+        ]
+      },
+      "vocabularyTerms": [
+        "COPPERKETTLE",
+        "Stonebridge"
+      ],
+      "coverage": [
+        "literal-vocabulary-spelling",
+        "join"
+      ]
+    },
+    "after": {
+      "id": "train-spelling-join-005",
+      "split": "train",
+      "provenance": {
+        "kind": "authoredSynthetic",
+        "author": "Playground Labs",
+        "license": "CC0-1.0",
+        "source": "repository"
+      },
+      "raw": "Our reading list appears in the stone bridge application beside the archive",
+      "clean": "Our reading list appears in the Stonebridge application beside the archive.",
+      "editPlan": {
+        "v": 1,
+        "e": [
+          {
+            "s": 6,
+            "e": 8,
+            "r": "Stonebridge",
+            "c": "vocabulary"
+          },
+          {
+            "s": 12,
+            "e": 12,
+            "r": ".",
+            "c": "punctuation"
+          }
+        ]
+      },
+      "vocabularyTerms": [
+        "Stonebridge",
+        "DEWMAP"
+      ],
+      "coverage": [
+        "literal-vocabulary-spelling",
+        "join"
+      ]
+    }
+  },
+  {
+    "before": {
+      "id": "train-spelling-join-007",
+      "split": "train",
+      "provenance": {
+        "kind": "authoredSynthetic",
+        "author": "Playground Labs",
+        "license": "CC0-1.0",
+        "source": "repository"
+      },
+      "raw": "I saved a separate copy in red lantern for the editor.",
+      "clean": "I saved a separate copy in Redlantern for the editor.",
+      "editPlan": {
+        "v": 1,
+        "e": [
+          {
+            "s": 6,
+            "e": 8,
+            "r": "Redlantern",
+            "c": "vocabulary"
+          }
+        ]
+      },
+      "vocabularyTerms": [
+        "Redlantern",
+        "SMALLHARBOR"
+      ],
+      "coverage": [
+        "literal-vocabulary-spelling",
+        "join"
+      ]
+    },
+    "after": {
+      "id": "train-spelling-join-007",
+      "split": "train",
+      "provenance": {
+        "kind": "authoredSynthetic",
+        "author": "Playground Labs",
+        "license": "CC0-1.0",
+        "source": "repository"
+      },
+      "raw": "I saved a separate copy in the red lantern application for the editor.",
+      "clean": "I saved a separate copy in the Redlantern application for the editor.",
+      "editPlan": {
+        "v": 1,
+        "e": [
+          {
+            "s": 7,
+            "e": 9,
+            "r": "Redlantern",
+            "c": "vocabulary"
+          }
+        ]
+      },
+      "vocabularyTerms": [
+        "Redlantern",
+        "Willow Studio"
+      ],
+      "coverage": [
+        "literal-vocabulary-spelling",
+        "join"
+      ]
+    }
+  },
+  {
+    "before": {
+      "id": "train-spelling-join-010",
+      "split": "train",
+      "provenance": {
+        "kind": "authoredSynthetic",
+        "author": "Playground Labs",
+        "license": "CC0-1.0",
+        "source": "repository"
+      },
+      "raw": "we can compare both versions inside maple branch later.",
+      "clean": "We can compare both versions inside maplebranch later.",
+      "editPlan": {
+        "v": 1,
+        "e": [
+          {
+            "s": 0,
+            "e": 1,
+            "r": "We",
+            "c": "capitalization"
+          },
+          {
+            "s": 6,
+            "e": 8,
+            "r": "maplebranch",
+            "c": "vocabulary"
+          }
+        ]
+      },
+      "vocabularyTerms": [
+        "OAKSIGNAL",
+        "maplebranch"
+      ],
+      "coverage": [
+        "literal-vocabulary-spelling",
+        "join"
+      ]
+    },
+    "after": {
+      "id": "train-spelling-join-010",
+      "split": "train",
+      "provenance": {
+        "kind": "authoredSynthetic",
+        "author": "Playground Labs",
+        "license": "CC0-1.0",
+        "source": "repository"
+      },
+      "raw": "we can compare both versions inside the maple branch application later.",
+      "clean": "We can compare both versions inside the maplebranch application later.",
+      "editPlan": {
+        "v": 1,
+        "e": [
+          {
+            "s": 0,
+            "e": 1,
+            "r": "We",
+            "c": "capitalization"
+          },
+          {
+            "s": 7,
+            "e": 9,
+            "r": "maplebranch",
+            "c": "vocabulary"
+          }
+        ]
+      },
+      "vocabularyTerms": [
+        "Copper Atlas",
+        "maplebranch"
+      ],
+      "coverage": [
+        "literal-vocabulary-spelling",
+        "join"
+      ]
+    }
+  },
+  {
+    "before": {
+      "id": "train-spelling-join-012",
+      "split": "train",
+      "provenance": {
+        "kind": "authoredSynthetic",
+        "author": "Playground Labs",
+        "license": "CC0-1.0",
+        "source": "repository"
+      },
+      "raw": "please attach the sketch in silver ribbon beside the outline",
+      "clean": "Please attach the sketch in silverribbon beside the outline.",
+      "editPlan": {
+        "v": 1,
+        "e": [
+          {
+            "s": 0,
+            "e": 1,
+            "r": "Please",
+            "c": "capitalization"
+          },
+          {
+            "s": 5,
+            "e": 7,
+            "r": "silverribbon",
+            "c": "vocabulary"
+          },
+          {
+            "s": 10,
+            "e": 10,
+            "r": ".",
+            "c": "punctuation"
+          }
+        ]
+      },
+      "vocabularyTerms": [
+        "silverribbon",
+        "Willow Studio"
+      ],
+      "coverage": [
+        "literal-vocabulary-spelling",
+        "join"
+      ]
+    },
+    "after": {
+      "id": "train-spelling-join-012",
+      "split": "train",
+      "provenance": {
+        "kind": "authoredSynthetic",
+        "author": "Playground Labs",
+        "license": "CC0-1.0",
+        "source": "repository"
+      },
+      "raw": "please attach the sketch in the silver ribbon application beside the outline",
+      "clean": "Please attach the sketch in the silverribbon application beside the outline.",
+      "editPlan": {
+        "v": 1,
+        "e": [
+          {
+            "s": 0,
+            "e": 1,
+            "r": "Please",
+            "c": "capitalization"
+          },
+          {
+            "s": 6,
+            "e": 8,
+            "r": "silverribbon",
+            "c": "vocabulary"
+          },
+          {
+            "s": 12,
+            "e": 12,
+            "r": ".",
+            "c": "punctuation"
+          }
+        ]
+      },
+      "vocabularyTerms": [
+        "Slate Harbor",
+        "silverribbon"
+      ],
+      "coverage": [
+        "literal-vocabulary-spelling",
+        "join"
+      ]
+    }
+  },
+  {
+    "before": {
+      "id": "train-spelling-join-018",
+      "split": "train",
+      "provenance": {
+        "kind": "authoredSynthetic",
+        "author": "Playground Labs",
+        "license": "CC0-1.0",
+        "source": "repository"
+      },
+      "raw": "the package from copper kettle includes a short introduction",
+      "clean": "The package from COPPERKETTLE includes a short introduction.",
+      "editPlan": {
+        "v": 1,
+        "e": [
+          {
+            "s": 0,
+            "e": 1,
+            "r": "The",
+            "c": "capitalization"
+          },
+          {
+            "s": 3,
+            "e": 5,
+            "r": "COPPERKETTLE",
+            "c": "vocabulary"
+          },
+          {
+            "s": 9,
+            "e": 9,
+            "r": ".",
+            "c": "punctuation"
+          }
+        ]
+      },
+      "vocabularyTerms": [
+        "Marble Finch",
+        "COPPERKETTLE"
+      ],
+      "coverage": [
+        "literal-vocabulary-spelling",
+        "join"
+      ]
+    },
+    "after": {
+      "id": "train-spelling-join-018",
+      "split": "train",
+      "provenance": {
+        "kind": "authoredSynthetic",
+        "author": "Playground Labs",
+        "license": "CC0-1.0",
+        "source": "repository"
+      },
+      "raw": "the software package from copper kettle includes a short introduction",
+      "clean": "The software package from COPPERKETTLE includes a short introduction.",
+      "editPlan": {
+        "v": 1,
+        "e": [
+          {
+            "s": 0,
+            "e": 1,
+            "r": "The",
+            "c": "capitalization"
+          },
+          {
+            "s": 4,
+            "e": 6,
+            "r": "COPPERKETTLE",
+            "c": "vocabulary"
+          },
+          {
+            "s": 10,
+            "e": 10,
+            "r": ".",
+            "c": "punctuation"
+          }
+        ]
+      },
+      "vocabularyTerms": [
+        "COPPERKETTLE",
+        "Birch Lantern"
+      ],
+      "coverage": [
+        "literal-vocabulary-spelling",
+        "join"
+      ]
+    }
+  },
+  {
+    "before": {
+      "id": "train-spelling-join-020",
+      "split": "train",
+      "provenance": {
+        "kind": "authoredSynthetic",
+        "author": "Playground Labs",
+        "license": "CC0-1.0",
+        "source": "repository"
+      },
+      "raw": "our draft in small harbor still needs an opening paragraph",
+      "clean": "Our draft in SMALLHARBOR still needs an opening paragraph.",
+      "editPlan": {
+        "v": 1,
+        "e": [
+          {
+            "s": 0,
+            "e": 1,
+            "r": "Our",
+            "c": "capitalization"
+          },
+          {
+            "s": 3,
+            "e": 5,
+            "r": "SMALLHARBOR",
+            "c": "vocabulary"
+          },
+          {
+            "s": 10,
+            "e": 10,
+            "r": ".",
+            "c": "punctuation"
+          }
+        ]
+      },
+      "vocabularyTerms": [
+        "SMALLHARBOR",
+        "Blueenvelope"
+      ],
+      "coverage": [
+        "literal-vocabulary-spelling",
+        "join"
+      ]
+    },
+    "after": {
+      "id": "train-spelling-join-020",
+      "split": "train",
+      "provenance": {
+        "kind": "authoredSynthetic",
+        "author": "Playground Labs",
+        "license": "CC0-1.0",
+        "source": "repository"
+      },
+      "raw": "our draft in the small harbor application still needs an opening paragraph",
+      "clean": "Our draft in the SMALLHARBOR application still needs an opening paragraph.",
+      "editPlan": {
+        "v": 1,
+        "e": [
+          {
+            "s": 0,
+            "e": 1,
+            "r": "Our",
+            "c": "capitalization"
+          },
+          {
+            "s": 4,
+            "e": 6,
+            "r": "SMALLHARBOR",
+            "c": "vocabulary"
+          },
+          {
+            "s": 12,
+            "e": 12,
+            "r": ".",
+            "c": "punctuation"
+          }
+        ]
+      },
+      "vocabularyTerms": [
+        "SMALLHARBOR",
+        "Cobalt Garden"
+      ],
+      "coverage": [
+        "literal-vocabulary-spelling",
+        "join"
+      ]
+    }
+  }
+]

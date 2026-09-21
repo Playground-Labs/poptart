@@ -207,13 +207,7 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
     guard revalidate(request.target) == .valid,
       let captured = lock.withLock({ capturedTargets[request.target.elementIdentifier] })
     else {
-      return report(
-        .failed(.accessibilityAndPasteFailed),
-        for: request,
-        applicationIdentifier: request.target.applicationIdentifier,
-        direct: nil,
-        paste: nil
-      )
+      return await copyAfterTargetChanged(request, direct: nil)
     }
 
     let directOutcome: DirectInsertionOutcome?
@@ -251,20 +245,20 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
 
     // Revalidate again after the unapplied write to close the target-change race before paste.
     guard revalidate(request.target) == .valid else {
-      return report(
-        .failed(.accessibilityAndPasteFailed),
-        for: request,
-        applicationIdentifier: captured.applicationIdentifier,
-        direct: directOutcome,
-        paste: nil
-      )
+      return await copyAfterTargetChanged(request, direct: directOutcome)
     }
 
     // Read the target immediately before the paste rather than reusing the capture-time numbers:
     // seconds of recognition and cleanup sit between capture and delivery.
     let before = Self.textState(of: captured.element)
     let outcome = await clipboard.pastePreservingClipboard(
-      text: request.text, deadline: request.deadline)
+      text: request.text,
+      deadline: request.deadline,
+      shouldPaste: { self.mayPaste(request) }
+    )
+    if outcome == .pasteSuppressed {
+      return await copyAfterTargetChanged(request, direct: directOutcome)
+    }
     var evidence: InsertionEvidence?
     if case .promisedTextWasRead = outcome {
       // The pasteboard receipt only proves someone read the promised text. Confirm against the
@@ -283,6 +277,38 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
       applicationIdentifier: captured.applicationIdentifier,
       direct: directOutcome,
       paste: evidence
+    )
+  }
+
+  private func mayPaste(_ request: DeliveryRequest) -> Bool {
+    lock.withLock({ cancelledDelivery != request.id })
+      && clock.nowNanoseconds() < request.deadline.nanoseconds
+      && revalidate(request.target) == .valid
+  }
+
+  private func copyAfterTargetChanged(
+    _ request: DeliveryRequest,
+    direct: DirectInsertionOutcome?
+  ) async -> DeliveryResult {
+    let result: DeliveryResult
+    if lock.withLock({ cancelledDelivery == request.id }) {
+      result = .failed(.cancelled)
+    } else if clock.nowNanoseconds() >= request.deadline.nanoseconds {
+      result = .failed(.completionDeadlineExceeded)
+    } else {
+      let copied = await clipboard.replaceClipboard(
+        text: request.text,
+        unlessRefusedBy: { self.deliveryRefusal(for: request.id, deadline: request.deadline) }
+      )
+      result = copied == .copiedToClipboard ? .copiedAfterTargetChanged : copied
+    }
+    removeCapture(for: request.target)
+    return report(
+      result,
+      for: request,
+      applicationIdentifier: request.target.applicationIdentifier,
+      direct: direct,
+      paste: nil
     )
   }
 
@@ -316,9 +342,21 @@ public final class AccessibilityTextService: InsertionTargetBoundary, TextDelive
     guard clock.nowNanoseconds() < request.deadline.nanoseconds else {
       return .failed(.completionDeadlineExceeded)
     }
-    let result = await clipboard.replaceClipboard(text: request.text)
+    let result = await clipboard.replaceClipboard(
+      text: request.text,
+      unlessRefusedBy: { self.deliveryRefusal(for: request.id, deadline: request.deadline) }
+    )
     removeCaptures(for: request.id)
     return result
+  }
+
+  private func deliveryRefusal(
+    for id: DictationID,
+    deadline: MonotonicInstant
+  ) -> DeliveryFailure? {
+    if lock.withLock({ cancelledDelivery == id }) { return .cancelled }
+    if clock.nowNanoseconds() >= deadline.nanoseconds { return .completionDeadlineExceeded }
+    return nil
   }
 
   public func cancelDelivery(for id: DictationID) async {

@@ -1,0 +1,100 @@
+{
+  "candidates": {
+    "100": {
+      "adapters/adapter_config.json": "caba2616efcc0b564abe88aa6b89de7c35c81728fa8d7526c1e12224d2310c76",
+      "adapters/adapters.safetensors": "739b8af1ac6d48ad9b96c4d2a4bc1bdc7e036f1df0079fd6ebc126faf2e0e7b2",
+      "base/README.md": "748c964f9b7e5f2c3770ce013bbc0153be7c54311d9692c343b6188eefe77ac6",
+      "base/chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80",
+      "base/config.json": "919d818806acc6093475afcccc40b4c27deb509ef1508ba940c71c9b3ce83ab5",
+      "base/model.safetensors": "59809defba0dbb6da4952bf8eb33ea7505b2426d8eb286a77913aa1ae14deb03",
+      "base/model.safetensors.index.json": "d95a2e17af08ab870498266088eccee4d0a012338c604465ae7df24b976c488e",
+      "base/tokenizer.json": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523",
+      "base/tokenizer_config.json": "386ba246ba3dfa4d3a21d8bc8712eba38de558e5ac94c2c90436d8f94d519d5e"
+    },
+    "200": {
+      "adapters/adapter_config.json": "caba2616efcc0b564abe88aa6b89de7c35c81728fa8d7526c1e12224d2310c76",
+      "adapters/adapters.safetensors": "74e76ec740f08820ca3bf49b27b69ebef6c53f31f13fe214899af8ad4709cb36",
+      "base/README.md": "748c964f9b7e5f2c3770ce013bbc0153be7c54311d9692c343b6188eefe77ac6",
+      "base/chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80",
+      "base/config.json": "919d818806acc6093475afcccc40b4c27deb509ef1508ba940c71c9b3ce83ab5",
+      "base/model.safetensors": "59809defba0dbb6da4952bf8eb33ea7505b2426d8eb286a77913aa1ae14deb03",
+      "base/model.safetensors.index.json": "d95a2e17af08ab870498266088eccee4d0a012338c604465ae7df24b976c488e",
+      "base/tokenizer.json": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523",
+      "base/tokenizer_config.json": "386ba246ba3dfa4d3a21d8bc8712eba38de558e5ac94c2c90436d8f94d519d5e"
+    },
+    "300": {
+      "adapters/adapter_config.json": "caba2616efcc0b564abe88aa6b89de7c35c81728fa8d7526c1e12224d2310c76",
+      "adapters/adapters.safetensors": "a88590d083bfd1fc877952dfffe9745f4fa1824fa7ae3edf310adc2429cc9570",
+      "base/README.md": "748c964f9b7e5f2c3770ce013bbc0153be7c54311d9692c343b6188eefe77ac6",
+      "base/chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80",
+      "base/config.json": "919d818806acc6093475afcccc40b4c27deb509ef1508ba940c71c9b3ce83ab5",
+      "base/model.safetensors": "59809defba0dbb6da4952bf8eb33ea7505b2426d8eb286a77913aa1ae14deb03",
+      "base/model.safetensors.index.json": "d95a2e17af08ab870498266088eccee4d0a012338c604465ae7df24b976c488e",
+      "base/tokenizer.json": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523",
+      "base/tokenizer_config.json": "386ba246ba3dfa4d3a21d8bc8712eba38de558e5ac94c2c90436d8f94d519d5e"
+    },
+    "400": {
+      "adapters/adapter_config.json": "caba2616efcc0b564abe88aa6b89de7c35c81728fa8d7526c1e12224d2310c76",
+      "adapters/adapters.safetensors": "741f9e8dc7d4ec2eefb5eefa8363d68e1a86028de056e058228f4c186abe6f69",
+      "base/README.md": "748c964f9b7e5f2c3770ce013bbc0153be7c54311d9692c343b6188eefe77ac6",
+      "base/chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80",
+      "base/config.json": "919d818806acc6093475afcccc40b4c27deb509ef1508ba940c71c9b3ce83ab5",
+      "base/model.safetensors": "59809defba0dbb6da4952bf8eb33ea7505b2426d8eb286a77913aa1ae14deb03",
+      "base/model.safetensors.index.json": "d95a2e17af08ab870498266088eccee4d0a012338c604465ae7df24b976c488e",
+      "base/tokenizer.json": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523",
+      "base/tokenizer_config.json": "386ba246ba3dfa4d3a21d8bc8712eba38de558e5ac94c2c90436d8f94d519d5e"
+    },
+    "500": {
+      "adapters/adapter_config.json": "caba2616efcc0b564abe88aa6b89de7c35c81728fa8d7526c1e12224d2310c76",
+      "adapters/adapters.safetensors": "b36d10516c2d06fbd4eace73853a4c64f3593c9b78d0fae5f48ebf7b5bf49b37",
+      "base/README.md": "748c964f9b7e5f2c3770ce013bbc0153be7c54311d9692c343b6188eefe77ac6",
+      "base/chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80",
+      "base/config.json": "919d818806acc6093475afcccc40b4c27deb509ef1508ba940c71c9b3ce83ab5",
+      "base/model.safetensors": "59809defba0dbb6da4952bf8eb33ea7505b2426d8eb286a77913aa1ae14deb03",
+      "base/model.safetensors.index.json": "d95a2e17af08ab870498266088eccee4d0a012338c604465ae7df24b976c488e",
+      "base/tokenizer.json": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523",
+      "base/tokenizer_config.json": "386ba246ba3dfa4d3a21d8bc8712eba38de558e5ac94c2c90436d8f94d519d5e"
+    },
+    "600": {
+      "adapters/adapter_config.json": "caba2616efcc0b564abe88aa6b89de7c35c81728fa8d7526c1e12224d2310c76",
+      "adapters/adapters.safetensors": "85d41636df4655d15256a5b12a39ea73080b0496d0502491c2d1625031ca9b32",
+      "base/README.md": "748c964f9b7e5f2c3770ce013bbc0153be7c54311d9692c343b6188eefe77ac6",
+      "base/chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80",
+      "base/config.json": "919d818806acc6093475afcccc40b4c27deb509ef1508ba940c71c9b3ce83ab5",
+      "base/model.safetensors": "59809defba0dbb6da4952bf8eb33ea7505b2426d8eb286a77913aa1ae14deb03",
+      "base/model.safetensors.index.json": "d95a2e17af08ab870498266088eccee4d0a012338c604465ae7df24b976c488e",
+      "base/tokenizer.json": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523",
+      "base/tokenizer_config.json": "386ba246ba3dfa4d3a21d8bc8712eba38de558e5ac94c2c90436d8f94d519d5e"
+    }
+  },
+  "fixturesSHA256": {
+    ".build/recognition-validation-gold.jsonl": "ecd5af86280dad908757f522d0f717597d0c166b65af11c552aacac53327d610",
+    "Evals/fixtures/adversarial.jsonl": "d2d68d0e84b8d5ddd43523404541cc5c76dcbc30b2e4e5034a13984d6adc48ab",
+    "Evals/fixtures/gold.jsonl": "b8c97e312b14e2327fc8544c995bdaa62b48dca64cc19c2d6981b75484289a55"
+  },
+  "limitations": "Existing validation is small and lacks a vocabulary-preservation denominator; no frozen release holdout query. Runtime rejection is not exact cleanup success.",
+  "loggedValidationLosses": {
+    "100": 0.003,
+    "200": 0.004,
+    "300": 0.004,
+    "400": 0.002,
+    "500": 0.002,
+    "600": 0.002
+  },
+  "modelDirectories": {
+    "100": "Models/Artifacts/low-rate-qwen-step100",
+    "200": "Models/Artifacts/low-rate-qwen-step200",
+    "300": "Models/Artifacts/low-rate-qwen-step300",
+    "400": "Models/Artifacts/low-rate-qwen-step400",
+    "500": "Models/Artifacts/low-rate-qwen-step500",
+    "600": "Models/Artifacts/low-rate-qwen-step600"
+  },
+  "purpose": "Re-evaluate checkpoint eligibility after the independently reproduced URL/numeric safety fix; no further training.",
+  "runnerSHA256": "dab9a962b9c563d52c8cae86303d380217f016b4cbd7f0ccf9482bf80a3dd19b",
+  "runtimeSourceSHA256": {
+    "Evals/editplan.py": "d310aed37db6f9ef42e962efa815456497fc2bc620eca0691e57250b13747777",
+    "Packages/Cleanup/Sources/Cleanup/EditPlanValidator.swift": "4fe35abc3303a34f4287141caaa9703c090b84307e472331f1bcc97b8fb5c88f"
+  },
+  "selection": "Score all six saved checkpoints on existing native validation and adversarial fixtures. Require all adversarial/runtime checks; maximize meaning preservation, then context fit, then exact plans. Break ties with lower logged validation loss, then earlier step. Record selection before one development evaluation. No selection on development outputs.",
+  "status": "Predeclared before corrected-runtime checkpoint validation."
+}

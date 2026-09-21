@@ -245,12 +245,14 @@ final class CompatRun {
           result.failures.append("clipboard check failed in mode \(clipboard.mode)")
         }
       case .unsupported:
-        // The shipping capture must refuse this control; record what it actually returned.
+        // ADR 0052 records without a target; an unsupported control must never become editable.
         let outcome = await service.captureTarget(for: DictationID())
         result.serviceCaptureOutcome = describe(outcome)
-        if case .success = outcome {
+        if case .success(.noTarget) = outcome {
+          break
+        } else {
           result.failures.append(
-            "policy classified the control unsupported but the capture path accepted it")
+            "unsupported control must capture as noTarget, received \(describe(outcome))")
         }
       case .secure:
         result.failures.append("a non-secure control classified as secure")
@@ -830,7 +832,7 @@ final class CompatRun {
       return report
     }
     report.attempted = true
-    guard await synthesizer.paste() else {
+    guard synthesizer.paste(ifAllowedBy: { true }) == .dispatched else {
       archive.restore()
       report.accepted = false
       return report
@@ -874,6 +876,7 @@ final class CompatRun {
   private func describe(_ outcome: ClipboardPasteOutcome) -> String {
     switch outcome {
     case .promisedTextWasRead: "promisedTextWasRead"
+    case .pasteSuppressed: "pasteSuppressed"
     case .failed(let failure): "failed(\(failure.rawValue))"
     }
   }
@@ -882,6 +885,7 @@ final class CompatRun {
     switch result {
     case .inserted(let method): "inserted(\(method.rawValue))"
     case .copiedToClipboard: "copiedToClipboard"
+    case .copiedAfterTargetChanged: "copiedAfterTargetChanged"
     case .failed(let failure): "failed(\(failure.rawValue))"
     }
   }

@@ -1,0 +1,167 @@
+{
+  "audioFixtureSHA256": "2017b21694701507aafc146d3a57ec303f5d6a5e6f6d30d74026995486976ae0",
+  "cpuAssetSmoke": {
+    "audioFixture": ".build/audio-smoke/spoken-001.wav",
+    "model": "Models/Artifacts/silero-vad-b419383c55c1/silero-vad-unified-256ms-v6.2.1.mlmodelc",
+    "noiseProbabilities": [
+      0.083984375,
+      0.07080078125,
+      0.0654296875,
+      0.0888671875,
+      0.04736328125,
+      0.048828125,
+      0.05322265625,
+      0.10400390625
+    ],
+    "passed": true,
+    "scope": "CPU-only model asset smoke with synthesized speech, silence and seeded white noise; not representative recognition or production SpeechGate evidence",
+    "silenceProbabilities": [
+      0.0966796875,
+      0.0625,
+      0.0478515625,
+      0.0419921875,
+      0.03662109375,
+      0.0322265625,
+      0.03125,
+      0.03076171875
+    ],
+    "speechProbabilities": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "threshold": 0.85
+  },
+  "cpuSmokeScript": "import AVFoundation\nimport CoreML\nimport Foundation\n\nlet config = MLModelConfiguration()\nconfig.computeUnits = .cpuOnly // Leave the GPU exclusively to the active training job.\nlet modelPath = \"Models/Artifacts/silero-vad-b419383c55c1/silero-vad-unified-256ms-v6.2.1.mlmodelc\"\nlet model = try MLModel(contentsOf: URL(fileURLWithPath: modelPath), configuration: config)\nfunc array(_ values: [Float]) throws -> MLMultiArray {\n    let output = try MLMultiArray(shape: [1, NSNumber(value: values.count)], dataType: .float32)\n    for (index, value) in values.enumerated() { output[index] = NSNumber(value: value) }\n    return output\n}\nfunc probabilities(_ samples: [Float]) throws -> [Double] {\n    var context = [Float](repeating: 0, count: 64)\n    var hidden = try array([Float](repeating: 0, count: 128))\n    var cell = try array([Float](repeating: 0, count: 128))\n    var values: [Double] = []\n    for start in stride(from: 0, to: samples.count, by: 4096) {\n        var chunk = Array(samples[start..<min(start + 4096, samples.count)])\n        chunk += [Float](repeating: 0, count: 4096 - chunk.count)\n        let output = try model.prediction(from: MLDictionaryFeatureProvider(dictionary: [\n            \"audio_input\": try array(context + chunk), \"hidden_state\": hidden, \"cell_state\": cell]))\n        guard let score = output.featureValue(for: \"vad_output\")?.multiArrayValue,\n              let nextHidden = output.featureValue(for: \"new_hidden_state\")?.multiArrayValue,\n              let nextCell = output.featureValue(for: \"new_cell_state\")?.multiArrayValue else {\n            fatalError(\"Missing VAD outputs\")\n        }\n        let value = score[0].doubleValue\n        precondition(value.isFinite && (0...1).contains(value))\n        values.append(value)\n        hidden = nextHidden; cell = nextCell; context = Array(chunk.suffix(64))\n    }\n    return values\n}\nlet fixture = \".build/audio-smoke/spoken-001.wav\"\nlet file = try AVAudioFile(forReading: URL(fileURLWithPath: fixture), commonFormat: .pcmFormatFloat32, interleaved: false)\nprecondition(file.processingFormat.sampleRate == 16000 && file.processingFormat.channelCount == 1)\nlet buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length))!\ntry file.read(into: buffer)\nlet speech = Array(UnsafeBufferPointer(start: buffer.floatChannelData![0], count: Int(buffer.frameLength)))\nvar seed: UInt64 = 20260916\nlet noise: [Float] = (0..<32768).map { _ in\n    seed = seed &* 6364136223846793005 &+ 1\n    return (Float(seed >> 40) / Float(1 << 24) * 2 - 1) * 0.02\n}\nlet silenceScores = try probabilities([Float](repeating: 0, count: 32768))\nlet noiseScores = try probabilities(noise)\nlet speechScores = try probabilities(speech)\nlet threshold = 0.85 // VadConfig.default in the pinned FluidAudio fork.\nprecondition(silenceScores.allSatisfy { $0 < threshold })\nprecondition(noiseScores.allSatisfy { $0 < threshold })\nprecondition(speechScores.contains { $0 >= threshold })\nlet report: [String: Any] = [\"scope\": \"CPU-only model asset smoke with synthesized speech, silence and seeded white noise; not representative recognition or production SpeechGate evidence\",\n    \"model\": modelPath, \"audioFixture\": fixture, \"threshold\": threshold,\n    \"silenceProbabilities\": silenceScores, \"noiseProbabilities\": noiseScores,\n    \"speechProbabilities\": speechScores, \"passed\": true]\nlet data = try JSONSerialization.data(withJSONObject: report, options: [.sortedKeys, .prettyPrinted])\ntry data.write(to: URL(fileURLWithPath: \".build/vad-cpu-smoke.json\"), options: .atomic)\nprint(String(decoding: data, as: UTF8.self))\n",
+  "cpuSmokeScriptSHA256": "696ff0f08781c4490e6d218324e26601017d2506619ba7aac1492c4e833ca999",
+  "download": {
+    "files": {
+      "README.md": {
+        "byteSize": 2472,
+        "sha256": "c31dbec3e24a014a51fc06c645b3cb04897c97ecdbad9a90645466019c933ef4"
+      },
+      "silero-vad-unified-256ms-v6.2.1.mlmodelc/analytics/coremldata.bin": {
+        "byteSize": 243,
+        "sha256": "8067594eb3126ab8318af507f0c00cabfed40d5fedb8a0ee5075dd02e903d909"
+      },
+      "silero-vad-unified-256ms-v6.2.1.mlmodelc/coremldata.bin": {
+        "byteSize": 625,
+        "sha256": "7db35a4fd995222a7fb0129713473b15d1462572ab4a2e5e4d56bcaad9e40f41"
+      },
+      "silero-vad-unified-256ms-v6.2.1.mlmodelc/metadata.json": {
+        "byteSize": 3335,
+        "sha256": "2740be542c611e1ba358e1849b4e265c65cdf0b17192767e1e5de86a31ac94d6"
+      },
+      "silero-vad-unified-256ms-v6.2.1.mlmodelc/model.mil": {
+        "byteSize": 176918,
+        "sha256": "c6a9d1bf22d413265da0a07a1d14151c3ea2fad296b3aa5859275b33ef1c3270"
+      },
+      "silero-vad-unified-256ms-v6.2.1.mlmodelc/weights/weight.bin": {
+        "byteSize": 882304,
+        "sha256": "53ecc8b5081146140ab654c89109cf001f2183abddd7a2411c5081feeffff063"
+      }
+    },
+    "license": "mit",
+    "repo": "FluidInference/silero-vad-coreml",
+    "revision": "b419383c55c110e2c9271fa6ee0ea83d03c70d96"
+  },
+  "licenseSource": {
+    "sha256": "2e63e9a38b6e8fc0c7bc37ce174caca1862870856c6daf5697cfb785e925520b",
+    "source": "https://raw.githubusercontent.com/snakers4/silero-vad/caddb3b7ce1dee88a14d5621a0e9a8fdeb2c2c48/LICENSE"
+  },
+  "productionGateSmoke": {
+    "captureBufferFrames": 1536,
+    "log": "Building for debugging...\n[Pre-planning 1\u2009/\u2009245]\n[Starting]\n[7\u2009/\u200918] RecognitionTests-product\n[11\u2009/\u200922] RecognitionTests-product\n[17\u2009/\u200921] RecognitionTests-product\nBuild complete! (1.23 sec)\nTest Suite 'Selected tests' started at 2026-09-16 22:08:46.070.\nTest Suite 'RecognitionTests.xctest' started at 2026-09-16 22:08:46.071.\nTest Suite 'SileroAssetSmokeTests' started at 2026-09-16 22:08:46.071.\nTest Case '-[RecognitionTests.SileroAssetSmokeTests testProductionGateWithPinnedSileroAsset]' started.\n[22:08:46.274] [INFO] [FluidAudio.VadManager] VAD initialized with provided model\nTest Case '-[RecognitionTests.SileroAssetSmokeTests testProductionGateWithPinnedSileroAsset]' passed (0.220 seconds).\nTest Suite 'SileroAssetSmokeTests' passed at 2026-09-16 22:08:46.291.\n\t Executed 1 test, with 0 failures (0 unexpected) in 0.220 (0.220) seconds\nTest Suite 'RecognitionTests.xctest' passed at 2026-09-16 22:08:46.291.\n\t Executed 1 test, with 0 failures (0 unexpected) in 0.220 (0.220) seconds\nTest Suite 'Selected tests' passed at 2026-09-16 22:08:46.291.\n\t Executed 1 test, with 0 failures (0 unexpected) in 0.220 (0.221) seconds\nSilero production gate: noiseFrames=32768 zeroed; speechFrames=34651 unchanged; tapFrames=1536\n",
+    "noiseFramesZeroed": 32768,
+    "probeSource": "import AVFoundation\nimport XCTest\n@testable import Recognition\n\nfinal class SileroAssetSmokeTests: XCTestCase {\n    func testProductionGateWithPinnedSileroAsset() async throws {\n        let environment = ProcessInfo.processInfo.environment\n        let model = URL(fileURLWithPath: try XCTUnwrap(environment[\"POPTART_VAD_SMOKE_MODEL\"]))\n        let audio = URL(fileURLWithPath: try XCTUnwrap(environment[\"POPTART_VAD_SMOKE_AUDIO\"]))\n        let gate = await SpeechGate.make(modelDirectory: model)\n        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 16_000, channels: 1))\n        func buffer(_ samples: [Float]) throws -> AVAudioPCMBuffer {\n            let value = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(samples.count)))\n            value.frameLength = value.frameCapacity\n            let pointer = try XCTUnwrap(value.floatChannelData)[0]\n            for (index, sample) in samples.enumerated() { pointer[index] = sample }\n            return value\n        }\n        func flatten(_ buffers: [AVAudioPCMBuffer]) -> [Float] {\n            buffers.flatMap { Array(UnsafeBufferPointer(start: $0.floatChannelData![0], count: Int($0.frameLength))) }\n        }\n        var random: UInt32 = 0x53494C45\n        var noise: [Float] = []\n        for _ in 0..<(8 * 4_096) {\n            random = 1_664_525 &* random &+ 1_013_904_223\n            noise.append((Float(random >> 8) / Float(1 << 24) * 2 - 1) * 0.02)\n        }\n        var filtered: [AVAudioPCMBuffer] = []\n        // Deliberately misaligned capture buffers exercise exact recurrent windows.\n        for start in stride(from: 0, to: noise.count, by: 1_536) {\n            let input = try buffer(Array(noise[start..<min(start + 1_536, noise.count)]))\n            filtered.append(contentsOf: await gate.gate(.init(buffer: input, audioActivity: nil)).buffers)\n        }\n        filtered.append(contentsOf: await gate.flush().buffers)\n        let quiet = flatten(filtered)\n        XCTAssertEqual(quiet.count, noise.count)\n        XCTAssertTrue(quiet.allSatisfy { $0 == 0 }, \"A missing/failed model passes noise through and must fail this probe\")\n\n        await gate.reset()\n        let file = try AVAudioFile(forReading: audio, commonFormat: .pcmFormatFloat32, interleaved: false)\n        XCTAssertEqual(file.processingFormat.sampleRate, 16_000)\n        XCTAssertEqual(file.processingFormat.channelCount, 1)\n        let recording = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length)))\n        try file.read(into: recording)\n        let spoken = flatten([recording])\n        filtered.removeAll()\n        for start in stride(from: 0, to: spoken.count, by: 1_536) {\n            let input = try buffer(Array(spoken[start..<min(start + 1_536, spoken.count)]))\n            filtered.append(contentsOf: await gate.gate(.init(buffer: input, audioActivity: nil)).buffers)\n        }\n        filtered.append(contentsOf: await gate.flush().buffers)\n        let delivered = flatten(filtered)\n        XCTAssertEqual(delivered, spoken, \"This authored speech fixture should survive byte-identically\")\n        print(\"Silero production gate: noiseFrames=\\(quiet.count) zeroed; speechFrames=\\(delivered.count) unchanged; tapFrames=1536\")\n    }\n}\n",
+    "recognitionSuiteGreenLog": "Building for debugging...\n[Using on-disk description]\n[2\u2009/\u200912] Recognition\n[6\u2009/\u200916] Recognition\n[14\u2009/\u200919] Recognition-product\n[14\u2009/\u200919] RecognitionTests-product\n[17\u2009/\u200920] RecognitionTests-product\n[20\u2009/\u200923] RecognitionTests-product\nBuild complete! (1.48 sec)\nTest Suite 'All tests' started at 2026-09-16 22:06:49.176.\nTest Suite 'RecognitionTests.xctest' started at 2026-09-16 22:06:49.177.\nTest Suite 'FluidAudioIncrementalRecognizerTests' started at 2026-09-16 22:06:49.177.\nTest Case '-[RecognitionTests.FluidAudioIncrementalRecognizerTests testFinalizationFailureFallsBackToTheHypothesisWithoutWaitingOutTheDeadline]' started.\nTest Case '-[RecognitionTests.FluidAudioIncrementalRecognizerTests testFinalizationFailureFallsBackToTheHypothesisWithoutWaitingOutTheDeadline]' passed (0.002 seconds).\nTest Case '-[RecognitionTests.FluidAudioIncrementalRecognizerTests testFinalizationFailureWithoutAHypothesisReportsTheTypedFailure]' started.\nTest Case '-[RecognitionTests.FluidAudioIncrementalRecognizerTests testFinalizationFailureWithoutAHypothesisReportsTheTypedFailure]' passed (0.000 seconds).\nTest Suite 'FluidAudioIncrementalRecognizerTests' passed at 2026-09-16 22:06:49.179.\n\t Executed 2 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds\nTest Suite 'RecognitionModelValidationTests' started at 2026-09-16 22:06:49.179.\nTest Case '-[RecognitionTests.RecognitionModelValidationTests testCompleteUnifiedModelDirectoryPassesSmokeValidation]' started.\nTest Case '-[RecognitionTests.RecognitionModelValidationTests testCompleteUnifiedModelDirectoryPassesSmokeValidation]' passed (0.002 seconds).\nTest Case '-[RecognitionTests.RecognitionModelValidationTests testConfiguredCTCAssetsAreValidatedAndReportVocabularyCapability]' started.\nTest Case '-[RecognitionTests.RecognitionModelValidationTests testConfiguredCTCAssetsAreValidatedAndReportVocabularyCapability]' passed (0.003 seconds).\nTest Case '-[RecognitionTests.RecognitionModelValidationTests testIncompleteOptionalCTCAssetsAreRejectedInsteadOfSilentlyDisablingVocabulary]' started.\nTest Case '-[RecognitionTests.RecognitionModelValidationTests testIncompleteOptionalCTCAssetsAreRejectedInsteadOfSilentlyDisablingVocabulary]' passed (0.003 seconds).\nTest Case '-[RecognitionTests.RecognitionModelValidationTests testMissingContextSpecificInt8EncoderIsRejected]' started.\nTest Case '-[RecognitionTests.RecognitionModelValidationTests testMissingContextSpecificInt8EncoderIsRejected]' passed (0.002 seconds).\nTest Case '-[RecognitionTests.RecognitionModelValidationTests testProductionFluidAudioConfigurationIsTheApprovedStreamingArtifact]' started.\nTest Case '-[RecognitionTests.RecognitionModelValidationTests testProductionFluidAudioConfigurationIsTheApprovedStreamingArtifact]' passed (0.000 seconds).\nTest Suite 'RecognitionModelValidationTests' passed at 2026-09-16 22:06:49.191.\n\t Executed 5 tests, with 0 failures (0 unexpected) in 0.011 (0.012) seconds\nTest Suite 'RecognitionServiceTests' started at 2026-09-16 22:06:49.191.\nTest Case '-[RecognitionTests.RecognitionServiceTests testCancellationStopsCaptureAndDestroysRecognizerAudio]' started.\nTest Case '-[RecognitionTests.RecognitionServiceTests testCancellationStopsCaptureAndDestroysRecognizerAudio]' passed (0.000 seconds).\nTest Case '-[RecognitionTests.RecognitionServiceTests testCapabilitiesReportWhetherStagedCTCAssetsEnablePersonalVocabulary]' started.\nTest Case '-[RecognitionTests.RecognitionServiceTests testCapabilitiesReportWhetherStagedCTCAssetsEnablePersonalVocabulary]' passed (0.000 seconds).\nTest Case '-[RecognitionTests.RecognitionServiceTests testCaptureDeviceLossIsTranslatedWithoutReturningAudioOrText]' started.\nTest Case '-[RecognitionTests.RecognitionServiceTests testCaptureDeviceLossIsTranslatedWithoutReturningAudioOrText]' passed (0.000 seconds).\nTest Case '-[RecognitionTests.RecognitionServiceTests testFinalTailDeadlinePublishesLatestHypothesisAndReturnsTypedFailure]' started.\nTest Case '-[RecognitionTests.RecognitionServiceTests testFinalTailDeadlinePublishesLatestHypothesisAndReturnsTypedFailure]' passed (0.000 seconds).\nTest Case '-[RecognitionTests.RecognitionServiceTests testRecordingStreamsAudioPublishesPartialsAndDestroysAudioAfterFinalization]' started.\nTest Case '-[RecognitionTests.RecognitionServiceTests testRecordingStreamsAudioPublishesPartialsAndDestroysAudioAfterFinalization]' passed (0.001 seconds).\nTest Case '-[RecognitionTests.RecognitionServiceTests testReplayedAudioReachesTheRecognizerAndFinalizesOnStop]' started.\nTest Case '-[RecognitionTests.RecognitionServiceTests testReplayedAudioReachesTheRecognizerAndFinalizesOnStop]' passed (0.001 seconds).\nTest Suite 'RecognitionServiceTests' passed at 2026-09-16 22:06:49.194.\n\t Executed 6 tests, with 0 failures (0 unexpected) in 0.003 (0.003) seconds\nTest Suite 'SpeechBandAnalyzerTests' started at 2026-09-16 22:06:49.194.\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testAnalyzerRejectsAFrameCountThatIsNotAPowerOfTwo]' started.\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testAnalyzerRejectsAFrameCountThatIsNotAPowerOfTwo]' passed (0.000 seconds).\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testCaptureCopyMeasuresFirstChannelWithoutChangingSamples]' started.\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testCaptureCopyMeasuresFirstChannelWithoutChangingSamples]' passed (0.001 seconds).\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testFullScaleNoiseStaysInsideTheNormalisedRange]' started.\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testFullScaleNoiseStaysInsideTheNormalisedRange]' passed (0.000 seconds).\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testFullScaleToneReachesTheTopOfTheRange]' started.\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testFullScaleToneReachesTheTopOfTheRange]' passed (0.000 seconds).\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testHighToneLightsTheHighBandsAndNotTheLowOnes]' started.\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testHighToneLightsTheHighBandsAndNotTheLowOnes]' passed (0.000 seconds).\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testHighToneStillReachesTheTopBandAtSixteenKilohertz]' started.\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testHighToneStillReachesTheTopBandAtSixteenKilohertz]' passed (0.000 seconds).\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testLowToneLightsTheLowBandsAndNotTheHighOnes]' started.\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testLowToneLightsTheLowBandsAndNotTheHighOnes]' passed (0.000 seconds).\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testOverallLevelIsTheRootMeanSquareOfTheBuffer]' started.\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testOverallLevelIsTheRootMeanSquareOfTheBuffer]' passed (0.000 seconds).\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testOversizedCaptureUsesTheNewestSamples]' started.\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testOversizedCaptureUsesTheNewestSamples]' passed (0.000 seconds).\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testShortAndEmptyCaptureRemainFinite]' started.\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testShortAndEmptyCaptureRemainFinite]' passed (0.000 seconds).\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testSilenceProducesNoEnergy]' started.\nTest Case '-[RecognitionTests.SpeechBandAnalyzerTests testSilenceProducesNoEnergy]' passed (0.000 seconds).\nTest Suite 'SpeechBandAnalyzerTests' passed at 2026-09-16 22:06:49.197.\n\t Executed 11 tests, with 0 failures (0 unexpected) in 0.003 (0.004) seconds\nTest Suite 'SpeechGatePolicyTests' started at 2026-09-16 22:06:49.197.\nTest Case '-[RecognitionTests.SpeechGatePolicyTests testALoneNonSpeechChunkBetweenSpeechDoesNotTruncateTheUtterance]' started.\nTest Case '-[RecognitionTests.SpeechGatePolicyTests testALoneNonSpeechChunkBetweenSpeechDoesNotTruncateTheUtterance]' passed (0.000 seconds).\nTest Case '-[RecognitionTests.SpeechGatePolicyTests testNoAudioIsStrandedWhenCaptureEndsInsideAnUtterance]' started.\nTest Case '-[RecognitionTests.SpeechGatePolicyTests testNoAudioIsStrandedWhenCaptureEndsInsideAnUtterance]' passed (0.000 seconds).\nTest Case '-[RecognitionTests.SpeechGatePolicyTests testSpeechAfterSilenceReleasesTheHeldPreRollChunk]' started.\nTest Case '-[RecognitionTests.SpeechGatePolicyTests testSpeechAfterSilenceReleasesTheHeldPreRollChunk]' passed (0.000 seconds).\nTest Case '-[RecognitionTests.SpeechGatePolicyTests testSustainedSilenceEmitsSilence]' started.\nTest Case '-[RecognitionTests.SpeechGatePolicyTests testSustainedSilenceEmitsSilence]' passed (0.000 seconds).\nTest Case '-[RecognitionTests.SpeechGatePolicyTests testSustainedSpeechPassesThrough]' started.\nTest Case '-[RecognitionTests.SpeechGatePolicyTests testSustainedSpeechPassesThrough]' passed (0.000 seconds).\nTest Suite 'SpeechGatePolicyTests' passed at 2026-09-16 22:06:49.198.\n\t Executed 5 tests, with 0 failures (0 unexpected) in 0.000 (0.001) seconds\nTest Suite 'SpeechGateTests' started at 2026-09-16 22:06:49.198.\nTest Case '-[RecognitionTests.SpeechGateTests testAGateWhoseDetectorThrowsPassesAudioThroughByteIdentically]' started.\nTest Case '-[RecognitionTests.SpeechGateTests testAGateWhoseDetectorThrowsPassesAudioThroughByteIdentically]' passed (0.002 seconds).\nTest Case '-[RecognitionTests.SpeechGateTests testAGateWithoutAModelPassesAudioThroughByteIdentically]' started.\nTest Case '-[RecognitionTests.SpeechGateTests testAGateWithoutAModelPassesAudioThroughByteIdentically]' passed (0.001 seconds).\nTest Case '-[RecognitionTests.SpeechGateTests testMisalignedBuffersFormContiguousFullDetectorWindows]' started.\nTest Case '-[RecognitionTests.SpeechGateTests testMisalignedBuffersFormContiguousFullDetectorWindows]' passed (0.001 seconds).\nTest Case '-[RecognitionTests.SpeechGateTests testResetDiscardsSuspendedDetectorResults]' started.\nTest Case '-[RecognitionTests.SpeechGateTests testResetDiscardsSuspendedDetectorResults]' passed (0.001 seconds).\nTest Case '-[RecognitionTests.SpeechGateTests testSpeechPastTheDetectorWindowIsNotSilenced]' started.\nTest Case '-[RecognitionTests.SpeechGateTests testSpeechPastTheDetectorWindowIsNotSilenced]' passed (0.001 seconds).\nTest Case '-[RecognitionTests.SpeechGateTests testSustainedNoiseReachesTheRecognizerAsSilence]' started.\nTest Case '-[RecognitionTests.SpeechGateTests testSustainedNoiseReachesTheRecognizerAsSilence]' passed (0.001 seconds).\nTest Case '-[RecognitionTests.SpeechGateTests testTheFirstChunkOfSpeechIsNotClipped]' started.\nTest Case '-[RecognitionTests.SpeechGateTests testTheFirstChunkOfSpeechIsNotClipped]' passed (0.001 seconds).\nTest Suite 'SpeechGateTests' passed at 2026-09-16 22:06:49.208.\n\t Executed 7 tests, with 0 failures (0 unexpected) in 0.010 (0.010) seconds\nTest Suite 'RecognitionTests.xctest' passed at 2026-09-16 22:06:49.208.\n\t Executed 36 tests, with 0 failures (0 unexpected) in 0.029 (0.031) seconds\nTest Suite 'All tests' passed at 2026-09-16 22:06:49.208.\n\t Executed 36 tests, with 0 failures (0 unexpected) in 0.029 (0.032) seconds\n\u25c7 Test run started.\n\u21b3 Testing Library Version: 2084\n\u21b3 Target Platform: arm64e-apple-macos14.0\n\u25c7 Suite ReplayAudioCaptureTests started.\n\u25c7 Test startingASpentReplayIsRefused() started.\n\u25c7 Test stoppingMidReplayEndsTheStreamWithoutAnotherBuffer() started.\n\u25c7 Test eachBufferWaitsForItsOwnDuration() started.\n\u25c7 Test queueOverflowFailsInsteadOfSilentlyDroppingAudio() started.\n\u25c7 Test replayArrivesAsTapSizedBuffersEndingWithAShortOne() started.\n\u25c7 Test cancellationBeforeArrivalCompletesWithoutEmittingAudio() started.\n\u2714 Test cancellationBeforeArrivalCompletesWithoutEmittingAudio() passed after 0.001 seconds.\n\u2714 Test startingASpentReplayIsRefused() passed after 0.001 seconds.\n\u2714 Test eachBufferWaitsForItsOwnDuration() passed after 0.001 seconds.\n\u2714 Test replayArrivesAsTapSizedBuffersEndingWithAShortOne() passed after 0.001 seconds.\n\u2714 Test queueOverflowFailsInsteadOfSilentlyDroppingAudio() passed after 0.008 seconds.\n\u2714 Test stoppingMidReplayEndsTheStreamWithoutAnotherBuffer() passed after 0.013 seconds.\n\u2714 Suite ReplayAudioCaptureTests passed after 0.014 seconds.\n\u2714 Test run with 6 tests in 1 suite passed after 0.014 seconds.\n",
+    "result": "passed",
+    "reviews": {
+      "spec": "No actionable findings after contiguous-window fix",
+      "standards": "No actionable findings after gate and detector generation guards; real SDK cancellation scheduling remains untested"
+    },
+    "scope": "Production SpeechGate with pinned Silero on CPU/Neural Engine; synthetic speech and seeded noise only, no human recognition or release performance claim.",
+    "sourceSHA256": {
+      "Packages/Recognition/Sources/Recognition/SpeechGate.swift": "cd2df1baa313b3dd75c75b8adcaf656616d5ba760ae6bcc92091ecd1af021e48",
+      "Packages/Recognition/Sources/Recognition/SpeechGatePolicy.swift": "d08e2a2b559d828d6bc7700e6b80b1f454fd2747065465b7bf8e79d9172250d1",
+      "Packages/Recognition/Tests/RecognitionTests/SpeechGateTests.swift": "4b987ce834fb3aa848dec9ac22a4e60952f97c188b719ac10ee3ab6ab6343405"
+    },
+    "speechFramesUnchanged": 34651,
+    "windowRegressionRedLog": "Building for debugging...\n[1\u2009/\u200913] FastClusterWrapper\n[2\u2009/\u20097] RecognitionTests-product\n[6\u2009/\u200911] RecognitionTests-product\n[12\u2009/\u200916] RecognitionTests-product\nBuild complete! (1.52 sec)\nTest Suite 'Selected tests' started at 2026-09-16 22:01:02.108.\nTest Suite 'RecognitionTests.xctest' started at 2026-09-16 22:01:02.109.\nTest Suite 'SpeechGateTests' started at 2026-09-16 22:01:02.109.\nTest Case '-[RecognitionTests.SpeechGateTests testSpeechPastTheDetectorWindowIsNotSilenced]' started.\n/Users/brandon/Development/conductor/workspaces/poptart/bogota/Packages/Recognition/Tests/RecognitionTests/SpeechGateTests.swift:65: error: -[RecognitionTests.SpeechGateTests testSpeechPastTheDetectorWindowIsNotSilenced] : XCTAssertTrue failed\n/Users/brandon/Development/conductor/workspaces/poptart/bogota/Packages/Recognition/Tests/RecognitionTests/SpeechGateTests.swift:66: error: -[RecognitionTests.SpeechGateTests testSpeechPastTheDetectorWindowIsNotSilenced] : XCTAssertEqual failed: (\"Optional(0.0)\") is not equal to (\"Optional(0.9)\")\nTest Case '-[RecognitionTests.SpeechGateTests testSpeechPastTheDetectorWindowIsNotSilenced]' failed (0.465 seconds).\nTest Suite 'SpeechGateTests' failed at 2026-09-16 22:01:02.573.\n\t Executed 1 test, with 2 failures (0 unexpected) in 0.465 (0.465) seconds\nTest Suite 'RecognitionTests.xctest' failed at 2026-09-16 22:01:02.573.\n\t Executed 1 test, with 2 failures (0 unexpected) in 0.465 (0.465) seconds\nTest Suite 'Selected tests' failed at 2026-09-16 22:01:02.573.\n\t Executed 1 test, with 2 failures (0 unexpected) in 0.465 (0.466) seconds\nNote: Some test targets reported failures:\n  - RecognitionTests (XCTest)\n"
+  },
+  "scope": "Pinned source download and local staging only; no runtime VAD accuracy or release claim.",
+  "stagedManifestEntries": [
+    {
+      "byteSize": 1075,
+      "license": {
+        "name": "MIT",
+        "url": "https://opensource.org/license/mit"
+      },
+      "relativePath": "vad/LICENSE.txt",
+      "role": "recognition",
+      "sha256": "2e63e9a38b6e8fc0c7bc37ce174caca1862870856c6daf5697cfb785e925520b",
+      "url": "https://models.invalid/development-only/vad/LICENSE.txt"
+    },
+    {
+      "byteSize": 243,
+      "license": {
+        "name": "MIT",
+        "url": "https://opensource.org/license/mit"
+      },
+      "relativePath": "vad/silero-vad-unified-256ms-v6.2.1.mlmodelc/analytics/coremldata.bin",
+      "role": "recognition",
+      "sha256": "8067594eb3126ab8318af507f0c00cabfed40d5fedb8a0ee5075dd02e903d909",
+      "url": "https://models.invalid/development-only/vad/silero-vad-unified-256ms-v6.2.1.mlmodelc/analytics/coremldata.bin"
+    },
+    {
+      "byteSize": 625,
+      "license": {
+        "name": "MIT",
+        "url": "https://opensource.org/license/mit"
+      },
+      "relativePath": "vad/silero-vad-unified-256ms-v6.2.1.mlmodelc/coremldata.bin",
+      "role": "recognition",
+      "sha256": "7db35a4fd995222a7fb0129713473b15d1462572ab4a2e5e4d56bcaad9e40f41",
+      "url": "https://models.invalid/development-only/vad/silero-vad-unified-256ms-v6.2.1.mlmodelc/coremldata.bin"
+    },
+    {
+      "byteSize": 3335,
+      "license": {
+        "name": "MIT",
+        "url": "https://opensource.org/license/mit"
+      },
+      "relativePath": "vad/silero-vad-unified-256ms-v6.2.1.mlmodelc/metadata.json",
+      "role": "recognition",
+      "sha256": "2740be542c611e1ba358e1849b4e265c65cdf0b17192767e1e5de86a31ac94d6",
+      "url": "https://models.invalid/development-only/vad/silero-vad-unified-256ms-v6.2.1.mlmodelc/metadata.json"
+    },
+    {
+      "byteSize": 176918,
+      "license": {
+        "name": "MIT",
+        "url": "https://opensource.org/license/mit"
+      },
+      "relativePath": "vad/silero-vad-unified-256ms-v6.2.1.mlmodelc/model.mil",
+      "role": "recognition",
+      "sha256": "c6a9d1bf22d413265da0a07a1d14151c3ea2fad296b3aa5859275b33ef1c3270",
+      "url": "https://models.invalid/development-only/vad/silero-vad-unified-256ms-v6.2.1.mlmodelc/model.mil"
+    },
+    {
+      "byteSize": 882304,
+      "license": {
+        "name": "MIT",
+        "url": "https://opensource.org/license/mit"
+      },
+      "relativePath": "vad/silero-vad-unified-256ms-v6.2.1.mlmodelc/weights/weight.bin",
+      "role": "recognition",
+      "sha256": "53ecc8b5081146140ab654c89109cf001f2183abddd7a2411c5081feeffff063",
+      "url": "https://models.invalid/development-only/vad/silero-vad-unified-256ms-v6.2.1.mlmodelc/weights/weight.bin"
+    }
+  ]
+}

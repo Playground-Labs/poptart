@@ -1,0 +1,92 @@
+{
+  "base": "Models/Artifacts/baseline-qwen-4bit",
+  "batchSize": 2,
+  "command": [
+    ".build/training-venv/bin/python",
+    "Training/train.py",
+    "--config",
+    "Training/config/lora.yaml",
+    "--model",
+    "Models/Artifacts/baseline-qwen-4bit",
+    "--data",
+    "Training/experiments/boundary-inputs",
+    "--learning-rate",
+    "0.00001",
+    "--batch-size",
+    "2",
+    "--iters",
+    "1200",
+    "--steps-per-eval",
+    "200",
+    "--save-every",
+    "200",
+    "--adapter-path",
+    ".build/clean-base-adapters",
+    "--test"
+  ],
+  "export": "Keep unchanged four-bit base and separate F32 adapter; no fusion.",
+  "inputs": {
+    "Models/Artifacts/baseline-qwen-4bit/README.md": "748c964f9b7e5f2c3770ce013bbc0153be7c54311d9692c343b6188eefe77ac6",
+    "Models/Artifacts/baseline-qwen-4bit/chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80",
+    "Models/Artifacts/baseline-qwen-4bit/config.json": "919d818806acc6093475afcccc40b4c27deb509ef1508ba940c71c9b3ce83ab5",
+    "Models/Artifacts/baseline-qwen-4bit/model.safetensors": "268de1e6659fda36822fe5b4043b916be0840a8f6c533305f96feefcf1ad983d",
+    "Models/Artifacts/baseline-qwen-4bit/model.safetensors.index.json": "d95a2e17af08ab870498266088eccee4d0a012338c604465ae7df24b976c488e",
+    "Models/Artifacts/baseline-qwen-4bit/tokenizer.json": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523",
+    "Models/Artifacts/baseline-qwen-4bit/tokenizer_config.json": "386ba246ba3dfa4d3a21d8bc8712eba38de558e5ac94c2c90436d8f94d519d5e",
+    "Training/config/lora.yaml": "7e1df156a526390a8f6abe8297ae6251b57dc219281e0aea8fc369439bb6dbba",
+    "Training/experiments/boundary-inputs/corpus.jsonl": "7d9e2894ab4df335aa13f482e16f5da172762b861fad660bd95ea5561d9ec395",
+    "Training/experiments/boundary-inputs/test.jsonl": "d498484d91fb42cc84c5266eaf09e06a25921e5ca39ed3557280901eaa09bbed",
+    "Training/experiments/boundary-inputs/train.jsonl": "908d8ca12ffe25a331ee10e0318362de1a922758ca8da51dd820f84f6e5061aa",
+    "Training/experiments/boundary-inputs/valid.jsonl": "5bad72da383034295263eb3169b80ce81516b5308137c209d6bb8bf17214adcb",
+    "Training/requirements-macos26-arm64.lock": "6b503f9a82f56a19fda8a0a50b94cc7415d425a5571a24892b2bd2cb5d356195",
+    "Training/train.py": "26e80d3160e9f6932d1dd15541c2cdc9bc85f2d69d7f4fb9aeba60ca491ffb96"
+  },
+  "iterations": 1200,
+  "layers": 16,
+  "learningRate": 1e-05,
+  "limitations": "Recipe comparison, not single-factor ablation: starting weights/adapter, learning rate and training length differ from low-rate run. Validation lacks vocabulary-preservation denominator. No frozen release holdout query; no promotion or physical-M1 claim.",
+  "preflightLog": "[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.\nValidated 560/32/32 records; longest sequence 427 tokens.\n",
+  "purpose": "Fresh LoRA on the clean stock four-bit base, avoiding historical fused-adapter ancestry. Same fixed624-record corpus; no new labels.",
+  "rank": 8,
+  "resumeAdapter": null,
+  "runtimeSourceSHA256": {
+    "Evals/editplan.py": "d310aed37db6f9ef42e962efa815456497fc2bc620eca0691e57250b13747777",
+    "Packages/Cleanup/Sources/Cleanup/EditPlanValidator.swift": "4fe35abc3303a34f4287141caaa9703c090b84307e472331f1bcc97b8fb5c88f"
+  },
+  "saveEvery": 200,
+  "scale": 20,
+  "seed": 20260824,
+  "selection": "Score all six saved200-step checkpoints on existing native validation32+adversarial11. Require all adversarial/runtime checks; maximize meaning preservation, then context fit, then exact plans. Break ties with lower logged validation loss, then earlier step. Record selection before one development evaluation.",
+  "status": "Predeclared before training.",
+  "stockBaselineEvidenceSHA256": "203a3296f3edd70dc86d81d9a18e962a8b7179f58a7ad44165f90d8d7de85aea",
+  "stockModelFiles": {
+    "README.md": {
+      "byteSize": 81,
+      "sha256": "748c964f9b7e5f2c3770ce013bbc0153be7c54311d9692c343b6188eefe77ac6"
+    },
+    "chat_template.jinja": {
+      "byteSize": 7755,
+      "sha256": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+    },
+    "config.json": {
+      "byteSize": 2625,
+      "sha256": "919d818806acc6093475afcccc40b4c27deb509ef1508ba940c71c9b3ce83ab5"
+    },
+    "model.safetensors": {
+      "byteSize": 424026782,
+      "sha256": "268de1e6659fda36822fe5b4043b916be0840a8f6c533305f96feefcf1ad983d"
+    },
+    "model.safetensors.index.json": {
+      "byteSize": 60784,
+      "sha256": "d95a2e17af08ab870498266088eccee4d0a012338c604465ae7df24b976c488e"
+    },
+    "tokenizer.json": {
+      "byteSize": 19989325,
+      "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+    },
+    "tokenizer_config.json": {
+      "byteSize": 1160,
+      "sha256": "386ba246ba3dfa4d3a21d8bc8712eba38de558e5ac94c2c90436d8f94d519d5e"
+    }
+  }
+}

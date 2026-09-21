@@ -1,0 +1,22 @@
+{
+  "holdout": "No release holdout query in this experiment.",
+  "newAdapterWeights": [
+    0.25,
+    0.5,
+    0.75
+  ],
+  "operation": "Elementwise F32 interpolation of corresponding adapter tensors; unchanged four-bit base; no fusion. This is parameter interpolation, not an exact mixture of model outputs or weight deltas.",
+  "parents": {
+    "Models/Artifacts/boundary-qwen-step500": {
+      "adapter_config.json": "9cbde47c6a427f18eca3565b7b4d652c3feba4b3503523358243ebd312d6f98e",
+      "adapters.safetensors": "5af793d32dd5ed22e36f6755079546e9fe54e10f63c90519a56f0e8d9a7b2db5"
+    },
+    "Models/Artifacts/composition-qwen-adapter-v2": {
+      "adapter_config.json": "989be6c37b2cfc3c4559453219f7ef96b8d59e43c079d5fc44ff3e075cc27e1a",
+      "adapters.safetensors": "496150c42cfb09618a356d63b501189014f73bb5183a75904e1bf19deb3b83a0"
+    }
+  },
+  "purpose": "Check whether the improved boundary validation behavior can retain the prior composition adapter behavior.",
+  "selection": "Include both measured endpoints. Require all adversarial/runtime checks. Maximize existing validation meaning preservation, then context fit, then exact plans; ties choose the lowest new-adapter weight. Record selection before one native development evaluation of a new winner. Reuse endpoint development evidence if an endpoint wins.",
+  "status": "Predeclared before boundary blend export or scoring."
+}

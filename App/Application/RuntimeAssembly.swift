@@ -64,7 +64,8 @@ public enum ApplicationModelPackLocator {
     static let developmentManifestName = "manifest.json"
 
     public static func activePack(
-        in modelRuntimeDirectory: URL
+        in modelRuntimeDirectory: URL,
+        manifestPublicKey: Data? = nil
     ) throws -> ActiveApplicationModelPack? {
         #if DEBUG
         if let path = ProcessInfo.processInfo.environment["POPTART_MODEL_PACK_DIRECTORY"],
@@ -73,12 +74,14 @@ public enum ApplicationModelPackLocator {
             return developmentPack(at: URL(fileURLWithPath: path, isDirectory: true))
         }
         #endif
-        return try installedPack(in: modelRuntimeDirectory)
+        return try installedPack(in: modelRuntimeDirectory, manifestPublicKey: manifestPublicKey)
     }
 
-    static func installedPack(in modelRuntimeDirectory: URL) throws -> ActiveApplicationModelPack? {
+    static func installedPack(in modelRuntimeDirectory: URL, manifestPublicKey: Data? = nil) throws -> ActiveApplicationModelPack? {
         guard let installed = try InstalledModelPackRegistry(
-            rootDirectory: modelRuntimeDirectory
+            rootDirectory: modelRuntimeDirectory,
+            applicationVersion: PoptartRelease.version(),
+            manifestPublicKey: manifestPublicKey ?? (try? ModelPackTrust.embeddedPublicKey()) ?? Data()
         ).activePack() else { return nil }
         return .init(
             layout: .init(root: installed.directory),
@@ -213,7 +216,8 @@ public final class RuntimeAssembly: @unchecked Sendable {
         let pressureMonitor = MacOSMemoryPressureMonitor()
         let accessibility = AccessibilityTextService()
         let indicator = IndicatorPresenter()
-        let keyProvider = KeychainEncryptionKeyProvider(service: "labs.playground.Poptart")
+        let keyProvider = KeychainEncryptionKeyProvider(service: applicationKeychainService(
+            developmentDirectory: ProcessInfo.processInfo.environment["POPTART_SUPPORT_DIRECTORY"]))
         let historyStore = try HistoryStore(
             directory: applicationSupportDirectory,
             keyProvider: keyProvider
@@ -285,7 +289,9 @@ public final class RuntimeAssembly: @unchecked Sendable {
         shortcutRelay.setObserver(nil)
         shortcut.stop()
         pressureMonitor.stop()
+        await coordinator.finishCurrentDictation()
         await scheduler.cancelAll()
+        await cleanupModel?.unload()
     }
 
     /// The key currently held to dictate.

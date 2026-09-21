@@ -44,7 +44,8 @@ def traffic_results(lines, stats, phases, installed):
         raise ValueError("packet count or process attribution mismatch")
     if not installed or not counts["during"]:
         raise ValueError("download and installation not observed")
-    return {"schemaVersion": 1, "packetsBeforeDownload": counts["before"],
+    return {"schemaVersion": 1, "scope": "network-silence-outside-explicit-download",
+            "destinationsVerified": False, "packetsBeforeDownload": counts["before"],
             "packetsDuringDownload": counts["during"], "packetsAfterDownload": counts["after"],
             "downloadObserved": True, "passed": counts["before"] == counts["after"] == 0}
 

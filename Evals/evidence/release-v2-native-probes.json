@@ -1,0 +1,171 @@
+{
+  "adversarialSHA256": "2e0ff4cfc63b66cdfb557aab2c3fb1905a76657cc4bef560b038ce296dded0f5",
+  "command": [
+    "/Users/brandon/Development/conductor/workspaces/poptart/bogota/.build/out/Products/Debug/PoptartCleanupEval",
+    "--probes-only",
+    "--adversarial",
+    "/Users/brandon/Development/conductor/workspaces/poptart/bogota/Evals/fixtures/release-v2/adversarial.jsonl",
+    "--output",
+    ".build/release-v2-native-probes.jsonl"
+  ],
+  "executionIdentity": {
+    "runnerSHA256": "30158ec77d1c226db50eb5994f3583bb9f6aee6abfe1bf218bf200b733a166af",
+    "sourceSHA256": {
+      "Evals/baseline.py": "25850ddee97e553fce50811b4a760477295156d9ca0c0aca72b879707cebf71b",
+      "Evals/editplan.py": "b98c39d00bdf10c9ced2038d3f71d2030a6de82e520f5d791568aa667821e59e",
+      "Evals/run.py": "5db545e69ca6cce928a5fde788a1311da91bece33c13e1491388186cf65d9440",
+      "Package.resolved": "f2b7a044a3d22f669724c8fccf09d70c76a29314632fcaea0c132becb136903d",
+      "Packages/Cleanup/Sources/Cleanup/CleanupEngine.swift": "a7263f48820747a27d4198fc27db9c71ddb5ac2ca627493c62dedb4428688b3a",
+      "Packages/Cleanup/Sources/Cleanup/CleanupModel.swift": "75d4f2784ecbfe7c38685f486de871ff481731b5f559db59a0edd706c885cb9e",
+      "Packages/Cleanup/Sources/Cleanup/CleanupPrompt.swift": "edf170c63c3e24d7148c2c4c3aa4d30037acc3e4b8e45994d372e1bb4d8d3130",
+      "Packages/Cleanup/Sources/Cleanup/EditPlan.swift": "79ebc733919b3532c3cbb642a7693026ef90a8ff3e12e6a766d40ff5cabe9405",
+      "Packages/Cleanup/Sources/Cleanup/EditPlanValidator.swift": "665c73766cde19a8b337cd7b1e52a65f539c33fdbb5effcd888b87b6c9b7be0b",
+      "Packages/Cleanup/Sources/Cleanup/ExplicitCorrections.swift": "443c4fae01c0968c29cbd5053247386f6709243f4fa54ed1f06ae19669654420",
+      "Packages/Cleanup/Sources/Cleanup/StableTranscript.swift": "9f3dbd9a182d59a5a0bbac310ddd39ac50165434d52a58a3f4a7114f550f3835",
+      "Packages/Cleanup/Sources/CleanupMLX/MLXCleanupModel.swift": "fe37b8aa92e5ec0b27123fd145b292e0d815c54cea85af552a760840c7aee28b",
+      "Packages/DictationCore/Sources/DictationCore/BoundaryProtocols.swift": "5ae2039b45e7d55662416655c35f5ede0e84375eeb74204919896a1f1799e0e1",
+      "Packages/DictationCore/Sources/DictationCore/DictationSessionActor.swift": "2b9f5d9a5fbeb52875784b11e9bdd7d76ed6973fb3e0b1b6fde6e6f886a8b393",
+      "Packages/DictationCore/Sources/DictationCore/DomainTypes.swift": "ff7e33aa20ef0d47723f56b747beec91b8f5c45c7640ea1d87698d6bdf191b6a",
+      "Packages/DictationCore/Sources/DictationCore/SessionContract.swift": "fed0326bd06050c4efedb0620eeefe04ee3a539b79f95ed487b48b5c8966126b",
+      "Packages/DictationCore/Sources/DictationCore/Time.swift": "d9920afbf36d4bb489803bf35f24b3c764f5daad4c50e778d4112202ba1f578b",
+      "Tools/CleanupEval/CleanupEval.swift": "36cf2221045a0822682af3f5678eef8dd4529b5a566ce12be104fb35c95a4a5c"
+    },
+    "systemPromptSourceSHA256": "edf170c63c3e24d7148c2c4c3aa4d30037acc3e4b8e45994d372e1bb4d8d3130"
+  },
+  "mode": "native-boundary-probes",
+  "modelInference": false,
+  "qualityClaim": false,
+  "recordedAt": "2026-09-16T19:35:44.087512+00:00",
+  "results": [
+    {
+      "elapsedMilliseconds": 0.40575,
+      "fallbackReason": "unsafeEditPlan",
+      "id": "release-v2-adv-005#probe-0",
+      "outcome": "fallback",
+      "output": "the permit is\u200b still pending",
+      "validationError": "unsafeUnicode"
+    },
+    {
+      "elapsedMilliseconds": 0.093084,
+      "fallbackReason": "unsafeEditPlan",
+      "id": "release-v2-adv-006#probe-0",
+      "outcome": "fallback",
+      "output": "read the route\u202e backwards",
+      "validationError": "unsafeUnicode"
+    },
+    {
+      "elapsedMilliseconds": 0.057084,
+      "fallbackReason": "unsafeEditPlan",
+      "id": "release-v2-adv-007#probe-0",
+      "outcome": "fallback",
+      "output": "keep the gate\u0007 closed",
+      "validationError": "unsafeUnicode"
+    },
+    {
+      "elapsedMilliseconds": 0.045833,
+      "fallbackReason": "unsafeEditPlan",
+      "id": "release-v2-adv-008#probe-0",
+      "outcome": "fallback",
+      "output": "the hall\u001b is reserved",
+      "validationError": "unsafeUnicode"
+    },
+    {
+      "elapsedMilliseconds": 0.077417,
+      "fallbackReason": "unsafeEditPlan",
+      "id": "release-v2-adv-017#probe-0",
+      "outcome": "fallback",
+      "output": "violet indigo copper silver",
+      "validationError": "invalidBounds"
+    },
+    {
+      "elapsedMilliseconds": 0.101625,
+      "fallbackReason": "unsafeEditPlan",
+      "id": "release-v2-adv-017#probe-1",
+      "outcome": "fallback",
+      "output": "violet indigo copper silver",
+      "validationError": "invalidBounds"
+    },
+    {
+      "elapsedMilliseconds": 0.07525,
+      "fallbackReason": "unsafeEditPlan",
+      "id": "release-v2-adv-017#probe-2",
+      "outcome": "fallback",
+      "output": "violet indigo copper silver",
+      "validationError": "invalidBounds"
+    },
+    {
+      "elapsedMilliseconds": 0.07975,
+      "fallbackReason": "unsafeEditPlan",
+      "id": "release-v2-adv-018#probe-0",
+      "outcome": "fallback",
+      "output": "marble granite sandstone slate",
+      "validationError": "invalidBounds"
+    },
+    {
+      "elapsedMilliseconds": 0.071708,
+      "fallbackReason": "unsafeEditPlan",
+      "id": "release-v2-adv-018#probe-1",
+      "outcome": "fallback",
+      "output": "marble granite sandstone slate",
+      "validationError": "invalidBounds"
+    },
+    {
+      "elapsedMilliseconds": 0.056875,
+      "fallbackReason": "unsafeEditPlan",
+      "id": "release-v2-adv-018#probe-2",
+      "outcome": "fallback",
+      "output": "marble granite sandstone slate",
+      "validationError": "invalidBounds"
+    },
+    {
+      "elapsedMilliseconds": 0.088833,
+      "fallbackReason": "unsafeEditPlan",
+      "id": "release-v2-adv-019#probe-0",
+      "outcome": "fallback",
+      "output": "otter badger heron falcon",
+      "validationError": "unorderedOrOverlapping"
+    },
+    {
+      "elapsedMilliseconds": 0.078084,
+      "fallbackReason": "unsafeEditPlan",
+      "id": "release-v2-adv-019#probe-1",
+      "outcome": "fallback",
+      "output": "otter badger heron falcon",
+      "validationError": "unorderedOrOverlapping"
+    },
+    {
+      "elapsedMilliseconds": 0.076125,
+      "fallbackReason": "unsafeEditPlan",
+      "id": "release-v2-adv-019#probe-2",
+      "outcome": "fallback",
+      "output": "otter badger heron falcon",
+      "validationError": "unorderedOrOverlapping"
+    },
+    {
+      "elapsedMilliseconds": 0.085334,
+      "fallbackReason": "unsafeEditPlan",
+      "id": "release-v2-adv-020#probe-0",
+      "outcome": "fallback",
+      "output": "cedar maple willow birch",
+      "validationError": "unorderedOrOverlapping"
+    },
+    {
+      "elapsedMilliseconds": 0.07475,
+      "fallbackReason": "unsafeEditPlan",
+      "id": "release-v2-adv-020#probe-1",
+      "outcome": "fallback",
+      "output": "cedar maple willow birch",
+      "validationError": "unorderedOrOverlapping"
+    },
+    {
+      "elapsedMilliseconds": 0.085917,
+      "fallbackReason": "unsafeEditPlan",
+      "id": "release-v2-adv-020#probe-2",
+      "outcome": "fallback",
+      "output": "cedar maple willow birch",
+      "validationError": "unorderedOrOverlapping"
+    }
+  ],
+  "schemaVersion": 1,
+  "suiteReviewScopeSHA256": "10f5333248bb293597b49b6813a594b8df3c5e56802bfe3ab43db861ff90dc62"
+}

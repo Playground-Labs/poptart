@@ -11,8 +11,8 @@ let package = Package(
     dependencies: [
         .package(path: "../DictationCore"),
         .package(
-            url: "https://github.com/FluidInference/FluidAudio.git",
-            exact: "0.15.6"
+            url: "https://github.com/brandon-nextwork/FluidAudio.git",
+            revision: "61dc8edf915e528a11d81ded84b83d2709746713"
         ),
     ],
     targets: [

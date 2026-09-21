@@ -6,25 +6,15 @@ import SwiftUI
 
 @main
 struct PoptartApp: App {
+    @NSApplicationDelegateAdaptor(PoptartLifecycle.self) private var lifecycle
     @State private var root = AppRoot.shared
-
-    init() {
-        Task { @MainActor in
-            await AppRoot.shared.start()
-        }
-    }
 
     var body: some Scene {
         Window("Poptart", id: "poptart") {
-            RootView(root: root)
+            RootView(root: root, menuBar: lifecycle.menuBar)
                 .frame(minWidth: 560, minHeight: 560)
         }
         .defaultSize(width: 560, height: 720)
-
-        MenuBarExtra("Poptart", systemImage: root.menuBarSymbol) {
-            PoptartMenu(root: root)
-        }
-        .menuBarExtraStyle(.menu)
     }
 }
 
@@ -85,30 +75,13 @@ final class AppRoot {
     }
 }
 
-private struct PoptartMenu: View {
+private struct RootView: View {
     let root: AppRoot
+    let menuBar: PoptartMenuBar
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Text(root.statusMessage)
-        Divider()
-        Button("Open Poptart…") {
-            NSApp.activate(ignoringOtherApps: true)
-            openWindow(id: "poptart")
-        }
-        Button("Quit Poptart") {
-            Task {
-                await root.stop()
-                NSApp.terminate(nil)
-            }
-        }
-    }
-}
-
-private struct RootView: View {
-    let root: AppRoot
-
-    var body: some View {
+      Group {
         if let failure = root.failure {
             ContentUnavailableView(
                 "Poptart cannot start",
@@ -125,6 +98,8 @@ private struct RootView: View {
             ProgressView("Starting Poptart…")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+      }
+      .onAppear { menuBar.openWindow = { openWindow(id: "poptart") } }
     }
 }
 

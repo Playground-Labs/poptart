@@ -1,6 +1,18 @@
 import DictationCore
+import CryptoKit
 import Foundation
 import Persistence
+
+public func applicationKeychainService(developmentDirectory: String?) -> String {
+    #if DEBUG
+    if let developmentDirectory, !developmentDirectory.isEmpty {
+        let path = URL(fileURLWithPath: developmentDirectory).standardizedFileURL.path
+        let identity = SHA256.hash(data: Data(path.utf8)).map { String(format: "%02x", $0) }.joined()
+        return "labs.playground.Poptart.development.\(identity)"
+    }
+    #endif
+    return "labs.playground.Poptart"
+}
 
 public actor EncryptedHistoryBoundary: HistoryBoundary {
     private let store: HistoryStore
@@ -20,6 +32,10 @@ public actor EncryptedHistoryBoundary: HistoryBoundary {
             cleanupChangedText: intent.cleanupChanged,
             outcome: outcome,
             fallbackReason: intent.outcome.fallbackReason,
+            recordingEnd: intent.outcome.recordingEnd.map {
+                $0 == .fiveMinuteSafetyLimit ? .fiveMinuteSafetyLimit : .released
+            },
+            textSource: intent.outcome.textSource,
             timings: .init(
                 recognitionMilliseconds: milliseconds(intent.timings.finalRecognition),
                 cleanupMilliseconds: milliseconds(intent.timings.cleanup),
@@ -33,7 +49,6 @@ public actor EncryptedHistoryBoundary: HistoryBoundary {
     private func persistenceOutcome(
         for outcome: DictationCore.DictationOutcome
     ) -> Persistence.DictationOutcome? {
-        if outcome.recordingEnd == .fiveMinuteSafetyLimit { return .safetyStop }
         switch outcome {
         case .cleanedInsertion:
             return .cleaned
@@ -71,6 +86,26 @@ public actor EncryptedHistoryBoundary: HistoryBoundary {
 }
 
 private extension DictationCore.DictationOutcome {
+    var textSource: Persistence.DictationTextSource? {
+        switch self {
+        case .cleanedInsertion: return .cleaned
+        case .rawTranscriptFallback: return .rawTranscript
+        case .oversizedDeterministicFallback: return .oversized
+        case .recognitionHypothesisFallback: return .recognitionHypothesis
+        case .targetChangedClipboard(let source, _),
+             .noTargetClipboard(let source, _),
+             .deliveryFailure(let source, _, _):
+            switch source {
+            case .cleaned: return .cleaned
+            case .rawTranscriptFallback: return .rawTranscript
+            case .oversizedDeterministicFallback: return .oversized
+            case .recognitionHypothesisFallback: return .recognitionHypothesis
+            }
+        case .emptyRecognitionFailure, .secureTargetRejection, .cancelled, .recordingFailure:
+            return nil
+        }
+    }
+
     var recordingEnd: RecordingEndReason? {
         switch self {
         case .cleanedInsertion(_, let end),

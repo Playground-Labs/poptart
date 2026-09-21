@@ -181,6 +181,29 @@ struct ClipboardPasteCoordinatorTests {
     #expect(await pasteboard.writtenTexts() == [])
   }
 
+  @Test("withdrawn permission after the promised write prevents Cmd-V and restores the clipboard")
+  func withdrawnPermissionPreventsPaste() async {
+    let original = snapshot("previous")
+    let pasteboard = FakePasteboard(snapshot: original, changeCount: 3)
+    let synthesizer = await MainActor.run { RecordingPasteSynthesizer() }
+    let coordinator = ClipboardPasteCoordinator(
+      pasteboard: pasteboard,
+      synthesizer: synthesizer,
+      clock: FakeIntegrationClock(now: 0),
+      sleeper: SystemIntegrationSleeper()
+    )
+
+    let result = await coordinator.pastePreservingClipboard(
+      text: "dictated",
+      deadline: .init(nanoseconds: 1_000_000_000),
+      shouldPaste: { false }
+    )
+
+    #expect(result == .pasteSuppressed)
+    #expect(await synthesizer.pasteCount() == 0)
+    #expect(await pasteboard.restoredSnapshot() == original)
+  }
+
   @Test("target-change copy intentionally replaces the clipboard without restoration")
   func targetChangeCopy() async {
     let pasteboard = FakePasteboard(snapshot: snapshot("previous"), changeCount: 3)
@@ -225,7 +248,8 @@ private final class FakeIntegrationClock: IntegrationNanosecondClock, @unchecked
   func advance(to instant: Int64) { lock.withLock { now = max(now, instant) } }
 }
 
-private actor FakePasteboard: PasteboardClient {
+private final class FakePasteboard: PasteboardClient, @unchecked Sendable {
+  private let lock = NSLock()
   private let initialSnapshot: PasteboardSnapshot
   private var count: Int
   private var texts: [String] = []
@@ -240,54 +264,86 @@ private actor FakePasteboard: PasteboardClient {
     self.eagerRead = eagerRead
   }
 
-  func snapshot() -> PasteboardSnapshot { initialSnapshot }
-  func writeText(_ text: String) -> Int? {
-    texts.append(text)
-    count += 1
-    return count
+  func snapshot() async -> PasteboardSnapshot { initialSnapshot }
+  @MainActor
+  func writeText(
+    _ text: String,
+    unlessRefusedBy refusal: @MainActor @Sendable () -> DeliveryFailure?
+  ) -> ClipboardWriteOutcome {
+    if let failure = refusal() { return .suppressed(failure) }
+    return lock.withLock {
+      texts.append(text)
+      count += 1
+      return .written(changeCount: count)
+    }
   }
-  func writePromisedText(_ text: String, onRead: @escaping @Sendable () -> Void) -> Int? {
-    texts.append(text)
-    promisedRead = onRead
+  func writePromisedText(_ text: String, onRead: @escaping @Sendable () -> Void) async -> Int? {
+    let result = lock.withLock { () -> Int in
+      texts.append(text)
+      promisedRead = onRead
+      count += 1
+      return count
+    }
     if eagerRead { onRead() }
-    count += 1
-    return count
+    return result
   }
-  func changeCount() -> Int { count }
-  func restore(_ snapshot: PasteboardSnapshot) -> Bool {
-    restored = snapshot
-    count += 1
-    promisedRead = nil
+  func changeCount() async -> Int { lock.withLock { count } }
+  func restore(_ snapshot: PasteboardSnapshot) async -> Bool {
+    lock.withLock {
+      restored = snapshot
+      count += 1
+      promisedRead = nil
+    }
     return true
   }
-  func releasePromisedData() {
-    promisedRead = nil
-    releaseCount += 1
+  func releasePromisedData() async {
+    lock.withLock {
+      promisedRead = nil
+      releaseCount += 1
+    }
   }
-  func foreignWrite() { count += 1 }
-  func readPromisedText() { promisedRead?() }
-  func restoredSnapshot() -> PasteboardSnapshot? { restored }
-  func writtenTexts() -> [String] { texts }
-  func promisedReleaseCount() -> Int { releaseCount }
+  func foreignWrite() { lock.withLock { count += 1 } }
+  func readPromisedText() { lock.withLock { promisedRead }?() }
+  func restoredSnapshot() async -> PasteboardSnapshot? { lock.withLock { restored } }
+  func writtenTexts() async -> [String] { lock.withLock { texts } }
+  func promisedReleaseCount() async -> Int { lock.withLock { releaseCount } }
 }
 
 private struct SuccessfulPasteSynthesizer: PasteCommandSynthesizer {
-  func paste() async -> Bool { true }
+  @MainActor
+  func paste(ifAllowedBy authorization: @MainActor @Sendable () -> Bool) -> PasteCommandOutcome {
+    authorization() ? .dispatched : .suppressed
+  }
+}
+
+@MainActor
+private final class RecordingPasteSynthesizer: PasteCommandSynthesizer, @unchecked Sendable {
+  private var count = 0
+  func paste(ifAllowedBy authorization: @MainActor @Sendable () -> Bool) -> PasteCommandOutcome {
+    guard authorization() else { return .suppressed }
+    count += 1
+    return .dispatched
+  }
+  func pasteCount() -> Int { count }
 }
 
 private struct ReadingPasteSynthesizer: PasteCommandSynthesizer {
   let pasteboard: FakePasteboard
-  func paste() async -> Bool {
-    await pasteboard.readPromisedText()
-    return true
+  @MainActor
+  func paste(ifAllowedBy authorization: @MainActor @Sendable () -> Bool) -> PasteCommandOutcome {
+    guard authorization() else { return .suppressed }
+    pasteboard.readPromisedText()
+    return .dispatched
   }
 }
 
 private struct FailingOwnershipChangingSynthesizer: PasteCommandSynthesizer {
   let pasteboard: FakePasteboard
-  func paste() async -> Bool {
-    await pasteboard.foreignWrite()
-    return false
+  @MainActor
+  func paste(ifAllowedBy authorization: @MainActor @Sendable () -> Bool) -> PasteCommandOutcome {
+    guard authorization() else { return .suppressed }
+    pasteboard.foreignWrite()
+    return .failed
   }
 }
 
@@ -307,7 +363,7 @@ private actor ScriptedReadSleeper: IntegrationSleeper {
     while let readTime = readTimes.first, readTime <= destination {
       clock.advance(to: readTime)
       readTimes.removeFirst()
-      await pasteboard.readPromisedText()
+      pasteboard.readPromisedText()
     }
     clock.advance(to: destination)
   }
@@ -318,6 +374,6 @@ private struct OwnershipChangingSleeper: IntegrationSleeper {
   let pasteboard: FakePasteboard
   func sleep(nanoseconds: UInt64) async {
     clock.advance(to: clock.nowNanoseconds() + Int64(nanoseconds))
-    await pasteboard.foreignWrite()
+    pasteboard.foreignWrite()
   }
 }

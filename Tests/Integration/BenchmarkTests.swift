@@ -84,4 +84,40 @@ final class BenchmarkTests: XCTestCase {
             XCTFail("History decrypted with the wrong key")
         } catch {}
     }
+
+    func testHypothesisFallbackReportsSkippedCleanupAndAbsentFinalTranscriptAsNull() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let key = RunKey()
+        let store = try HistoryStore(directory: directory, keyProvider: key)
+        let harness = Harness(context: .init(applicationIdentifier: "benchmark", applicationCategory: .textEditor,
+            textBeforeCursor: "", textAfterCursor: "", selectedText: nil), store: store)
+        let intent = DictationRecordIntent(id: .init(), occurredAt: Date(), rawTranscript: nil,
+            deliveredText: "Usable partial", cleanupChanged: false,
+            outcome: .recognitionHypothesisFallback(method: .accessibility, recordingEnd: .released),
+            timings: .init(finalRecognition: .milliseconds(1400), cleanup: nil,
+                delivery: .milliseconds(10), completion: .milliseconds(1410)),
+            destinationApplicationIdentifier: "benchmark")
+        await harness.record(intent)
+        let readback = try HistoryStore(directory: directory, keyProvider: key)
+        let records = try await readback.records()
+        let record = try XCTUnwrap(records.first)
+        XCTAssertEqual(record.rawTranscript, "")
+        let row = try pipelineResult(intent: intent, record: record)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONSerialization.data(withJSONObject: row)) as? [String: Any])
+        XCTAssertTrue(json["rawTranscript"] is NSNull)
+        XCTAssertTrue(json["cleanupMilliseconds"] is NSNull)
+        XCTAssertEqual(json["outcome"] as? String, "recognitionHypothesis")
+        XCTAssertEqual(json["elapsedMilliseconds"] as? Double, 1410)
+        XCTAssertEqual(json["deliveredText"] as? String, "Usable partial")
+        XCTAssertEqual(json["historyReadback"] as? Bool, true)
+
+        let missingCleanup = DictationRecordIntent(id: intent.id,
+            occurredAt: Date(), rawTranscript: "Usable partial", deliveredText: "Usable partial",
+            cleanupChanged: false, outcome: .cleanedInsertion(method: .accessibility, recordingEnd: .released),
+            timings: intent.timings, destinationApplicationIdentifier: "benchmark")
+        await harness.record(missingCleanup)
+        let updated = try await readback.records()
+        XCTAssertThrowsError(try pipelineResult(intent: missingCleanup, record: XCTUnwrap(updated.first)))
+    }
 }

@@ -1,6 +1,7 @@
 import CryptoKit
 import Foundation
 import Testing
+import Synchronization
 
 @testable import Persistence
 
@@ -67,6 +68,8 @@ struct HistoryStoreTests {
         )
       ])
     #expect(loaded.first?.fallbackReason == nil)
+    #expect(loaded.first?.recordingEnd == nil)
+    #expect(loaded.first?.textSource == nil)
   }
 
   @Test("A Dictation Record stored when every copy was one outcome loads as the copy it was shown as")
@@ -156,6 +159,37 @@ struct HistoryStoreTests {
     #expect(try await store.records() == [record])
   }
 
+  @Test("Recording end and text source survive independently of clipboard delivery",
+    arguments: DictationRecordingEnd.allCases, DictationTextSource.allCases)
+  func independentClassificationsRoundTrip(end: DictationRecordingEnd, source: DictationTextSource) async throws {
+    let fixture = try Fixture()
+    let key = InMemoryKeyProvider()
+    let now = Date(timeIntervalSince1970: 2_000_000)
+    let store = try HistoryStore(directory: fixture.directory, keyProvider: key, now: { now })
+    let record = DictationRecord(id: UUID(), createdAt: now, rawTranscript: "raw",
+      deliveredText: "delivered", destinationApplication: "com.example.Editor", cleanupChangedText: false,
+      outcome: .copiedTargetChanged, recordingEnd: end, textSource: source,
+      timings: .init(recognitionMilliseconds: 1, cleanupMilliseconds: 0, deliveryMilliseconds: 1))
+    try await store.save(record)
+    let reopened = try HistoryStore(directory: fixture.directory, keyProvider: key, now: { now })
+    #expect(try await reopened.records() == [record])
+  }
+
+  @Test("Old safety-stop records remain readable without inventing their lost delivery classification")
+  func legacySafetyStopRemainsUnknown() async throws {
+    let fixture = try Fixture()
+    let key = InMemoryKeyProvider()
+    let store = try HistoryStore(directory: fixture.directory, keyProvider: key,
+      now: { Date(timeIntervalSince1970: 2_000_000) })
+    try writeLegacyRecord(id: UUID(), outcomeRawValue: "safetyStop",
+      timings: .init(recognitionMilliseconds: 1, cleanupMilliseconds: 0, deliveryMilliseconds: 1),
+      directory: fixture.directory, key: key.encryptionKey())
+    let record = try #require(try await store.records().first)
+    #expect(record.outcome == .safetyStop)
+    #expect(record.recordingEnd == nil)
+    #expect(record.textSource == nil)
+  }
+
   @Test("Dictation Records round-trip while sensitive values stay encrypted at rest")
   func encryptedRoundTrip() async throws {
     let fixture = try Fixture()
@@ -186,6 +220,75 @@ struct HistoryStoreTests {
     #expect(!persistedBytes.contains(Data(raw.utf8)))
     #expect(!persistedBytes.contains(Data(delivered.utf8)))
     #expect(!persistedBytes.contains(Data(destination.utf8)))
+  }
+
+  @Test("Scheduled retention expires records without opening History")
+  func retentionWithoutRead() async throws {
+    let fixture = try Fixture()
+    let initial = Date(timeIntervalSince1970: 4_000_000)
+    let clock = Mutex((now: initial, wakes: 0))
+    let store = try HistoryStore(directory: fixture.directory, keyProvider: InMemoryKeyProvider(),
+      now: { clock.withLock { $0.now } })
+    let record = makeRecord(id: 1, createdAt: initial)
+    try await store.save(record)
+    let path = fixture.directory.appendingPathComponent("DictationRecords")
+      .appendingPathComponent(record.id.uuidString).appendingPathExtension("poptartrecord").path
+    #expect(FileManager.default.fileExists(atPath: path))
+    await store.maintainRetention(sleep: {
+      let wakes = clock.withLock {
+        $0.wakes += 1
+        $0.now = initial.addingTimeInterval(HistoryStore.retentionInterval + 1)
+        return $0.wakes
+      }
+      if wakes > 1 { throw CancellationError() }
+    })
+    #expect(!FileManager.default.fileExists(atPath: path))
+  }
+
+  @Test("A malformed record cannot block expiry of other records")
+  func expiryContinuesAfterInvalidRecord() async throws {
+    let fixture = try Fixture()
+    let now = Date(timeIntervalSince1970: 4_000_000)
+    let store = try HistoryStore(directory: fixture.directory, keyProvider: InMemoryKeyProvider(), now: { now })
+    let expired = makeRecord(id: 1, createdAt: now.addingTimeInterval(-HistoryStore.retentionInterval - 1))
+    try await store.save(expired)
+    let directory = fixture.directory.appendingPathComponent("DictationRecords")
+    let corrupt = directory.appendingPathComponent("invalid.poptartrecord")
+    try Data("malformed".utf8).write(to: corrupt)
+    await #expect(throws: PersistenceError.invalidStoredData) { try await store.expireRecords() }
+    let remaining = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+    #expect(remaining == [corrupt.lastPathComponent])
+  }
+
+  @Test("Ciphertext and authenticated metadata tampering cannot produce a Dictation Record")
+  func rejectsRecordTampering() async throws {
+    let fixture = try Fixture()
+    let now = Date(timeIntervalSince1970: 4_000_000)
+    let store = try HistoryStore(directory: fixture.directory, keyProvider: InMemoryKeyProvider(), now: { now })
+    let record = makeRecord(id: 1, createdAt: now)
+    try await store.save(record)
+    let file = fixture.directory.appendingPathComponent("DictationRecords")
+      .appendingPathComponent(record.id.uuidString).appendingPathExtension("poptartrecord")
+    let original = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+    for field in ["ciphertext", "metadata", "recordingEnd", "textSource"] {
+      var object = original
+      if field == "ciphertext" {
+        let encoded = try #require(object["encryptedPayload"] as? String)
+        var bytes = try #require(Data(base64Encoded: encoded))
+        bytes[bytes.count - 1] ^= 1
+        object["encryptedPayload"] = bytes.base64EncodedString()
+      } else {
+        var metadata = try #require(object["metadata"] as? [String: Any])
+        switch field {
+        case "recordingEnd": metadata[field] = "fiveMinuteSafetyLimit"
+        case "textSource": metadata[field] = "recognitionHypothesis"
+        default: metadata["cleanupChangedText"] = !(metadata["cleanupChangedText"] as? Bool ?? false)
+        }
+        object["metadata"] = metadata
+      }
+      try JSONSerialization.data(withJSONObject: object).write(to: file)
+      await #expect(throws: PersistenceError.unreadableProtectedData) { try await store.records() }
+    }
   }
 
   @Test("History expires after 30 days and supports individual and bulk deletion")

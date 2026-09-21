@@ -34,11 +34,17 @@ actor FluidAudioIncrementalRecognizer: IncrementalSpeechRecognizing {
     private var pendingRecovery: Task<Void, Never>?
     private var currentFinalization: Task<Result<String, RecognitionFailure>, Never>?
 
+    #if DEBUG
+    func hasActiveSpeechDetector() async -> Bool { await gate.hasActiveDetector }
+    #endif
+
     init(
         modelLayout: RecognitionModelLayout,
         clock: any MonotonicClock,
         latestHypothesis: LatestHypothesisStore = LatestHypothesisStore()
     ) {
+        // SDK diagnostics include transcript and vocabulary contents, even in release warnings.
+        AppLogger.disableLogging()
         self.modelLayout = modelLayout
         self.clock = clock
         self.latestHypothesis = latestHypothesis

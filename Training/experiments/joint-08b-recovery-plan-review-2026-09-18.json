@@ -1,0 +1,8 @@
+{
+  "reviewedAt": "2026-09-18",
+  "result": "CLEAR",
+  "reviews": {
+    "specCompliance": "CLEAR. All eight checkpoints and final-step evidence support evaluation without retraining. Original validation-only selection, diagnostics order, and gates remain unchanged. Recovered test loss uses the same weights, tokenizer, data, masking, and batching recipe. No prospective or release query is introduced.",
+    "standards": "CLEAR. Regenerated bindings match; all eight numbered checkpoints are structurally complete and final/default adapter hashes agree. Recovery preserves native evidence checks. The full-dataset test loss is recomputed rather than bit-identically continued because batch permutation and floating-point accumulation order can differ; it is not used for checkpoint selection."
+  }
+}

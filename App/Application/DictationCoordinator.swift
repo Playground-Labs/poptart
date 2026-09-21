@@ -45,6 +45,15 @@ public actor DictationCoordinator {
     private let awaitCompletionPresentation: CompletionPresentationWait
     private var gesture: GestureState?
     private var scheduledCompletionPresentationID: DictationID?
+    private var stopping = false
+    private var stopped = false
+    private var eventsInFlight = 0
+    private var stopWaiters: [CheckedContinuation<Void, Never>] = []
+    private var recordingPreparation: Task<Void, Never>?
+    private var historyWrite: Task<Void, Never>?
+    private var cancellationTasks: [Task<Void, Never>] = []
+    private var recognitionCancellation: Task<Void, Never>?
+    private var recognitionFinalization: Task<Void, Never>?
 
     public init(
         session: DictationSessionActor,
@@ -79,24 +88,58 @@ public actor DictationCoordinator {
     }
 
     public func receive(_ signal: DictationGesture) async {
+        guard !stopping || signal == .released else { return }
         switch signal {
         case .pressed:
             await beginGesture()
         case .released:
             await releaseGesture()
         }
+        await finishStopIfIdle()
     }
 
     public func receive(_ event: DictationEvent) async {
+        guard !stopped else { return }
+        if stopping, case .completionPresentationElapsed = event { return }
+        eventsInFlight += 1
         let effects = await session.handle(event)
         await dispatch(effects)
         await scheduleCompletionPresentation()
+        eventsInFlight -= 1
+        await finishStopIfIdle()
+    }
+
+    /// Preserve an in-flight Dictation before replacing its models, while refusing new presses.
+    public func finishCurrentDictation() async {
+        stopping = true
+        await releaseGesture()
+        await withCheckedContinuation { continuation in
+            stopWaiters.append(continuation)
+            Task { await self.finishStopIfIdle() }
+        }
+        await recordingPreparation?.value
+        await historyWrite?.value
+        for task in cancellationTasks { await task.value }
+        cancellationTasks.removeAll()
+        await recognitionFinalization?.value
+        recognitionFinalization = nil
+        stopped = true
+    }
+
+    private func finishStopIfIdle() async {
+        guard stopping else { return }
+        let snapshot = await session.snapshot()
+        guard gesture == nil, eventsInFlight == 0,
+              snapshot.phase == .ready || snapshot.phase == .completed else { return }
+        let waiters = stopWaiters
+        stopWaiters.removeAll()
+        for waiter in waiters { waiter.resume() }
     }
 
     /// Returns the Indicator to ready once a terminal outcome has been visible long enough.
     private func scheduleCompletionPresentation() async {
         let snapshot = await session.snapshot()
-        guard snapshot.phase == .completed,
+        guard !stopping, snapshot.phase == .completed,
               let id = snapshot.activeID,
               scheduledCompletionPresentationID != id
         else { return }
@@ -125,7 +168,7 @@ public actor DictationCoordinator {
     }
 
     private func presentReadyAfterDirectFailure(_ id: DictationID) async {
-        guard scheduledCompletionPresentationID == id, gesture == nil else { return }
+        guard !stopping, scheduledCompletionPresentationID == id, gesture == nil else { return }
         await indicator.present(.init(dictationID: nil, state: .ready))
     }
 
@@ -138,7 +181,7 @@ public actor DictationCoordinator {
         let id = DictationID()
         gesture = .capturing(id: id, released: false)
         let capture = await target.captureTarget(for: id)
-        guard case .capturing(let currentID, let released) = gesture, currentID == id else {
+        guard case .capturing(let currentID, _) = gesture, currentID == id else {
             return
         }
 
@@ -175,6 +218,8 @@ public actor DictationCoordinator {
                 )
             }
 
+            // Vocabulary lookup may suspend too; preserve releases received during that lookup.
+            guard case .capturing(let pendingID, let released) = gesture, pendingID == id else { return }
             gesture = .starting(id: id, released: released)
             await receive(.press(start))
             let snapshot = await session.snapshot()
@@ -212,8 +257,12 @@ public actor DictationCoordinator {
         for effect in effects {
             switch effect {
             case .startRecording(let request):
+                await recognitionCancellation?.value
+                recognitionCancellation = nil
+                await recognitionFinalization?.value
+                recognitionFinalization = nil
                 let prepareForRecording = prepareForRecording
-                Task { await prepareForRecording() }
+                recordingPreparation = Task { await prepareForRecording() }
                 if case .failure(let failure) = await speech.startRecording(request) {
                     await receive(.recordingFailed(request.id, failure))
                 }
@@ -226,7 +275,7 @@ public actor DictationCoordinator {
 
             case .stopRecordingAndFinalize(let request):
                 let speech = speech
-                Task { [weak self] in
+                recognitionFinalization = Task { [weak self] in
                     let result = await speech.stopRecordingAndFinalize(request)
                     await self?.receive(.recognitionCompleted(request.id, result))
                 }
@@ -245,13 +294,18 @@ public actor DictationCoordinator {
                 }
 
             case .cancelRecognition(let id):
-                await speech.cancelRecognition(for: id)
+                let speech = speech
+                let task = Task { await speech.cancelRecognition(for: id) }
+                recognitionCancellation = task
+                cancellationTasks.append(task)
 
             case .cancelCleanup(let id):
-                await cleanup.cancelCleanup(for: id)
+                let cleanup = cleanup
+                cancellationTasks.append(Task { await cleanup.cancelCleanup(for: id) })
 
             case .cancelDelivery(let id):
-                await delivery.cancelDelivery(for: id)
+                let delivery = delivery
+                cancellationTasks.append(Task { await delivery.cancelDelivery(for: id) })
 
             case .revalidateTarget(let request):
                 let target = target
@@ -279,7 +333,8 @@ public actor DictationCoordinator {
 
             case .recordHistory(let intent):
                 let history = history
-                Task { await history.record(intent) }
+                let previous = historyWrite
+                historyWrite = Task { await previous?.value; await history.record(intent) }
             }
         }
     }

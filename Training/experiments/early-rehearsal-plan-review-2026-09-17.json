@@ -1,0 +1,8 @@
+{
+  "reviewedAt": "2026-09-17",
+  "result": "CLEAR",
+  "reviews": {
+    "specCompliance": "CLEAR. Bindings match; only duration, evaluation/save cadence, and output paths differ from the reviewed recipe. Selection, gates, physical audit, fresh destinations, and query scope are correct.",
+    "standards": "CLEAR. The first 56 batches are unchanged because the pinned iterator draws the full first-epoch permutation before yielding. This remains observed-set selection, not qualification evidence."
+  }
+}

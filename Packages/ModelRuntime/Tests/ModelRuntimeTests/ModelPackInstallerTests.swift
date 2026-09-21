@@ -44,7 +44,83 @@ struct ModelPackInstallerTests {
     #expect(await installer.activePack() == installed)
     #expect(await smokeTester.testedVersions() == ["1.0.0"])
     #expect(await downloader.requests().map(\.resumeOffset) == [0, 0])
-    #expect(try InstalledModelPackRegistry(rootDirectory: fixture.directory).activePack() == installed)
+    #expect(try InstalledModelPackRegistry(rootDirectory: fixture.directory, applicationVersion: "1.0.0", manifestPublicKey: fixture.publicKey).activePack() == installed)
+  }
+
+  @Test("Startup rechecks the signed compatibility range after application upgrades and downgrades")
+  func startupRechecksApplicationCompatibility() async throws {
+    let fixture = try ModelFixture()
+    defer { try? FileManager.default.removeItem(at: fixture.directory) }
+    let data = Data([1, 2, 3])
+    let signed = try fixture.signedManifest(version: "1.0.0",
+      minimumApplicationVersion: "1.0.0", maximumApplicationVersion: "1.9.9",
+      artifacts: fixture.completeArtifacts(recognition: data, cleanup: data))
+    let installer = try fixture.installer(downloader: FakeDownloader(content: [
+      "https://models.example/recognition": data, "https://models.example/cleanup": data]))
+    let installed = try await installer.perform(.onboardingInstall, signedManifest: signed)
+    for version in ["0.9.9", "2.0.0"] {
+      #expect(throws: ModelPackError.incompatibleApplicationVersion) {
+        try InstalledModelPackRegistry(rootDirectory: fixture.directory,
+          applicationVersion: version, manifestPublicKey: fixture.publicKey).activePack()
+      }
+    }
+    for version in ["1.0", "1.0.0.0", "1.5.0", "1.9.9.0"] {
+      #expect(try InstalledModelPackRegistry(rootDirectory: fixture.directory,
+        applicationVersion: version, manifestPublicKey: fixture.publicKey).activePack() == installed)
+    }
+    #expect(throws: ModelPackError.incompatibleApplicationVersion) {
+      try InstalledModelPackRegistry(rootDirectory: fixture.directory,
+        applicationVersion: "1.invalid", manifestPublicKey: fixture.publicKey)
+    }
+  }
+
+  @Test("Unsigned or corrupted files, layout directories, and symlinks cannot enter an active pack",
+    arguments: ["weight", "directory", "symlink", "corrupt"], [false, true])
+  func rejectsUnsignedInventory(_ kind: String, _ afterActivation: Bool) async throws {
+    let fixture = try ModelFixture()
+    defer { try? FileManager.default.removeItem(at: fixture.directory) }
+    let data = Data([1, 2, 3])
+    let signed = try fixture.signedManifest(version: "1.0.0",
+      artifacts: fixture.completeArtifacts(recognition: data, cleanup: data))
+    let downloader = FakeDownloader(content: [
+      "https://models.example/recognition": data, "https://models.example/cleanup": data])
+    let smoke = FakeSmokeTester()
+    let installer = try fixture.installer(downloader: downloader, smokeTester: smoke)
+    let directory: URL
+    if afterActivation {
+      directory = try await installer.perform(.onboardingInstall, signedManifest: signed).directory
+    } else {
+      directory = fixture.directory.appendingPathComponent("staging/poptart-english-1.0.0")
+    }
+    let cleanup = directory.appendingPathComponent("cleanup")
+    try FileManager.default.createDirectory(at: cleanup, withIntermediateDirectories: true)
+    switch kind {
+    case "weight": try data.write(to: cleanup.appendingPathComponent("extra.safetensors"))
+    case "corrupt": try Data([4, 5, 6]).write(to: cleanup.appendingPathComponent("model.bin"))
+    case "directory":
+      try FileManager.default.createDirectory(at: cleanup.appendingPathComponent("base"),
+        withIntermediateDirectories: true)
+    default:
+      let target = fixture.directory.appendingPathComponent("unsigned.bin")
+      try data.write(to: target)
+      let link = cleanup.appendingPathComponent("model.bin")
+      if FileManager.default.fileExists(atPath: link.path) { try FileManager.default.removeItem(at: link) }
+      try FileManager.default.createSymbolicLink(at: link, withDestinationURL: target)
+    }
+    let expectedError: ModelPackError = kind == "corrupt" ? .artifactHashMismatch(.cleanup) : .artifactInventoryMismatch
+    if afterActivation {
+      #expect(throws: expectedError) {
+        try InstalledModelPackRegistry(rootDirectory: fixture.directory, applicationVersion: "1.0.0", manifestPublicKey: fixture.publicKey).activePack()
+      }
+    } else {
+      await #expect(throws: expectedError) {
+        try await installer.perform(.onboardingInstall, signedManifest: signed)
+      }
+      #expect(await installer.activePack() == nil)
+      #expect(await smoke.testedVersions().isEmpty)
+      #expect(!FileManager.default.fileExists(atPath: directory.path))
+      _ = try await installer.perform(.repair, signedManifest: signed)
+    }
   }
 
   @Test("A bad manifest signature is rejected before the download boundary")
@@ -65,6 +141,40 @@ struct ModelPackInstallerTests {
         .onboardingInstall, signedManifest: JSONEncoder().encode(envelope))
     }
     #expect(await downloader.requests().isEmpty)
+  }
+
+  @Test("A full partial artifact is verified before retrying the network", arguments: [false, true])
+  func verifiesCompletePartialArtifact(_ corrupt: Bool) async throws {
+    let fixture = try ModelFixture()
+    defer { try? FileManager.default.removeItem(at: fixture.directory) }
+    let recognition = Data(repeating: 1, count: 65_536)
+    let cleanup = Data([2, 3])
+    let signed = try fixture.signedManifest(version: "1.0.0",
+      artifacts: fixture.completeArtifacts(recognition: recognition, cleanup: cleanup))
+    let partial = fixture.directory.appendingPathComponent(
+      "staging/poptart-english-1.0.0/recognition/model.bin.partial")
+    try FileManager.default.createDirectory(
+      at: partial.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try (corrupt ? Data(repeating: 9, count: recognition.count) : recognition).write(to: partial)
+    // A server rejects a Range starting at EOF. No recognition response is available on this try.
+    let downloader = FakeDownloader(content: ["https://models.example/cleanup": cleanup])
+    let installer = try fixture.installer(downloader: downloader)
+    if corrupt {
+      await #expect(throws: ModelPackError.artifactHashMismatch(.recognition)) {
+        try await installer.perform(.onboardingInstall, signedManifest: signed)
+      }
+      #expect(await downloader.requests().isEmpty)
+      #expect(await installer.activePack() == nil)
+      #expect(!FileManager.default.fileExists(atPath: partial.path))
+      await downloader.replaceContent([
+        "https://models.example/recognition": recognition,
+        "https://models.example/cleanup": cleanup,
+      ])
+    }
+    let installed = try await installer.perform(.onboardingInstall, signedManifest: signed)
+    #expect(try Data(contentsOf: installed.directory.appendingPathComponent("recognition/model.bin")) == recognition)
+    #expect(await downloader.requests().map(\.resumeOffset) == (corrupt ? [0, 0] : [0]))
+    #expect(await installer.activePack() == installed)
   }
 
   @Test("An interrupted artifact resumes from the persisted byte offset")
@@ -152,6 +262,53 @@ struct ModelPackInstallerTests {
       try await installer.perform(.update, signedManifest: incompatible)
     }
     #expect(await downloader.requests().count == requestCount)
+  }
+
+  @Test("Malformed release versions fail closed before staging or downloading")
+  func rejectsMalformedVersions() async throws {
+    #expect(SemanticVersion("1.0") == SemanticVersion("1.0.0"))
+    let fixture = try ModelFixture()
+    let downloader = FakeDownloader(content: [:])
+    let installer = try fixture.installer(downloader: downloader)
+    for version in ["", "1.0-/../../escape", "1.0-beta", "1..0", "1.0/escape", "+1.0"] {
+      #expect(SemanticVersion(version) == nil)
+      let signed = try fixture.signedManifest(version: version,
+        artifacts: fixture.completeArtifacts(recognition: Data([1]), cleanup: Data([2])))
+      await #expect(throws: ModelPackError.invalidManifest) {
+        try await installer.perform(.update, signedManifest: signed)
+      }
+    }
+    #expect(await downloader.requests().isEmpty)
+    #expect(try FileManager.default.contentsOfDirectory(atPath:
+      fixture.directory.appendingPathComponent("staging").path).isEmpty)
+  }
+
+  @Test("Overlapping installations cannot share staging or activate an older version last")
+  func rejectsOverlappingInstalls() async throws {
+    let fixture = try ModelFixture()
+    let data = Data([1])
+    let downloader = FakeDownloader(content: [
+      "https://models.example/recognition": data,
+      "https://models.example/cleanup": data,
+    ])
+    let smoke = BlockingSmokeTester()
+    let installer = try fixture.installer(downloader: downloader, smokeTester: smoke)
+    let artifacts = fixture.completeArtifacts(recognition: data, cleanup: data)
+    let newer = try fixture.signedManifest(version: "1.1.0", artifacts: artifacts)
+    let older = try fixture.signedManifest(version: "1.0.0", artifacts: artifacts)
+    let first = Task { try await installer.perform(.update, signedManifest: newer) }
+    while await !smoke.isWaiting { await Task.yield() }
+    await #expect(throws: ModelPackError.installationInProgress) {
+      try await installer.perform(.update, signedManifest: older)
+    }
+    await smoke.release()
+    _ = try await first.value
+    #expect(await installer.activePack()?.manifest.version == "1.1.0")
+    await #expect(throws: ModelPackError.downgradeNotAllowed) {
+      try await installer.perform(.update, signedManifest: older)
+    }
+    // The transaction gate is released even after a rejected manifest.
+    _ = try await installer.perform(.repair, signedManifest: newer)
   }
 
   @Test("A same-size artifact with the wrong hash is discarded without activation")
@@ -263,7 +420,7 @@ struct ModelPackInstallerTests {
     let restarted = try fixture.installer(downloader: FakeDownloader(content: [:]))
     #expect(await restarted.activePack()?.cleanupTokenCeiling == ModelFixture.cleanupTokenCeiling)
     #expect(
-      try InstalledModelPackRegistry(rootDirectory: fixture.directory)
+      try InstalledModelPackRegistry(rootDirectory: fixture.directory, applicationVersion: "1.0.0", manifestPublicKey: fixture.publicKey)
         .activePack()?.cleanupTokenCeiling == ModelFixture.cleanupTokenCeiling)
   }
 
@@ -297,7 +454,7 @@ struct ModelPackInstallerTests {
 
     #expect(updated.cleanupTokenCeiling == updatedCeiling)
     #expect(
-      try InstalledModelPackRegistry(rootDirectory: fixture.directory)
+      try InstalledModelPackRegistry(rootDirectory: fixture.directory, applicationVersion: "1.0.0", manifestPublicKey: fixture.publicKey)
         .activePack()?.cleanupTokenCeiling == updatedCeiling)
   }
 
@@ -366,10 +523,52 @@ struct ModelPackInstallerTests {
     try fixture.eraseCleanupTokenCeilingFromActiveState()
 
     #expect(throws: ModelPackError.invalidCleanupTokenCeiling) {
-      try InstalledModelPackRegistry(rootDirectory: fixture.directory).activePack()
+      try InstalledModelPackRegistry(rootDirectory: fixture.directory, applicationVersion: "1.0.0", manifestPublicKey: fixture.publicKey).activePack()
     }
-    #expect(throws: ModelPackError.invalidCleanupTokenCeiling) {
-      try fixture.installer(downloader: FakeDownloader(content: [:]))
+    let repairable = try fixture.installer(downloader: FakeDownloader(content: [:]))
+    #expect(await repairable.activePack() == nil)
+  }
+
+  @Test("Startup authenticates persisted metadata with the publisher's key")
+  func rejectsTamperedActiveMetadata() async throws {
+    let fixture = try ModelFixture()
+    let data = Data([1])
+    let signed = try fixture.signedManifest(version: "1.0.0",
+      artifacts: fixture.completeArtifacts(recognition: data, cleanup: data))
+    let downloader = FakeDownloader(content: [
+      "https://models.example/recognition": data, "https://models.example/cleanup": data])
+    let installer = try fixture.installer(downloader: downloader)
+    _ = try await installer.perform(.onboardingInstall, signedManifest: signed)
+    #expect(throws: ModelPackError.invalidManifestSignature) {
+      try InstalledModelPackRegistry(rootDirectory: fixture.directory, applicationVersion: "1.0.0",
+        manifestPublicKey: Curve25519.Signing.PrivateKey().publicKey.rawRepresentation).activePack()
+    }
+    let stateURL = fixture.directory.appendingPathComponent("active-model-pack.json")
+    var state = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: stateURL)) as? [String: Any])
+    var current = try #require(state["current"] as? [String: Any])
+    var manifest = try #require(current["manifest"] as? [String: Any])
+    manifest["cleanupTokenCeiling"] = 999_999
+    current["manifest"] = manifest
+    state["current"] = current
+    try JSONSerialization.data(withJSONObject: state).write(to: stateURL)
+    #expect(throws: ModelPackError.invalidActiveState) {
+      try InstalledModelPackRegistry(rootDirectory: fixture.directory, applicationVersion: "1.0.0", manifestPublicKey: fixture.publicKey).activePack()
+    }
+    let restarted = try fixture.installer(downloader: downloader)
+    #expect(await restarted.activePack() == nil)
+    let older = try fixture.signedManifest(version: "0.9.0",
+      artifacts: fixture.completeArtifacts(recognition: data, cleanup: data))
+    await #expect(throws: ModelPackError.downgradeNotAllowed) {
+      try await restarted.perform(.repair, signedManifest: older)
+    }
+    _ = try await restarted.perform(.repair, signedManifest: signed)
+    #expect(try InstalledModelPackRegistry(rootDirectory: fixture.directory, applicationVersion: "1.0.0",
+      manifestPublicKey: fixture.publicKey).activePack()?.manifest.version == "1.0.0")
+    // Without the signed version, recovery must not silently forget the downgrade floor.
+    state.removeValue(forKey: "signedManifest")
+    try JSONSerialization.data(withJSONObject: state).write(to: stateURL)
+    #expect(throws: ModelPackError.unrecoverableActiveState) {
+      try fixture.installer(downloader: downloader)
     }
   }
 
@@ -575,4 +774,21 @@ private actor InterruptOnceDownloader: ResumableArtifactDownloading {
   }
 
   func offsets() -> [Int64] { receivedOffsets }
+}
+
+private actor BlockingSmokeTester: ModelPackSmokeTesting {
+  private var continuation: CheckedContinuation<Void, Never>?
+  private var didWait = false
+  var isWaiting: Bool { continuation != nil }
+
+  func validate(packAt directory: URL, manifest: ModelPackManifest) async throws {
+    guard !didWait else { return }
+    didWait = true
+    await withCheckedContinuation { continuation = $0 }
+  }
+
+  func release() {
+    continuation?.resume()
+    continuation = nil
+  }
 }

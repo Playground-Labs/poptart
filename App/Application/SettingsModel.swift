@@ -101,7 +101,6 @@ public final class SettingsModel {
     public private(set) var applicationUpdateMessage: String?
     public let applicationVersion: String
     public let sourceURL = PoptartRelease.sourceURL
-    public let releasesURL = PoptartRelease.releasesURL
     public var historyRetentionDescription: String { history.retentionDescription }
 
     private let settings: any AppSettingsStoring
@@ -117,7 +116,14 @@ public final class SettingsModel {
     private let installer: any ModelPackInstalling
     private let storage: any ModelPackStorageMeasuring
     private let vocabulary: any PersonalVocabularyEditing
-    private let links: any ExternalLinkOpening
+    private let applicationUpdate: @MainActor () -> String
+    private var activateModelPack: @MainActor () async -> String? = {
+        "Restart Poptart to activate the installed Model Pack."
+    }
+
+    public func connectModelPackActivation(_ activate: @escaping @MainActor () async -> String?) {
+        activateModelPack = activate
+    }
 
     public init(
         shortcut: ShortcutBindingModel,
@@ -135,7 +141,7 @@ public final class SettingsModel {
         installer: any ModelPackInstalling,
         storage: any ModelPackStorageMeasuring,
         vocabulary: any PersonalVocabularyEditing,
-        links: any ExternalLinkOpening,
+        applicationUpdate: @escaping @MainActor () -> String,
         applicationVersion: String = PoptartRelease.version()
     ) {
         self.shortcut = shortcut
@@ -153,7 +159,7 @@ public final class SettingsModel {
         self.installer = installer
         self.storage = storage
         self.vocabulary = vocabulary
-        self.links = links
+        self.applicationUpdate = applicationUpdate
         self.applicationVersion = applicationVersion
     }
 
@@ -238,9 +244,7 @@ public final class SettingsModel {
             modelPack = .init(
                 version: pack.version,
                 storageBytes: storage.byteSize(of: pack.layout.root),
-                licenses: pack.manifest?.artifacts.map {
-                    .init(role: $0.role.rawValue, name: $0.license.name, url: $0.license.url)
-                } ?? [],
+                licenses: pack.manifest.map { modelPackLicenseSummaries($0.artifacts) } ?? [],
                 cleanupTokenCeiling: pack.cleanupTokenCeiling,
                 repairableVersion: pack.origin == .installed
                     ? (pack.manifest?.version ?? pack.version) : nil
@@ -278,14 +282,18 @@ public final class SettingsModel {
             return
         }
         modelPackActivity = .working(.update)
+        var failure: String?
         do {
             let installed = try await installer.perform(.update, signedManifest: offer.signedManifest)
             availableModelPack = nil
-            modelPackActivity = .reported("Model Pack \(installed.manifest.version) is active.")
+            let problem = await activateModelPack()
+            modelPackActivity = .reported(problem.map { "Model Pack \(installed.manifest.version) is installed. \($0)" }
+                ?? "Model Pack \(installed.manifest.version) is active.")
         } catch {
-            modelPackActivity = .reported(ModelPackFailureMessage.text(for: error))
+            failure = ModelPackFailureMessage.text(for: error)
         }
         await refreshModelPack()
+        if let failure { modelPackActivity = .reported(failure) }
     }
 
     /// Reinstalls and re-verifies the pack that should be installed, which is what the failure
@@ -301,17 +309,21 @@ public final class SettingsModel {
             return
         }
         modelPackActivity = .working(.repair)
+        var failure: String?
         do {
             let request = ModelPackManifestRequest(
                 action: .repair, version: modelPack?.repairableVersion)
             let offer = try await offer(for: request)
             let installed = try await installer.perform(
                 .repair, signedManifest: offer.signedManifest)
-            modelPackActivity = .reported("Model Pack \(installed.manifest.version) verifies again.")
+            let problem = await activateModelPack()
+            modelPackActivity = .reported(problem.map { "Model Pack \(installed.manifest.version) is installed. \($0)" }
+                ?? "Model Pack \(installed.manifest.version) verifies again and is active.")
         } catch {
-            modelPackActivity = .reported(ModelPackFailureMessage.text(for: error))
+            failure = ModelPackFailureMessage.text(for: error)
         }
         await refreshModelPack()
+        if let failure { modelPackActivity = .reported(failure) }
     }
 
     // MARK: Personal Vocabulary
@@ -354,12 +366,9 @@ public final class SettingsModel {
 
     // MARK: About
 
-    /// Poptart never checks for its own updates in the background. This opens the releases page so
-    /// the person can decide.
+    /// Called only by the person's explicit Settings action.
     public func checkForApplicationUpdate() {
-        links.open(releasesURL)
-        applicationUpdateMessage =
-            "Opened the Poptart releases page. Poptart never checks for updates on its own."
+        applicationUpdateMessage = applicationUpdate()
     }
 
     private func offer(for request: ModelPackManifestRequest) async throws -> ModelPackOffer {

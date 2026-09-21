@@ -10,7 +10,7 @@ profile=$2
 [ -d "$app" ] || { echo "signed application bundle is required" >&2; exit 1; }
 [ -n "$profile" ] || { echo "notary keychain profile is required" >&2; exit 1; }
 command -v codesign >/dev/null && command -v xcrun >/dev/null || { echo "Apple signing tools are required" >&2; exit 1; }
-codesign --verify --deep --strict "$app"
+python3 "$(dirname "$0")/verify_app_signature.py" "$app" "${POPTART_TEAM_ID:?expected Apple Developer Team ID is required}"
 archive=$(mktemp "${TMPDIR:-/tmp}/poptart-notary.XXXXXX.zip")
 trap 'rm -f "$archive"' EXIT HUP INT TERM
 ditto -c -k --keepParent "$app" "$archive"

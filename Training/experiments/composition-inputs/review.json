@@ -1,0 +1,12 @@
+{
+  "records": 148,
+  "scope": "Training-only independently authored examples; existing32validation and32test records unchanged; release holdout not queried. Two read-only agent reviews, not a release accuracy result.",
+  "specReview": "All148labels reviewed; ambiguous modifier repetitions025-048 replaced by noun/verb stutters, revised24approved.",
+  "standardsReview": "All148validator/applier/provenance checks pass; filler/casing correlation removed and four combinations each count10.",
+  "limitations": [
+    "Repeated sentence structures",
+    "New repetition starts are limited to ordinals1-3",
+    "New vocabulary examples join two words into one CamelCase known term",
+    "No new validation/test examples; broader generalization requires frozen release evaluation"
+  ]
+}

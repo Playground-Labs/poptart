@@ -31,6 +31,13 @@ public struct CleanupEditPlanValidator: Sendable {
     guard plan.edits.count <= configuration.maximumEdits else {
       throw CleanupEditValidationError.tooManyEdits
     }
+    // Safe replacements cannot certify unsafe bytes copied from the original text.
+    // Keep that transcript unchanged through the Raw Transcript fallback instead.
+    // ponytail: reuse the strict scalar policy; tailored acceptance of line breaks or
+    // joining characters needs preservation rules and tests before relaxing this guard.
+    guard transcript.source.unicodeScalars.allSatisfy(isSafe) else {
+      throw CleanupEditValidationError.unsafeUnicode
+    }
 
     var previousEnd = 0
     var previousWasInsertion = false
@@ -95,6 +102,11 @@ public struct CleanupEditPlanValidator: Sendable {
 
     let merged = (reservedEdits + plan.edits).sorted(by: CleanupEditApplier.editOrder)
     let output = CleanupEditApplier.apply(merged, to: transcript)
+    let deterministicOutput = CleanupEditApplier.apply(
+      reservedEdits.sorted(by: CleanupEditApplier.editOrder), to: transcript)
+    guard protectedLiterals(deterministicOutput) == protectedLiterals(output) else {
+      throw CleanupEditValidationError.unsafeCategory
+    }
     if output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
       guard removesOnlyFiller(merged, transcript: transcript) else {
         throw CleanupEditValidationError.blankOutput
@@ -185,6 +197,8 @@ public struct CleanupEditPlanValidator: Sendable {
     transcript: StableTranscript,
     personalVocabulary: PersonalVocabulary
   ) -> Bool {
+    // Word matching ignores symbols; an emoji or currency sign must not disappear with a word.
+    guard symbols(source) == symbols(edit.replacement) else { return false }
     switch edit.category {
     case .punctuation:
       return edit.replacement.unicodeScalars.allSatisfy(Self.isPunctuationOrWhitespace)
@@ -218,13 +232,32 @@ public struct CleanupEditPlanValidator: Sendable {
     }
   }
 
+  // A punctuation/casing label does not authorize changing a URL or numeric value.
+  // Explicit Corrections are applied before comparison, so their reserved edits stay authoritative.
+  private static let literalPattern = try! NSRegularExpression(
+    pattern: #"\b(?:[A-Za-z][A-Za-z0-9+.-]*://|[mM][aA][iI][lL][tT][oO]:|[wW]{3}\.)\S+"#
+      + #"|\b(?:[\p{L}\p{N}_-]+\.)+[\p{L}\p{N}_-]+(?::[0-9]+)?(?:[/?#]\S*)?"#
+      + #"|(?:[+−-][ \t]*)?(?:\p{Nd}+(?:[.,:/٫٬-]\p{Nd}+)*|[.٫]\p{Nd}+)(?:[eE][+−-]?\p{Nd}+)?"#
+      + #"|[%‰٪]"#)
+
+  private func protectedLiterals(_ text: String) -> [String] {
+    Self.literalPattern.matches(in: text, range: NSRange(text.startIndex..., in: text)).map {
+      String(text[Range($0.range, in: text)!])
+    }
+  }
+
+  private func symbols(_ text: String) -> String {
+    // Keep the explicit closure: Swift 6.4 whole-module optimization miscompiles the bound predicate here.
+    String(text.filter { $0.unicodeScalars.contains { CharacterSet.symbols.contains($0) } })
+  }
+
   private func words(_ text: String) -> Set<String> {
     Set(wordList(text))
   }
 
   private func wordList(_ text: String) -> [String] {
     StableTranscript(text).spans.compactMap { span in
-      span.text.unicodeScalars.contains(where: CharacterSet.alphanumerics.contains)
+      span.text.unicodeScalars.contains { CharacterSet.alphanumerics.contains($0) }
         ? span.text.lowercased()
         : nil
     }
@@ -241,24 +274,51 @@ public enum CleanupEditApplier {
     guard !edits.isEmpty else { return transcript.source }
     var output = ""
     var cursor = transcript.source.startIndex
-
+    // Adjacent deletions share one whitespace boundary, even across categories.
+    var renderedEdits: [CleanupEdit] = []
     for edit in edits {
+      if let previous = renderedEdits.last,
+        previous.replacement.isEmpty, edit.replacement.isEmpty,
+        previous.startSpan < previous.endSpan, edit.startSpan < edit.endSpan,
+        previous.endSpan == edit.startSpan
+      {
+        renderedEdits[renderedEdits.count - 1] = CleanupEdit(
+          startSpan: previous.startSpan, endSpan: edit.endSpan, replacement: "",
+          category: previous.category)
+      } else {
+        renderedEdits.append(edit)
+      }
+    }
+
+    for (index, edit) in renderedEdits.enumerated() {
       let offsets = sourceOffsets(for: edit, in: transcript)
       guard let offsets else { return transcript.source }
       var lower = String.Index(utf16Offset: offsets.lowerBound, in: transcript.source)
       var upper = String.Index(utf16Offset: offsets.upperBound, in: transcript.source)
 
       if edit.replacement.isEmpty, lower < upper {
+        var trimBefore = edit.endSpan == transcript.spans.count
         if edit.endSpan < transcript.spans.count {
+          var boundary = transcript.spans[edit.endSpan].text
+          if let followingEdit = renderedEdits.dropFirst(index + 1).first,
+            followingEdit.startSpan == edit.endSpan
+          {
+            boundary = followingEdit.replacement
+          }
+          trimBefore = [".", ",", ";", ":", "!", "?", "…", ")", "]", "}"].contains(
+            boundary.first.map(String.init) ?? "")
           let next = String.Index(
             utf16Offset: transcript.spans[edit.endSpan].utf16Range.lowerBound,
             in: transcript.source
           )
           if transcript.source[upper..<next].allSatisfy(\.isWhitespace) { upper = next }
-        } else if lower > cursor {
+        }
+        if trimBefore, lower > cursor {
           let prior = transcript.source[cursor..<lower]
           if let lastNonWhitespace = prior.lastIndex(where: { !$0.isWhitespace }) {
             lower = transcript.source.index(after: lastNonWhitespace)
+          } else {
+            lower = cursor
           }
         }
       }

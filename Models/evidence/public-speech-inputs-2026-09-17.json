@@ -1,0 +1,282 @@
+{
+  "archiveMD5": "32fa31d27d2e1cad72775fee3f4849a9",
+  "archiveSHA256": "39fde525e59672dc6d1551919b1478f724438a95aa55f874b576be21967e6c23",
+  "attribution": "LibriSpeech (c) 2014 Vassil Panayotov; LibriVox readers credited per fixture.",
+  "buildCommand": "swift build --package-path Packages/Recognition --build-tests (temporary opt-in test source removed after build)",
+  "buildDriverSource": "import hashlib,json,shutil,subprocess\nfrom pathlib import Path\nsha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()\nprobe=Path('.context/PublicSpeechAssetTests.swift')\ntarget=Path('Packages/Recognition/Tests/RecognitionTests/PublicSpeechAssetTests.swift')\nassert not target.exists()\nfiles=[probe,Path('Packages/Recognition/Package.swift'),Path('Packages/Recognition/Package.resolved'),Path('Packages/DictationCore/Package.swift')]\nfor directory in ['Packages/Recognition/Sources','Packages/Recognition/Tests','Packages/DictationCore/Sources']:\n files+=sorted(Path(directory).rglob('*.swift'))\nidentity={str(p):sha(p) for p in files}\nshutil.copyfile(probe,target)\ntry:\n with Path('.build/public-speech-build.log').open('w') as log:\n  subprocess.run(['swift','build','--package-path','Packages/Recognition','--build-tests'],stdout=log,stderr=subprocess.STDOUT,check=True)\n assert target.read_bytes()==probe.read_bytes()\n assert identity=={str(p):sha(p) for p in files}\n root=Path('.build/public-speech-runner')\n for name in ['RecognitionTests.xctest','FluidAudio_FluidAudio.bundle']:\n  shutil.rmtree(root/name)\n  subprocess.run(['/bin/cp','-cR',str(Path('Packages/Recognition/.build/out/Products/Debug')/name),str(root/name)],check=True)\n metadata=Path('Models/evidence/public-speech-inputs-2026-09-17.json')\n record=json.loads(metadata.read_text())\n record['buildSourceSHA256']=identity\n record['probeSource']=probe.read_text()\n record['probeSourceSHA256']=sha(probe)\n record['buildCommand']='swift build --package-path Packages/Recognition --build-tests (temporary opt-in test source removed after build)'\n record['buildLog']=Path('.build/public-speech-build.log').read_text()\n record['buildDriverSource']=Path(__file__).read_text()\n record['swiftVersion']=subprocess.check_output(['swift','--version'],text=True)\n record['retainedRunnerSHA256']={str(f):sha(f) for f in sorted(root.rglob('*')) if f.is_file()}\n metadata.write_text(json.dumps(record,indent=2,sort_keys=True)+'\\n')\nfinally:\n target.unlink()\nprint('Probe rebuilt with source/pin hashes before and after compilation; retained runner refreshed.')\n",
+  "buildLog": "Building for debugging...\n[Starting]\n[2\u2009/\u20097] RecognitionTests-product\n[6\u2009/\u200911] RecognitionTests-product\n[10\u2009/\u200913] RecognitionTests-product\n[12\u2009/\u200916] RecognitionTests-product\nBuild complete! (1.53 sec)\n",
+  "buildSourceSHA256": {
+    ".context/PublicSpeechAssetTests.swift": "c91fd39849f7d426eaca00fc5508c1c1efe4de6824d5a85a52cd6c5d98e5ea09",
+    "Packages/DictationCore/Package.swift": "60fa1a7a3c879b9821dfa8c48d3230c1dfe12a415cebd6e44edb5d5941141814",
+    "Packages/DictationCore/Sources/DictationCore/BoundaryProtocols.swift": "5ae2039b45e7d55662416655c35f5ede0e84375eeb74204919896a1f1799e0e1",
+    "Packages/DictationCore/Sources/DictationCore/DictationSessionActor.swift": "2b9f5d9a5fbeb52875784b11e9bdd7d76ed6973fb3e0b1b6fde6e6f886a8b393",
+    "Packages/DictationCore/Sources/DictationCore/DomainTypes.swift": "ff7e33aa20ef0d47723f56b747beec91b8f5c45c7640ea1d87698d6bdf191b6a",
+    "Packages/DictationCore/Sources/DictationCore/SessionContract.swift": "fed0326bd06050c4efedb0620eeefe04ee3a539b79f95ed487b48b5c8966126b",
+    "Packages/DictationCore/Sources/DictationCore/Time.swift": "d9920afbf36d4bb489803bf35f24b3c764f5daad4c50e778d4112202ba1f578b",
+    "Packages/Recognition/Package.resolved": "c08908a65347b59bf7ece66eee3fb1eb404cbd568501e7faf6a081f18691adb5",
+    "Packages/Recognition/Package.swift": "5a297182cbc69089f5ab77d0f52487339f3485b1f397fcc21191e0b03bfceeab",
+    "Packages/Recognition/Sources/Recognition/AVAudioEngineCapture.swift": "0cdd003846e38f9d286fc073665b7cf47357fc2c0b9aaafccb402c86059f05cb",
+    "Packages/Recognition/Sources/Recognition/FluidAudioIncrementalRecognizer.swift": "8a4ab12110e3dbf106d9d854c0f0aa8b067c906d2f062b58919827d25a8f7b3f",
+    "Packages/Recognition/Sources/Recognition/RecognitionContracts.swift": "f53a0eb10c65e950ff6c8a99ef831085cfd857ece77c875edf7ffc283c92a636",
+    "Packages/Recognition/Sources/Recognition/RecognitionModelLayout.swift": "047beef6b450a94c171edd3e579457d031f8fd10cced2802b3f00050af156d81",
+    "Packages/Recognition/Sources/Recognition/RecognitionService.swift": "0922c1ceb533ce7d12a11babc420a6570d45dc1aec5900752862fd21293a8dda",
+    "Packages/Recognition/Sources/Recognition/ReplayAudioCapture.swift": "8e3f57182129c51c4b1b5e4cefcea9d8ca673acc275663529f283aeac42ecc1e",
+    "Packages/Recognition/Sources/Recognition/SpeechBandAnalyzer.swift": "cb9c42dfdc1424092e9d0e9c00b49d219154160e634f077eeb4c16f9fea98a6a",
+    "Packages/Recognition/Sources/Recognition/SpeechGate.swift": "cd2df1baa313b3dd75c75b8adcaf656616d5ba760ae6bcc92091ecd1af021e48",
+    "Packages/Recognition/Sources/Recognition/SpeechGatePolicy.swift": "d08e2a2b559d828d6bc7700e6b80b1f454fd2747065465b7bf8e79d9172250d1",
+    "Packages/Recognition/Tests/RecognitionTests/FluidAudioIncrementalRecognizerTests.swift": "5da819e686e2d0f58578be3a8c26beac09725bc583d94f6283e2b450ddd6f4dc",
+    "Packages/Recognition/Tests/RecognitionTests/RecognitionModelValidationTests.swift": "931061d9b521ec7f456e55dfff34448fb730dc9359a6843d30ce97ded1bfe73f",
+    "Packages/Recognition/Tests/RecognitionTests/RecognitionServiceTests.swift": "729bf228b213500832d2af4edf1a36d1decb384c1794c08c80ebaeea2833053c",
+    "Packages/Recognition/Tests/RecognitionTests/ReplayAudioCaptureTests.swift": "28afb82b03c4db3ff49336744f4b6afe990273eb58c2ea67efaeabcb91ae2db3",
+    "Packages/Recognition/Tests/RecognitionTests/SpeechBandAnalyzerTests.swift": "3279f976e0bc837ba6f692dc59a0ddad27f842ffd0b351511cd1e9dc96fc2d23",
+    "Packages/Recognition/Tests/RecognitionTests/SpeechGateTests.swift": "4b987ce834fb3aa848dec9ac22a4e60952f97c188b719ac10ee3ab6ab6343405"
+  },
+  "download": "https://openslr.trmal.net/resources/12/test-clean.tar.gz",
+  "fixtures": [
+    {
+      "archiveMember": "LibriSpeech/test-clean/61/70968/61-70968-0000.flac",
+      "audioSeconds": 4.905,
+      "flacSHA256": "fd3c84146d8b357efc7f0d21de86de770721fc5ddac7e6577688dbf3cdabff5b",
+      "id": "61-70968-0000",
+      "reference": "HE BEGAN A CONFUSED COMPLAINT AGAINST THE WIZARD WHO HAD VANISHED BEHIND THE CURTAIN ON THE LEFT",
+      "speaker": {
+        "id": 61,
+        "name": "Paul-Gabriel Wiener",
+        "sex": "M"
+      },
+      "wavSHA256": "6db5c7679bb02fd2c2a66802f424bb20ef53f913f321081c8ab8625f62bca756"
+    },
+    {
+      "archiveMember": "LibriSpeech/test-clean/61/70968/61-70968-0001.flac",
+      "audioSeconds": 3.61,
+      "flacSHA256": "2f7236fa44f194f03b04571f94fd56cc99253f5d41496bff3476c3390dd20524",
+      "id": "61-70968-0001",
+      "reference": "GIVE NOT SO EARNEST A MIND TO THESE MUMMERIES CHILD",
+      "speaker": {
+        "id": 61,
+        "name": "Paul-Gabriel Wiener",
+        "sex": "M"
+      },
+      "wavSHA256": "c9fea022cbe4c575e09e0320d7efc4e204dee01fa7604126c6e59e7f835fd494"
+    },
+    {
+      "archiveMember": "LibriSpeech/test-clean/121/121726/121-121726-0000.flac",
+      "audioSeconds": 8.46,
+      "flacSHA256": "81378fdb3e648b43efb1cb8c4f87da3fc9cfbe19c5dda97e9e7361c4a2470d2f",
+      "id": "121-121726-0000",
+      "reference": "ALSO A POPULAR CONTRIVANCE WHEREBY LOVE MAKING MAY BE SUSPENDED BUT NOT STOPPED DURING THE PICNIC SEASON",
+      "speaker": {
+        "id": 121,
+        "name": "Nikolle Doolin",
+        "sex": "F"
+      },
+      "wavSHA256": "649961bfad77330eacf31e238d6ed8093928b1b93c065690f927e250f422e106"
+    },
+    {
+      "archiveMember": "LibriSpeech/test-clean/121/121726/121-121726-0001.flac",
+      "audioSeconds": 5.925,
+      "flacSHA256": "4d4459266056fcd052ced71563e093ecf74a420abfa3a402283fb6b8eb848441",
+      "id": "121-121726-0001",
+      "reference": "HARANGUE THE TIRESOME PRODUCT OF A TIRELESS TONGUE",
+      "speaker": {
+        "id": 121,
+        "name": "Nikolle Doolin",
+        "sex": "F"
+      },
+      "wavSHA256": "3e2c98448c40e7b51fe4bab87ca3d05a199b5764b0ea14c3faa747b32b203103"
+    },
+    {
+      "archiveMember": "LibriSpeech/test-clean/237/126133/237-126133-0000.flac",
+      "audioSeconds": 13.29,
+      "flacSHA256": "25466538df82602d1e597b0cb016e4dd0ce11031cb8994a4289d1c07170878ee",
+      "id": "237-126133-0000",
+      "reference": "HERE SHE WOULD STAY COMFORTED AND SOOTHED AMONG THE LOVELY PLANTS AND RICH EXOTICS REJOICING THE HEART OF OLD TURNER THE GARDENER WHO SINCE POLLY'S FIRST RAPTUROUS ENTRANCE HAD TAKEN HER INTO HIS GOOD GRACES FOR ALL TIME",
+      "speaker": {
+        "id": 237,
+        "name": "rachelellen",
+        "sex": "F"
+      },
+      "wavSHA256": "fe98b273624e61f2e2d828188313e5a99cc8b3a3ba9b06da137795ba565a1694"
+    },
+    {
+      "archiveMember": "LibriSpeech/test-clean/237/126133/237-126133-0001.flac",
+      "audioSeconds": 11.965,
+      "flacSHA256": "dfde7ea9d4eb3121b32043dffe260b257aaaad3ba163a815491d5b6dad01e5d0",
+      "id": "237-126133-0001",
+      "reference": "EVERY CHANCE SHE COULD STEAL AFTER PRACTICE HOURS WERE OVER AND AFTER THE CLAMOROUS DEMANDS OF THE BOYS UPON HER TIME WERE FULLY SATISFIED WAS SEIZED TO FLY ON THE WINGS OF THE WIND TO THE FLOWERS",
+      "speaker": {
+        "id": 237,
+        "name": "rachelellen",
+        "sex": "F"
+      },
+      "wavSHA256": "eea6b6520dd793059e15348a5d7b0c8e269fc3f2d2be21109e56e0c5466c5c05"
+    },
+    {
+      "archiveMember": "LibriSpeech/test-clean/260/123286/260-123286-0000.flac",
+      "audioSeconds": 7.04,
+      "flacSHA256": "d654a43d06f0e8b586b525e8ec83d6e3c0dc83c3f4742f8e25fd291db77248b3",
+      "id": "260-123286-0000",
+      "reference": "SATURDAY AUGUST FIFTEENTH THE SEA UNBROKEN ALL ROUND NO LAND IN SIGHT",
+      "speaker": {
+        "id": 260,
+        "name": "Brad Bush",
+        "sex": "M"
+      },
+      "wavSHA256": "9955f25627afbd049662a3d300b41e9baf06fe3f7b051b27963eb6a7f386a04e"
+    },
+    {
+      "archiveMember": "LibriSpeech/test-clean/260/123286/260-123286-0001.flac",
+      "audioSeconds": 3.07,
+      "flacSHA256": "482a025752a99bedf0d539c055c80c1f0396f3f0b0094fd1d3ff89b3d26beb9e",
+      "id": "260-123286-0001",
+      "reference": "THE HORIZON SEEMS EXTREMELY DISTANT",
+      "speaker": {
+        "id": 260,
+        "name": "Brad Bush",
+        "sex": "M"
+      },
+      "wavSHA256": "404c6bd05d0de7dccdb265d943f3be7f780ce46dec364d97ce5e9021e7d8547b"
+    },
+    {
+      "archiveMember": "LibriSpeech/test-clean/672/122797/672-122797-0000.flac",
+      "audioSeconds": 4.07,
+      "flacSHA256": "776b1ce553e7ecb2dc0254b2aa4b35af0bde50db65dbf7bdbdfa1560a2c9ec36",
+      "id": "672-122797-0000",
+      "reference": "OUT IN THE WOODS STOOD A NICE LITTLE FIR TREE",
+      "speaker": {
+        "id": 672,
+        "name": "Taylor Burton-Edward",
+        "sex": "M"
+      },
+      "wavSHA256": "ea588ee080150c569ec31a4ef17ecab2132a629d4f65712d7ea5a422d080d2b9"
+    },
+    {
+      "archiveMember": "LibriSpeech/test-clean/672/122797/672-122797-0001.flac",
+      "audioSeconds": 15.13,
+      "flacSHA256": "db2e7f1a0b8bf6130c2b8cd104cc6b9dee0d0ffd3ab5eb68fad072a3e442b956",
+      "id": "672-122797-0001",
+      "reference": "THE PLACE HE HAD WAS A VERY GOOD ONE THE SUN SHONE ON HIM AS TO FRESH AIR THERE WAS ENOUGH OF THAT AND ROUND HIM GREW MANY LARGE SIZED COMRADES PINES AS WELL AS FIRS",
+      "speaker": {
+        "id": 672,
+        "name": "Taylor Burton-Edward",
+        "sex": "M"
+      },
+      "wavSHA256": "331455a155c8f8acecb03c7bb30b00bdfdf956d94d8e5c7c39dda96716aed1ec"
+    },
+    {
+      "archiveMember": "LibriSpeech/test-clean/908/157963/908-157963-0000.flac",
+      "audioSeconds": 12.62,
+      "flacSHA256": "1f11115c9c3be561851f6e41eed9b176b42d084d07dd75d8436f42c8d2b5da22",
+      "id": "908-157963-0000",
+      "reference": "TO FADE AWAY LIKE MORNING BEAUTY FROM HER MORTAL DAY DOWN BY THE RIVER OF ADONA HER SOFT VOICE IS HEARD AND THUS HER GENTLE LAMENTATION FALLS LIKE MORNING DEW",
+      "speaker": {
+        "id": 908,
+        "name": "Sam Stinson",
+        "sex": "M"
+      },
+      "wavSHA256": "fbe9ba678ae9128e2e7765572bed5d62c80b3feb7b5c8d02eb689eeade08298f"
+    },
+    {
+      "archiveMember": "LibriSpeech/test-clean/908/157963/908-157963-0001.flac",
+      "audioSeconds": 2.885,
+      "flacSHA256": "4a4bc2758178b370e452343ba5496f28efa77908f473e64153ae20dffc62df3d",
+      "id": "908-157963-0001",
+      "reference": "O LIFE OF THIS OUR SPRING",
+      "speaker": {
+        "id": 908,
+        "name": "Sam Stinson",
+        "sex": "M"
+      },
+      "wavSHA256": "2f1d1211fb128db9b0bc0a9bc33ce1fa285cd9f3461eba58bd8b0040088e54a4"
+    },
+    {
+      "archiveMember": "LibriSpeech/test-clean/1221/135766/1221-135766-0000.flac",
+      "audioSeconds": 12.435,
+      "flacSHA256": "1f6b9ba126dc0f0a3cb813b04e2c970ff9583beeaf8cfaa8f7c8199244aa2514",
+      "id": "1221-135766-0000",
+      "reference": "HOW STRANGE IT SEEMED TO THE SAD WOMAN AS SHE WATCHED THE GROWTH AND THE BEAUTY THAT BECAME EVERY DAY MORE BRILLIANT AND THE INTELLIGENCE THAT THREW ITS QUIVERING SUNSHINE OVER THE TINY FEATURES OF THIS CHILD",
+      "speaker": {
+        "id": 1221,
+        "name": "Dianne",
+        "sex": "F"
+      },
+      "wavSHA256": "11066dd15887095d32230895c42564e2cb6391f66085d6480cd3f36cfb50a013"
+    },
+    {
+      "archiveMember": "LibriSpeech/test-clean/1221/135766/1221-135766-0001.flac",
+      "audioSeconds": 16.715,
+      "flacSHA256": "178cd97b0bbaa2f8919fd2a8a7c17e9d3891ec88199e54dbb0f01bd6274207a0",
+      "id": "1221-135766-0001",
+      "reference": "GOD AS A DIRECT CONSEQUENCE OF THE SIN WHICH MAN THUS PUNISHED HAD GIVEN HER A LOVELY CHILD WHOSE PLACE WAS ON THAT SAME DISHONOURED BOSOM TO CONNECT HER PARENT FOR EVER WITH THE RACE AND DESCENT OF MORTALS AND TO BE FINALLY A BLESSED SOUL IN HEAVEN",
+      "speaker": {
+        "id": 1221,
+        "name": "Dianne",
+        "sex": "F"
+      },
+      "wavSHA256": "5d716a1abe66c9c635141da374b5bb20d8dcfc7a0ffefde17b556f5e49b4f5a6"
+    },
+    {
+      "archiveMember": "LibriSpeech/test-clean/1284/1180/1284-1180-0000.flac",
+      "audioSeconds": 8.12,
+      "flacSHA256": "1b76cef86ab0f918aac7f576be7398f29bfa968e6c78bdf024c335faedd378f1",
+      "id": "1284-1180-0000",
+      "reference": "HE WORE BLUE SILK STOCKINGS BLUE KNEE PANTS WITH GOLD BUCKLES A BLUE RUFFLED WAIST AND A JACKET OF BRIGHT BLUE BRAIDED WITH GOLD",
+      "speaker": {
+        "id": 1284,
+        "name": "Daniel Anaya",
+        "sex": "F"
+      },
+      "wavSHA256": "817f4c6e136359a3cd6ad12da3c6529e7b6eff33a08f9afd928811314f2fdecb"
+    },
+    {
+      "archiveMember": "LibriSpeech/test-clean/1284/1180/1284-1180-0001.flac",
+      "audioSeconds": 7.755,
+      "flacSHA256": "b44a1ad458675ba4d8d4dd6d4529d40fbc6fc63d27afce7877dc2024592b5414",
+      "id": "1284-1180-0001",
+      "reference": "HIS HAT HAD A PEAKED CROWN AND A FLAT BRIM AND AROUND THE BRIM WAS A ROW OF TINY GOLDEN BELLS THAT TINKLED WHEN HE MOVED",
+      "speaker": {
+        "id": 1284,
+        "name": "Daniel Anaya",
+        "sex": "F"
+      },
+      "wavSHA256": "3a7fb7fc8209ae0d9cb55ff6fa72ee765575c51e2e15229cf5c40104a0ab61bc"
+    }
+  ],
+  "fixturesSHA256": "ea6088d8f495821cb375ba918bd25818ed7e6ec870d719d575265eec95342639",
+  "license": "CC-BY-4.0",
+  "licenseText": "LibriSpeech (c) 2014 by Vassil Panayotov\n\nLibriSpeech ASR corpus is licensed under a\nCreative Commons Attribution 4.0 International License.\n\nSee <http://creativecommons.org/licenses/by/4.0/>.\n",
+  "licenseURL": "https://creativecommons.org/licenses/by/4.0/",
+  "limitations": [
+    "Small ordered read-audiobook sample, not representative spontaneous Dictation or live microphone evidence.",
+    "Upstream ASR training overlap is not established; this is an adapter execution probe, not an independent model benchmark.",
+    "No Cleanup training data or frozen Cleanup evaluation labels changed."
+  ],
+  "probeSource": "import AVFoundation\nimport DictationCore\nimport Foundation\nimport XCTest\n@testable import Recognition\n\nfinal class PublicSpeechAssetTests: XCTestCase {\n    struct Fixture: Decodable { let id: String; let reference: String; let audioSeconds: Double }\n    struct Result: Encodable {\n        let id: String\n        let reference: String\n        let transcript: String\n        let audioSeconds: Double\n        let finalizationMilliseconds: Double\n        let replayReleaseMilliseconds: Double\n        let partialCountBeforeRelease: Int\n        let firstPartialMilliseconds: Double?\n        let partialCount: Int\n        let final: Bool\n    }\n\n    func testRecordedHumanSpeechThroughProductionReplay() async throws {\n        let env = ProcessInfo.processInfo.environment\n        let root = URL(fileURLWithPath: try XCTUnwrap(env[\"POPTART_PUBLIC_SPEECH_PACK\"]))\n        let audio = URL(fileURLWithPath: try XCTUnwrap(env[\"POPTART_PUBLIC_SPEECH_AUDIO\"]))\n        let output = URL(fileURLWithPath: try XCTUnwrap(env[\"POPTART_PUBLIC_SPEECH_OUTPUT\"]))\n        let fixtures = try JSONDecoder().decode([Fixture].self,\n            from: Data(contentsOf: audio.appendingPathComponent(\"fixtures.json\")))\n        XCTAssertEqual(fixtures.count, 16)\n        let clock = UptimeMonotonicClock()\n        let observations = PublicSpeechObservations(clock: clock)\n        let service = try RecognitionService(modelLayout: .init(\n            unifiedModelDirectory: root.appendingPathComponent(\"recognition/unified\"),\n            ctcModelDirectory: root.appendingPathComponent(\"recognition/ctc\"),\n            vadModelDirectory: root.appendingPathComponent(\"vad\")),\n            replaying: [0], sampleRate: 16_000, clock: clock,\n            onEvent: { await observations.receive($0) })\n        try await service.prepare()\n        var results: [Result] = []\n        for fixture in fixtures {\n            let file = try AVAudioFile(forReading: audio.appendingPathComponent(fixture.id + \".wav\"),\n                commonFormat: .pcmFormatFloat32, interleaved: false)\n            XCTAssertEqual(file.processingFormat.sampleRate, 16_000)\n            XCTAssertEqual(file.processingFormat.channelCount, 1)\n            let recording = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: file.processingFormat,\n                frameCapacity: AVAudioFrameCount(file.length)))\n            try file.read(into: recording)\n            let samples = Array(UnsafeBufferPointer(start: try XCTUnwrap(recording.floatChannelData)[0],\n                count: Int(recording.frameLength)))\n            XCTAssertEqual(Double(samples.count) / 16_000, fixture.audioSeconds, accuracy: 0.00001)\n            try await service.setReplay(samples: samples, sampleRate: 16_000)\n            let id = DictationID()\n            let began = clock.now()\n            await observations.begin(id, at: began)\n            let started = await service.startRecording(.init(id: id, personalVocabulary: .init(entries: [])))\n            guard case .success = started else { XCTFail(\"Failed to start \\(fixture.id)\"); return }\n            try await service.waitForReplayCompletion()\n            let release = clock.now()\n            // Diagnostic completion allowance; this is not the application's watchdog or an M1 benchmark.\n            let finalization = await service.stopRecordingAndFinalize(.init(id: id,\n                deadline: release.advanced(by: .seconds(30))))\n            let elapsed = Double(clock.now().nanoseconds - release.nanoseconds) / 1_000_000\n            let partials = await observations.snapshot(releasedAt: release)\n            let text: String\n            let isFinal: Bool\n            switch finalization {\n            case .final(let raw): text = raw.text; isFinal = true\n            case .failed: text = \"\"; isFinal = false\n            }\n            results.append(.init(id: fixture.id, reference: fixture.reference, transcript: text,\n                audioSeconds: fixture.audioSeconds, finalizationMilliseconds: elapsed,\n                replayReleaseMilliseconds: Double(release.nanoseconds - began.nanoseconds) / 1_000_000,\n                partialCountBeforeRelease: partials.beforeRelease,\n                firstPartialMilliseconds: partials.first, partialCount: partials.count, final: isFinal))\n            let encoder = JSONEncoder()\n            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]\n            try encoder.encode(results).write(to: output, options: .atomic)\n            XCTAssertTrue(isFinal && !text.isEmpty, \"No final transcript for \\(fixture.id)\")\n        }\n    }\n}\n\nprivate actor PublicSpeechObservations {\n    let clock: UptimeMonotonicClock\n    var id: DictationID?\n    var began = MonotonicInstant.zero\n    var first: Double?\n    var timestamps: [Int64] = []\n    init(clock: UptimeMonotonicClock) { self.clock = clock }\n    func begin(_ id: DictationID, at instant: MonotonicInstant) {\n        self.id = id; began = instant; first = nil; timestamps.removeAll()\n    }\n    func receive(_ event: DictationEvent) {\n        guard case .recognitionHypothesis(let eventID, _) = event, eventID == id else { return }\n        let received = clock.now().nanoseconds\n        if first == nil { first = Double(received - began.nanoseconds) / 1_000_000 }\n        timestamps.append(received)\n    }\n    func snapshot(releasedAt release: MonotonicInstant) -> (first: Double?, count: Int, beforeRelease: Int) {\n        (first, timestamps.count, timestamps.filter { $0 < release.nanoseconds }.count)\n    }\n}\n",
+  "probeSourceSHA256": "c91fd39849f7d426eaca00fc5508c1c1efe4de6824d5a85a52cd6c5d98e5ea09",
+  "retainedRunnerSHA256": {
+    ".build/public-speech-runner/FluidAudio_FluidAudio.bundle/Contents/Info.plist": "d1a52bdf42e5bbf40cdb20d7c25d07bff9ff31023ee6ffc1472aac7856a17dba",
+    ".build/public-speech-runner/FluidAudio_FluidAudio.bundle/Contents/Resources/luxtts_en_us_g2p_aux.json": "e67d7d3097daf9e14f56f81c64109d44dc5bca2d60252b1724282ce1065b029a",
+    ".build/public-speech-runner/FluidAudio_FluidAudio.bundle/Contents/Resources/luxtts_en_us_lexicon.tsv.zz": "c6caf56e109a87a4fd8244fa722389a9091e4b6071279b77e3a97e96601fa79e",
+    ".build/public-speech-runner/FluidAudio_FluidAudio.bundle/Contents/_CodeSignature/CodeDirectory": "0c84ffdd6b67d5fa16c6cc00f1d28ecb95d1af40186a9ab57e0c5a2233273dba",
+    ".build/public-speech-runner/FluidAudio_FluidAudio.bundle/Contents/_CodeSignature/CodeRequirements": "987920904eab650e75788c054aa0b0524e6a80bfc71aa32df8d237a61743f986",
+    ".build/public-speech-runner/FluidAudio_FluidAudio.bundle/Contents/_CodeSignature/CodeResources": "0945022d535a3db069564e5867ed6c0440506b4c3be8bb9fe5d6cac3000ae03f",
+    ".build/public-speech-runner/FluidAudio_FluidAudio.bundle/Contents/_CodeSignature/CodeSignature": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".build/public-speech-runner/RecognitionTests.xctest/Contents/Info.plist": "11a8e82f301f29d15f570344ef896f9d080a88ce760f56119da07caa0da3ffa1",
+    ".build/public-speech-runner/RecognitionTests.xctest/Contents/MacOS/RecognitionTests": "94107f11b1db663d85f25dd5a30fd545a5ffd5fd43e44245634de3a1ecd4e576",
+    ".build/public-speech-runner/RecognitionTests.xctest/Contents/Resources/FluidAudio_FluidAudio.bundle/Contents/Info.plist": "d1a52bdf42e5bbf40cdb20d7c25d07bff9ff31023ee6ffc1472aac7856a17dba",
+    ".build/public-speech-runner/RecognitionTests.xctest/Contents/Resources/FluidAudio_FluidAudio.bundle/Contents/Resources/luxtts_en_us_g2p_aux.json": "e67d7d3097daf9e14f56f81c64109d44dc5bca2d60252b1724282ce1065b029a",
+    ".build/public-speech-runner/RecognitionTests.xctest/Contents/Resources/FluidAudio_FluidAudio.bundle/Contents/Resources/luxtts_en_us_lexicon.tsv.zz": "c6caf56e109a87a4fd8244fa722389a9091e4b6071279b77e3a97e96601fa79e",
+    ".build/public-speech-runner/RecognitionTests.xctest/Contents/Resources/FluidAudio_FluidAudio.bundle/Contents/_CodeSignature/CodeDirectory": "0c84ffdd6b67d5fa16c6cc00f1d28ecb95d1af40186a9ab57e0c5a2233273dba",
+    ".build/public-speech-runner/RecognitionTests.xctest/Contents/Resources/FluidAudio_FluidAudio.bundle/Contents/_CodeSignature/CodeRequirements": "987920904eab650e75788c054aa0b0524e6a80bfc71aa32df8d237a61743f986",
+    ".build/public-speech-runner/RecognitionTests.xctest/Contents/Resources/FluidAudio_FluidAudio.bundle/Contents/_CodeSignature/CodeResources": "0945022d535a3db069564e5867ed6c0440506b4c3be8bb9fe5d6cac3000ae03f",
+    ".build/public-speech-runner/RecognitionTests.xctest/Contents/Resources/FluidAudio_FluidAudio.bundle/Contents/_CodeSignature/CodeSignature": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".build/public-speech-runner/RecognitionTests.xctest/Contents/_CodeSignature/CodeResources": "4fc538347d9864f5af92784c689cca04385bcde4dc1cc51bcc5f8ae2f9400ffe"
+  },
+  "selection": "First four numeric speaker IDs per F/M metadata group in test-clean; first two lexically sorted utterances per speaker. No output-based selection.",
+  "source": "https://www.openslr.org/12",
+  "sourceCode": "\"\"\"Select a small public read-speech probe before observing any recognition output.\"\"\"\nimport hashlib,json,subprocess,tarfile,wave\nfrom pathlib import Path\narchive=Path('.build/librispeech-test-clean.tar.gz')\nwith archive.open('rb') as f:assert hashlib.file_digest(f,'md5').hexdigest()=='32fa31d27d2e1cad72775fee3f4849a9'\nout=Path('.build/public-speech-probe')\nassert not out.exists()\nout.mkdir()\nsha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()\nrecords=[]\nwith tarfile.open(archive) as corpus:\n    def read(name):\n        member=corpus.getmember(name)\n        assert member.isfile() and member.size<10_000_000\n        return corpus.extractfile(member).read()\n    for name in ['LICENSE.TXT','README.TXT','SPEAKERS.TXT','CHAPTERS.TXT']:\n        (out/name).write_bytes(read('LibriSpeech/'+name))\n    people=[]\n    for line in (out/'SPEAKERS.TXT').read_text().splitlines():\n        if not line.strip() or line.startswith(';'):continue\n        parts=[p.strip() for p in line.split('|',4)]\n        if parts[2]=='test-clean':people.append(dict(id=int(parts[0]),sex=parts[1],name=parts[4]))\n    selected=[]\n    for sex in ['F','M']:\n        selected.extend(sorted((p for p in people if p['sex']==sex),key=lambda p:p['id'])[:4])\n    assert len(selected)==8\n    for person in sorted(selected,key=lambda p:p['id']):\n        names=sorted(m.name for m in corpus.getmembers() if m.isfile() and m.name.startswith(f\"LibriSpeech/test-clean/{person['id']}/\") and m.name.endswith('.flac'))[:2]\n        assert len(names)==2\n        for name in names:\n            identifier=Path(name).stem\n            assert all(c in '0123456789-' for c in identifier)\n            source=out/(identifier+'.flac')\n            source.write_bytes(read(name))\n            chapter='-'.join(identifier.split('-')[:2])\n            text=read(str(Path(name).parent/(chapter+'.trans.txt'))).decode()\n            matches=[line.split(' ',1)[1] for line in text.splitlines() if line.startswith(identifier+' ')]\n            assert len(matches)==1\n            audio=out/(identifier+'.wav')\n            subprocess.run(['/usr/bin/afconvert','-f','WAVE','-d','LEI16',str(source),str(audio)],check=True)\n            with wave.open(str(audio)) as w:\n                assert w.getnchannels()==1 and w.getframerate()==16000 and w.getsampwidth()==2\n                duration=w.getnframes()/w.getframerate()\n                assert 0<duration<300\n            records.append(dict(id=identifier,reference=matches[0],speaker=person,archiveMember=name,\n                                flacSHA256=sha(source),wavSHA256=sha(audio),audioSeconds=duration))\nassert len(records)==16 and len({r['id'] for r in records})==16\n(out/'fixtures.json').write_text(json.dumps(records,indent=2,sort_keys=True)+'\\n')\nevidence=dict(status='Prepared before inference; no recognition or release-quality claim.',\n source='https://www.openslr.org/12',download='https://openslr.trmal.net/resources/12/test-clean.tar.gz',\n upstreamChecksums='https://openslr.trmal.net/resources/12/md5sum.txt',\n archiveMD5='32fa31d27d2e1cad72775fee3f4849a9',archiveSHA256=sha(archive),license='CC-BY-4.0',\n licenseURL='https://creativecommons.org/licenses/by/4.0/',licenseText=(out/'LICENSE.TXT').read_text(),\n attribution='LibriSpeech (c) 2014 Vassil Panayotov; LibriVox readers credited per fixture.',\n selection='First four numeric speaker IDs per F/M metadata group in test-clean; first two lexically sorted utterances per speaker. No output-based selection.',\n transformations='Decoded FLAC to signed16-bit mono WAV using macOS afconvert; original sample rate retained.',\n limitations=['Small ordered read-audiobook sample, not representative spontaneous Dictation or live microphone evidence.',\n              'Upstream ASR training overlap is not established; this is an adapter execution probe, not an independent model benchmark.',\n              'No Cleanup training data or frozen Cleanup evaluation labels changed.'],\n fixtures=records,fixturesSHA256=sha(out/'fixtures.json'),sourceCode=Path(__file__).read_text())\nPath('Models/evidence/public-speech-inputs-2026-09-17.json').write_text(json.dumps(evidence,indent=2,sort_keys=True)+'\\n')\nprint(json.dumps(dict(fixtures=len(records),speakers=len(selected),seconds=sum(r['audioSeconds'] for r in records),ids=[r['id'] for r in records])))\n",
+  "status": "Prepared before inference; no recognition or release-quality claim.",
+  "swiftVersion": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0\n",
+  "transformations": "Decoded FLAC to signed16-bit mono WAV using macOS afconvert; original sample rate retained.",
+  "upstreamChecksums": "https://openslr.trmal.net/resources/12/md5sum.txt"
+}

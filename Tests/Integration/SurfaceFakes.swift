@@ -270,14 +270,6 @@ final class StubLaunchAtLogin: LaunchAtLoginControlling, @unchecked Sendable {
     }
 }
 
-final class StubLinkOpener: ExternalLinkOpening, @unchecked Sendable {
-    let opened = Box<[URL]>([])
-
-    func open(_ url: URL) {
-        opened.mutate { $0.append(url) }
-    }
-}
-
 struct StubStorageMeasure: ModelPackStorageMeasuring {
     var bytes: Int64
 
@@ -402,6 +394,14 @@ func stubManifest(
                 relativePath: "recognition/unified/model.bin",
                 byteSize: 900_000_000,
                 sha256: String(repeating: "a", count: 64),
+                license: license
+            ),
+            .init(
+                role: .recognition,
+                url: URL(string: "https://downloads.example.com/recognition-config")!,
+                relativePath: "recognition/unified/config.json",
+                byteSize: 1_000,
+                sha256: String(repeating: "c", count: 64),
                 license: license
             ),
             .init(

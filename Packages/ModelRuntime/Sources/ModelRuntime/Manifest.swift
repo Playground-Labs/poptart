@@ -147,13 +147,16 @@ public enum ModelPackError: Error, Equatable, Sendable {
   case invalidCleanupTokenCeiling
   case incompatibleApplicationVersion
   case downgradeNotAllowed
+  case installationInProgress
   case downloadFailed
   case incompleteDownload
   case downloadExceededExpectedSize
   case artifactSizeMismatch(ModelRole)
   case artifactHashMismatch(ModelRole)
+  case artifactInventoryMismatch
   case smokeTestFailed
   case invalidActiveState
+  case unrecoverableActiveState
   case fileSystemFailure
 }
 
@@ -161,12 +164,17 @@ struct SemanticVersion: Comparable, Sendable {
   let components: [Int]
 
   init?(_ value: String) {
-    let core = value.split(separator: "-", maxSplits: 1)[0]
-    let values = core.split(separator: ".", omittingEmptySubsequences: false).compactMap { Int($0) }
-    guard values.count == core.split(separator: ".", omittingEmptySubsequences: false).count,
+    // Pack and application versions are numeric dotted releases; prerelease suffixes are unsupported.
+    guard !value.isEmpty, value.utf8.allSatisfy({ (48...57).contains($0) || $0 == 46 }) else {
+      return nil
+    }
+    let parts = value.split(separator: ".", omittingEmptySubsequences: false)
+    var values = parts.compactMap { Int($0) }
+    guard values.count == parts.count,
       values.count >= 2,
       values.allSatisfy({ $0 >= 0 })
     else { return nil }
+    while values.count > 1, values.last == 0 { values.removeLast() }
     self.components = values
   }
 

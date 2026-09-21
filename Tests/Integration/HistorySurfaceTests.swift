@@ -305,6 +305,33 @@ struct ApplicationLaunchModelTests {
         #expect(model.activePack?.cleanupTokenCeiling == 768)
     }
 
+    @Test("pack activation waits for initial startup and reloads the newly installed pack")
+    func restartAfterPackInstallationWaitsForStartup() async {
+        let provider = StubModelPackProvider(pack: .stub(version: "1.0.0"))
+        let started = AsyncStream<Void>.makeStream()
+        let resume = AsyncStream<Void>.makeStream()
+        let versions = Box<[String]>([])
+        let model = ApplicationLaunchModel(modelPacks: provider) { pack in
+            versions.mutate { $0.append(pack.version) }
+            if versions.value.count == 1 {
+                started.continuation.yield(())
+                for await _ in resume.stream { break }
+            }
+        }
+        let first = Task { await model.start() }
+        for await _ in started.stream { break }
+        await provider.install(.stub(version: "1.1.0"))
+        let restarting = Task { await model.restart() }
+        resume.continuation.yield(())
+        await first.value
+        await restarting.value
+        #expect(versions.value == ["1.0.0", "1.1.0"])
+        #expect(model.status == .ready)
+        #expect(model.activePack?.version == "1.1.0")
+        started.continuation.finish()
+        resume.continuation.finish()
+    }
+
     @Test("restarting tries again after a permission is granted")
     func restartTriesAgain() async {
         let granted = Box(false)

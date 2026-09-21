@@ -1,0 +1,194 @@
+{
+  "buildCommand": "swift build -c debug --product PoptartCleanupEval; swift build -c release --product PoptartCleanupEval (sequential)",
+  "buildLog": {
+    "debug": "Building for debugging...\n[Computing dependencies]\n[Pre-planning 1\u2009/\u2009780]\n[Planning deferred tasks]\nwarning: missing creator for mutated node: ('/Users/brandon/Development/conductor/workspaces/poptart/bogota/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')\n[4\u2009/\u200963]\nBuild complete! (0.96 sec)\n",
+    "release": "Building for production...\n[Computing dependencies]\n[Pre-planning 1\u2009/\u2009780]\n[Planning deferred tasks]\n[21\u2009/\u200993]\n[32\u2009/\u200994] EventSource\n[38\u2009/\u200997] RealModule\n[43\u2009/\u2009100] Crypto\n[51\u2009/\u2009100] Numerics\n[58\u2009/\u2009104] EventSource\n[63\u2009/\u2009107] DictationCore\n[70\u2009/\u2009111] OrderedCollections\n[75\u2009/\u2009114] Cleanup\n[78\u2009/\u2009111] yyjson\n[79\u2009/\u2009111] MLX\n[84\u2009/\u2009114] HuggingFace\n[86\u2009/\u2009110] Jinja\n[92\u2009/\u2009114] MLXOptimizers\n[97\u2009/\u2009117] MLXOptimizers\n[100\u2009/\u2009119] MLXLMCommon\n[102\u2009/\u2009120] Hub\n[105\u2009/\u2009122] Tokenizers\n[107\u2009/\u2009123] Tokenizers\n[109\u2009/\u2009119] MLXLMCommon\n[112\u2009/\u2009121] MLXLLM\n[114\u2009/\u2009122] MLXLLM\n[117\u2009/\u2009124] CleanupMLX\n[120\u2009/\u2009126] CleanupMLX\n[123\u2009/\u2009126] PoptartCleanupEval-product\n[124\u2009/\u2009127] PoptartCleanupEval-product\n[126\u2009/\u2009127] PoptartCleanupEval-product\n[127\u2009/\u2009127] PoptartCleanupEval-product\nBuild complete! (36.78 sec)\n"
+  },
+  "fixtures": {
+    "Evals/fixtures/adversarial.jsonl": "d2d68d0e84b8d5ddd43523404541cc5c76dcbc30b2e4e5034a13984d6adc48ab",
+    "Evals/fixtures/gold.jsonl": "b8c97e312b14e2327fc8544c995bdaa62b48dca64cc19c2d6981b75484289a55"
+  },
+  "limitations": [
+    "M5Pro, Cleanup-only developer comparison; no physicalM1, fullapp, cold-system or release performance claim.",
+    "One pair per model with opposite run ordering; small sample and uncontrolled host noise preclude statistical performance guarantees.",
+    "Development suite only; no frozenrelease query. Do not change weights or promote models from this comparison."
+  ],
+  "modelFiles": {
+    "composition": {
+      "adapters/adapter_config.json": {
+        "byteSize": 1068,
+        "sha256": "989be6c37b2cfc3c4559453219f7ef96b8d59e43c079d5fc44ff3e075cc27e1a"
+      },
+      "adapters/adapters.safetensors": {
+        "byteSize": 14461040,
+        "sha256": "496150c42cfb09618a356d63b501189014f73bb5183a75904e1bf19deb3b83a0"
+      },
+      "base/README.md": {
+        "byteSize": 81,
+        "sha256": "748c964f9b7e5f2c3770ce013bbc0153be7c54311d9692c343b6188eefe77ac6"
+      },
+      "base/chat_template.jinja": {
+        "byteSize": 7755,
+        "sha256": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+      },
+      "base/config.json": {
+        "byteSize": 2625,
+        "sha256": "919d818806acc6093475afcccc40b4c27deb509ef1508ba940c71c9b3ce83ab5"
+      },
+      "base/model.safetensors": {
+        "byteSize": 424026782,
+        "sha256": "59809defba0dbb6da4952bf8eb33ea7505b2426d8eb286a77913aa1ae14deb03"
+      },
+      "base/model.safetensors.index.json": {
+        "byteSize": 60784,
+        "sha256": "d95a2e17af08ab870498266088eccee4d0a012338c604465ae7df24b976c488e"
+      },
+      "base/tokenizer.json": {
+        "byteSize": 19989325,
+        "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+      },
+      "base/tokenizer_config.json": {
+        "byteSize": 1160,
+        "sha256": "386ba246ba3dfa4d3a21d8bc8712eba38de558e5ac94c2c90436d8f94d519d5e"
+      }
+    },
+    "preservation": {
+      "adapters/adapter_config.json": {
+        "byteSize": 1158,
+        "sha256": "2a32eef734a3d35f456d7affbc9b1e063cee0c3d7489fc55e8922e507fc0ccb5"
+      },
+      "adapters/adapters.safetensors": {
+        "byteSize": 14461040,
+        "sha256": "f416f3ec997d03f2fc6b5acb37e38181c960a112a5bfb4bc9c39673c26ebd58b"
+      },
+      "base/README.md": {
+        "byteSize": 81,
+        "sha256": "748c964f9b7e5f2c3770ce013bbc0153be7c54311d9692c343b6188eefe77ac6"
+      },
+      "base/chat_template.jinja": {
+        "byteSize": 7755,
+        "sha256": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+      },
+      "base/config.json": {
+        "byteSize": 2625,
+        "sha256": "919d818806acc6093475afcccc40b4c27deb509ef1508ba940c71c9b3ce83ab5"
+      },
+      "base/model.safetensors": {
+        "byteSize": 424026782,
+        "sha256": "59809defba0dbb6da4952bf8eb33ea7505b2426d8eb286a77913aa1ae14deb03"
+      },
+      "base/model.safetensors.index.json": {
+        "byteSize": 60784,
+        "sha256": "d95a2e17af08ab870498266088eccee4d0a012338c604465ae7df24b976c488e"
+      },
+      "base/tokenizer.json": {
+        "byteSize": 19989325,
+        "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+      },
+      "base/tokenizer_config.json": {
+        "byteSize": 1160,
+        "sha256": "386ba246ba3dfa4d3a21d8bc8712eba38de558e5ac94c2c90436d8f94d519d5e"
+      }
+    }
+  },
+  "models": {
+    "composition": "Models/Artifacts/composition-qwen-adapter-v2",
+    "preservation": "Models/Artifacts/preservation-qwen-step500"
+  },
+  "order": [
+    [
+      "composition",
+      "debug"
+    ],
+    [
+      "composition",
+      "release"
+    ],
+    [
+      "preservation",
+      "release"
+    ],
+    [
+      "preservation",
+      "debug"
+    ]
+  ],
+  "preparationSource": "\"\"\"Retain freshly rebuilt runners and freeze recovery inputs before any model inference.\"\"\"\nimport hashlib,json,shutil,subprocess\nfrom pathlib import Path\nsha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()\noriginal=Path('Training/experiments/optimized-eval-plan-2026-09-17.json')\nplan=json.loads(original.read_text())\nsource={p:sha(p) for p in plan['sourceSHA256']}\nretained={};runners={};logs={}\nfor config in ['debug','release']:\n log=Path('.build/optimized-recovery-'+config+'-build.log')\n with log.open('w') as stream:\n  subprocess.run(['swift','build','-c',config,'--product','PoptartCleanupEval'],stdout=stream,stderr=subprocess.STDOUT,check=True)\n assert {p:sha(p) for p in source}==source\n directory=Path('.build/optimized-recovery-'+config+'-runner');directory.mkdir()\n products=Path('.build/out/Products/'+config.title())\n shutil.copy2(products/'PoptartCleanupEval',directory/'PoptartCleanupEval')\n for bundle in products.glob('*.bundle'):shutil.copytree(bundle,directory/bundle.name)\n runners[config]=str(directory/'PoptartCleanupEval')\n retained.update({str(p):sha(p) for p in directory.rglob('*') if p.is_file()})\n logs[config]=log.read_text()\nplan.update(sourceSHA256=source,retainedFilesSHA256=retained,runners=runners,buildLog=logs,\n buildCommand='swift build -c debug --product PoptartCleanupEval; swift build -c release --product PoptartCleanupEval (sequential)',\n sourceEvidence='Inputs hashed before and after both fresh builds. Only validator CharacterSet predicate implementation differs from interrupted pair; fresh debug control also rerun.',\n recoveryOf={'path':str(original),'sha256':sha(original),'result':'Training/experiments/optimized-eval-2026-09-17.json'},\n recoveryReason='Original optimized native rejection probes exposed whole-module CharacterSet predicate miscompilation. Explicit contains closures pass optimized Cleanup suite; preserve exact probe gate and rerun complete pair.',\n preparationSource=Path(__file__).read_text())\npath=Path('Training/experiments/optimized-recovery-plan-2026-09-17.json');assert not path.exists();path.write_text(json.dumps(plan,indent=2,sort_keys=True)+'\\n')\ndriver=Path('.context/run_optimized_eval.py').read_text().replace('optimized-eval-','optimized-recovery-')\nPath('.context/run_optimized_recovery.py').write_text(driver)\nprint(path,flush=True)\n",
+  "purpose": "Measure optimized-versus-debug Cleanup-only inference with same pinned models, production prompt, greedy generation, validation and input2048ceiling.",
+  "recoveryOf": {
+    "path": "Training/experiments/optimized-eval-plan-2026-09-17.json",
+    "result": "Training/experiments/optimized-eval-2026-09-17.json",
+    "sha256": "9b7a885c202bce53628e56b73858898b895a8e953904c886079eedcb15b0dc41"
+  },
+  "recoveryReason": "Original optimized native rejection probes exposed whole-module CharacterSet predicate miscompilation. Explicit contains closures pass optimized Cleanup suite; preserve exact probe gate and rerun complete pair.",
+  "retainedFilesSHA256": {
+    ".build/optimized-recovery-debug-runner/FluidAudio_FluidAudio.bundle/Contents/Info.plist": "d1a52bdf42e5bbf40cdb20d7c25d07bff9ff31023ee6ffc1472aac7856a17dba",
+    ".build/optimized-recovery-debug-runner/FluidAudio_FluidAudio.bundle/Contents/Resources/luxtts_en_us_g2p_aux.json": "e67d7d3097daf9e14f56f81c64109d44dc5bca2d60252b1724282ce1065b029a",
+    ".build/optimized-recovery-debug-runner/FluidAudio_FluidAudio.bundle/Contents/Resources/luxtts_en_us_lexicon.tsv.zz": "c6caf56e109a87a4fd8244fa722389a9091e4b6071279b77e3a97e96601fa79e",
+    ".build/optimized-recovery-debug-runner/FluidAudio_FluidAudio.bundle/Contents/_CodeSignature/CodeDirectory": "0c84ffdd6b67d5fa16c6cc00f1d28ecb95d1af40186a9ab57e0c5a2233273dba",
+    ".build/optimized-recovery-debug-runner/FluidAudio_FluidAudio.bundle/Contents/_CodeSignature/CodeRequirements": "987920904eab650e75788c054aa0b0524e6a80bfc71aa32df8d237a61743f986",
+    ".build/optimized-recovery-debug-runner/FluidAudio_FluidAudio.bundle/Contents/_CodeSignature/CodeResources": "0945022d535a3db069564e5867ed6c0440506b4c3be8bb9fe5d6cac3000ae03f",
+    ".build/optimized-recovery-debug-runner/FluidAudio_FluidAudio.bundle/Contents/_CodeSignature/CodeSignature": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".build/optimized-recovery-debug-runner/PoptartCleanupEval": "63e68c6c87bf4d9e9b43ce1907526d60f0e04f5bfe93175d735feeaadce6ecb8",
+    ".build/optimized-recovery-debug-runner/mlx-swift_Cmlx.bundle/Contents/Info.plist": "3554585cfb6507f310890090a1e050305517faaa6fb1fb591853e324eef7943d",
+    ".build/optimized-recovery-debug-runner/mlx-swift_Cmlx.bundle/Contents/Resources/default.metallib": "0214ad23cc2fa1df961eb7e2118881bd4b2bdb0183546ef537fff1a2a61e2ada",
+    ".build/optimized-recovery-debug-runner/mlx-swift_Cmlx.bundle/Contents/_CodeSignature/CodeDirectory": "4e724cfe0f2b60663b9f1385d651358911e79865fc5297928a1a7d1429073841",
+    ".build/optimized-recovery-debug-runner/mlx-swift_Cmlx.bundle/Contents/_CodeSignature/CodeRequirements": "987920904eab650e75788c054aa0b0524e6a80bfc71aa32df8d237a61743f986",
+    ".build/optimized-recovery-debug-runner/mlx-swift_Cmlx.bundle/Contents/_CodeSignature/CodeResources": "cd3f6e9acdf0aea5cf869344ac6fbee144b9ca4b99be436ead8a533030decfd7",
+    ".build/optimized-recovery-debug-runner/mlx-swift_Cmlx.bundle/Contents/_CodeSignature/CodeSignature": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".build/optimized-recovery-debug-runner/swift-crypto_Crypto.bundle/Contents/Info.plist": "50793fe2391f389930a814cba624de824235d3266307270c02ed9f564505656a",
+    ".build/optimized-recovery-debug-runner/swift-crypto_Crypto.bundle/Contents/Resources/PrivacyInfo.xcprivacy": "42fb8a30dd8d7ba0900e1bf17fe64ed8c12cfdb8a9c791ab6b4e1eceb0f299c0",
+    ".build/optimized-recovery-debug-runner/swift-crypto_Crypto.bundle/Contents/_CodeSignature/CodeDirectory": "02830a5069fb84b4e01bb94c2104aa0a4084d88f30bb767ac64aa2802d8d1786",
+    ".build/optimized-recovery-debug-runner/swift-crypto_Crypto.bundle/Contents/_CodeSignature/CodeRequirements": "987920904eab650e75788c054aa0b0524e6a80bfc71aa32df8d237a61743f986",
+    ".build/optimized-recovery-debug-runner/swift-crypto_Crypto.bundle/Contents/_CodeSignature/CodeResources": "ef18096dbff5ed48c3659bec9bdd13f4cbb99b9a32bbef344b28350174a90610",
+    ".build/optimized-recovery-debug-runner/swift-crypto_Crypto.bundle/Contents/_CodeSignature/CodeSignature": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".build/optimized-recovery-debug-runner/swift-transformers_Hub.bundle/Contents/Info.plist": "71bf803e8f033ebfa74aa44bb66310f5298f1924532a9025ca69d93b32db5411",
+    ".build/optimized-recovery-debug-runner/swift-transformers_Hub.bundle/Contents/Resources/gpt2_tokenizer_config.json": "551e26ec611d8d0c8edc3ef72e518a38418cb71f40de1347dd486a595e1557d7",
+    ".build/optimized-recovery-debug-runner/swift-transformers_Hub.bundle/Contents/Resources/t5_tokenizer_config.json": "e0aff0b1de9071e30d9a60a199303b6abe916a64a19932bd1c46992279b41a1f",
+    ".build/optimized-recovery-debug-runner/swift-transformers_Hub.bundle/Contents/_CodeSignature/CodeDirectory": "7383ee952594dfd686a059f8907507dc52737d8554206b818cc8db73c2ed1ddf",
+    ".build/optimized-recovery-debug-runner/swift-transformers_Hub.bundle/Contents/_CodeSignature/CodeRequirements": "987920904eab650e75788c054aa0b0524e6a80bfc71aa32df8d237a61743f986",
+    ".build/optimized-recovery-debug-runner/swift-transformers_Hub.bundle/Contents/_CodeSignature/CodeResources": "ae3880b32a4b58e4636e028cf141099134804da084866b30e86115f17fe99df7",
+    ".build/optimized-recovery-debug-runner/swift-transformers_Hub.bundle/Contents/_CodeSignature/CodeSignature": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".build/optimized-recovery-release-runner/FluidAudio_FluidAudio.bundle/Contents/Info.plist": "d1a52bdf42e5bbf40cdb20d7c25d07bff9ff31023ee6ffc1472aac7856a17dba",
+    ".build/optimized-recovery-release-runner/FluidAudio_FluidAudio.bundle/Contents/Resources/luxtts_en_us_g2p_aux.json": "e67d7d3097daf9e14f56f81c64109d44dc5bca2d60252b1724282ce1065b029a",
+    ".build/optimized-recovery-release-runner/FluidAudio_FluidAudio.bundle/Contents/Resources/luxtts_en_us_lexicon.tsv.zz": "c6caf56e109a87a4fd8244fa722389a9091e4b6071279b77e3a97e96601fa79e",
+    ".build/optimized-recovery-release-runner/PoptartCleanupEval": "6e6f183f50d2c1c059e1475e7aff0e66c5c06547731b1170f7e526de7291345c",
+    ".build/optimized-recovery-release-runner/mlx-swift_Cmlx.bundle/Contents/Info.plist": "3554585cfb6507f310890090a1e050305517faaa6fb1fb591853e324eef7943d",
+    ".build/optimized-recovery-release-runner/mlx-swift_Cmlx.bundle/Contents/Resources/default.metallib": "0214ad23cc2fa1df961eb7e2118881bd4b2bdb0183546ef537fff1a2a61e2ada",
+    ".build/optimized-recovery-release-runner/swift-crypto_Crypto.bundle/Contents/Info.plist": "50793fe2391f389930a814cba624de824235d3266307270c02ed9f564505656a",
+    ".build/optimized-recovery-release-runner/swift-crypto_Crypto.bundle/Contents/Resources/PrivacyInfo.xcprivacy": "42fb8a30dd8d7ba0900e1bf17fe64ed8c12cfdb8a9c791ab6b4e1eceb0f299c0",
+    ".build/optimized-recovery-release-runner/swift-transformers_Hub.bundle/Contents/Info.plist": "71bf803e8f033ebfa74aa44bb66310f5298f1924532a9025ca69d93b32db5411",
+    ".build/optimized-recovery-release-runner/swift-transformers_Hub.bundle/Contents/Resources/gpt2_tokenizer_config.json": "551e26ec611d8d0c8edc3ef72e518a38418cb71f40de1347dd486a595e1557d7",
+    ".build/optimized-recovery-release-runner/swift-transformers_Hub.bundle/Contents/Resources/t5_tokenizer_config.json": "e0aff0b1de9071e30d9a60a199303b6abe916a64a19932bd1c46992279b41a1f"
+  },
+  "runners": {
+    "debug": ".build/optimized-recovery-debug-runner/PoptartCleanupEval",
+    "release": ".build/optimized-recovery-release-runner/PoptartCleanupEval"
+  },
+  "sourceEvidence": "Inputs hashed before and after both fresh builds. Only validator CharacterSet predicate implementation differs from interrupted pair; fresh debug control also rerun.",
+  "sourceSHA256": {
+    "Evals/baseline.py": "c3c6abac9332e4c58496b1e67763f2a08b7d5220b8eba7c359239beee1556a15",
+    "Evals/editplan.py": "d310aed37db6f9ef42e962efa815456497fc2bc620eca0691e57250b13747777",
+    "Evals/run.py": "5db545e69ca6cce928a5fde788a1311da91bece33c13e1491388186cf65d9440",
+    "Package.resolved": "1f28a476049646105e9b0bf48665da852046fd1b00bc7dd587153b01fbf36dea",
+    "Package.swift": "e75c618f0cd015d87cd1717e9ab89224cba69a469c908b7b21d5beab6799bfd1",
+    "Packages/Cleanup/Package.swift": "ecc96bbddd48e82cb6118f6ed6a4daccd32d1646552411747c6cc4ab13b7e151",
+    "Packages/Cleanup/Sources/Cleanup/CleanupEngine.swift": "a7263f48820747a27d4198fc27db9c71ddb5ac2ca627493c62dedb4428688b3a",
+    "Packages/Cleanup/Sources/Cleanup/CleanupModel.swift": "75d4f2784ecbfe7c38685f486de871ff481731b5f559db59a0edd706c885cb9e",
+    "Packages/Cleanup/Sources/Cleanup/CleanupPrompt.swift": "edf170c63c3e24d7148c2c4c3aa4d30037acc3e4b8e45994d372e1bb4d8d3130",
+    "Packages/Cleanup/Sources/Cleanup/EditPlan.swift": "79ebc733919b3532c3cbb642a7693026ef90a8ff3e12e6a766d40ff5cabe9405",
+    "Packages/Cleanup/Sources/Cleanup/EditPlanValidator.swift": "1d8813df41fd1fdc152feae06e2b48d7c35d1e1ae4c1424e377ef493a327eb59",
+    "Packages/Cleanup/Sources/Cleanup/ExplicitCorrections.swift": "443c4fae01c0968c29cbd5053247386f6709243f4fa54ed1f06ae19669654420",
+    "Packages/Cleanup/Sources/Cleanup/StableTranscript.swift": "9f3dbd9a182d59a5a0bbac310ddd39ac50165434d52a58a3f4a7114f550f3835",
+    "Packages/Cleanup/Sources/CleanupMLX/MLXCleanupModel.swift": "25ab8dab5db06df416fd3b4e44eb6d625ea310fd7d0b1a1b6f24e81ab74fadfd",
+    "Packages/DictationCore/Package.swift": "60fa1a7a3c879b9821dfa8c48d3230c1dfe12a415cebd6e44edb5d5941141814",
+    "Packages/DictationCore/Sources/DictationCore/BoundaryProtocols.swift": "5ae2039b45e7d55662416655c35f5ede0e84375eeb74204919896a1f1799e0e1",
+    "Packages/DictationCore/Sources/DictationCore/DictationSessionActor.swift": "2b9f5d9a5fbeb52875784b11e9bdd7d76ed6973fb3e0b1b6fde6e6f886a8b393",
+    "Packages/DictationCore/Sources/DictationCore/DomainTypes.swift": "ff7e33aa20ef0d47723f56b747beec91b8f5c45c7640ea1d87698d6bdf191b6a",
+    "Packages/DictationCore/Sources/DictationCore/SessionContract.swift": "fed0326bd06050c4efedb0620eeefe04ee3a539b79f95ed487b48b5c8966126b",
+    "Packages/DictationCore/Sources/DictationCore/Time.swift": "d9920afbf36d4bb489803bf35f24b3c764f5daad4c50e778d4112202ba1f578b",
+    "Scripts/model_files.py": "f7980e17147f4bb28212d8ab35ddff707f3c02ee2a17866f5bf1db66a5733599",
+    "Tools/CleanupEval/CleanupEval.swift": "3d0a1cca57034068028543cd07bd6240a536493c405a1c7cecbe51065e7d546b"
+  },
+  "status": "Predeclared before paired evaluation; no training or promotion."
+}

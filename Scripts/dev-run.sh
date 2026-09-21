@@ -55,6 +55,7 @@ if [[ -n "${POPTART_MODEL_PACK_PUBLIC_KEY:-}" ]]; then
 else
   echo "POPTART_MODEL_PACK_PUBLIC_KEY is unset; Model Pack actions will be unavailable in this build" >&2
 fi
+zsh "$REPO/Scripts/embed-sparkle.sh" "$APP" - development
 codesign --force --sign - \
   --requirements '=designated => identifier "labs.playground.Poptart"' \
   "$APP" >/dev/null

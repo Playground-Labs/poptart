@@ -110,6 +110,28 @@ func milliseconds(_ duration: Duration?) throws -> Double {
     return Double(duration.components.seconds) * 1000 + Double(duration.components.attoseconds) / 1e15
 }
 
+/// Builds measured pipeline fields after encrypted readback, including stages deliberately skipped.
+func pipelineResult(intent: DictationRecordIntent, record: Persistence.DictationRecord) throws -> [String: Any] {
+    let isHypothesis: Bool
+    if case .recognitionHypothesisFallback = intent.outcome { isHypothesis = true }
+    else { isHypothesis = false }
+    guard record.id == intent.id.rawValue,
+          let text = intent.deliveredText, !text.isEmpty, record.deliveredText == text,
+          record.rawTranscript == (intent.rawTranscript ?? ""),
+          isHypothesis ? intent.rawTranscript == nil && intent.timings.cleanup == nil : intent.rawTranscript != nil
+    else { throw BenchmarkError("Encrypted history or fallback timing is inconsistent") }
+    return [
+        "elapsedMilliseconds": try milliseconds(intent.timings.completion),
+        "finalRecognitionMilliseconds": try milliseconds(intent.timings.finalRecognition),
+        "cleanupMilliseconds": isHypothesis ? NSNull() : try milliseconds(intent.timings.cleanup) as Any,
+        "deliveryMilliseconds": try milliseconds(intent.timings.delivery),
+        "outcome": record.outcome.rawValue, "deliveredText": text,
+        "rawTranscript": intent.rawTranscript as Any? ?? NSNull(),
+        "fallbackReason": record.fallbackReason?.rawValue as Any? ?? NSNull(),
+        "historyReadback": true, "historyRecordID": record.id.uuidString
+    ]
+}
+
 @main enum Benchmark {
     static func main() async {
         // Third-party inference diagnostics must never contaminate the JSONL stream.
@@ -158,8 +180,10 @@ func milliseconds(_ duration: Duration?) throws -> Double {
                 replaying: [0], sampleRate: 16_000, clock: clock,
                 onEvent: { await relay.send($0) })
         let cleanupModel = try MLXCleanupModel(modelDirectory: layout.cleanup)
-        try await recognition.prepare()
-        try await cleanupModel.prepare()
+        do { try await recognition.prepare() }
+        catch { throw BenchmarkError("Recognition model preparation failed: \(error)") }
+        do { try await cleanupModel.prepare() }
+        catch { throw BenchmarkError("Cleanup model preparation failed: \(error)") }
         let cleanup = CleanupEngine(model: cleanupModel, deadlineWaiter: SystemCleanupDeadlineWaiter(clock: clock),
                                     configuration: .init(maximumInputTokens: ceiling))
         let ownedDirectory = values["--history-directory"] == nil
@@ -188,7 +212,8 @@ func milliseconds(_ duration: Duration?) throws -> Double {
                 history: harness, deadlines: scheduler, vocabulary: { .init(entries: fixture.vocabularyTerms ?? []) })
             await relay.connect(coordinator)
             await coordinator.receive(.pressed)
-            try await recognition.waitForReplayCompletion()
+            do { try await recognition.waitForReplayCompletion() }
+            catch { throw BenchmarkError("Audio replay failed for \(fixture.id): \(error)") }
             await coordinator.receive(.released)
             let deadline = clock.now().advanced(by: .seconds(10))
             while await harness.result == nil, clock.now() < deadline {
@@ -198,26 +223,22 @@ func milliseconds(_ duration: Duration?) throws -> Double {
             guard let intent = await harness.result, let text = intent.deliveredText, !text.isEmpty,
                   await harness.delivered == text else { throw BenchmarkError("No completed delivery: \(fixture.id)") }
             let readback = try HistoryStore(directory: directory, keyProvider: key)
-            guard let record = try await readback.records().first(where: { $0.id == intent.id.rawValue }),
-                  record.deliveredText == text, record.rawTranscript == intent.rawTranscript else {
+            guard let record = try await readback.records().first(where: { $0.id == intent.id.rawValue }) else {
                 throw BenchmarkError("Encrypted history readback failed: \(fixture.id)")
             }
+            var row = try pipelineResult(intent: intent, record: record)
             let memory = try footprint()
             let mlx = await cleanupModel.memoryState
             let bothResident = await recognition.modelsPrepared && mlx.resident
             guard bothResident, mlx.activeBytes > 0 else { throw BenchmarkError("Cleanup model is not resident") }
-            let row: [String: Any] = [
-                "id": fixture.id, "elapsedMilliseconds": try milliseconds(intent.timings.completion),
-                "finalRecognitionMilliseconds": try milliseconds(intent.timings.finalRecognition),
-                "cleanupMilliseconds": try milliseconds(intent.timings.cleanup),
-                "deliveryMilliseconds": try milliseconds(intent.timings.delivery),
-                "outcome": record.outcome.rawValue, "deliveredText": text,
+            row.merge([
+                "id": fixture.id,
                 "footprintBytes": memory.current, "peakFootprintBytes": memory.peak,
                 "mlxActiveBytes": mlx.activeBytes, "bothModelsResident": bothResident,
-                "historyReadback": true, "settingsReadback": true, "historyRecordID": record.id.uuidString,
+                "settingsReadback": true,
                 "deliveryMode": "controlled", "cleanupTokenCeiling": ceiling,
                 "modelVersion": manifest.version
-            ]
+            ]) { _, value in value }
             try output.write(contentsOf: JSONSerialization.data(withJSONObject: row, options: [.sortedKeys]))
             try output.write(contentsOf: Data([10]))
         }

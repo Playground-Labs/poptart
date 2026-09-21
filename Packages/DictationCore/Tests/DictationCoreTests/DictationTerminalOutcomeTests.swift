@@ -149,6 +149,33 @@ final class DictationTerminalOutcomeTests: XCTestCase {
         XCTAssertTrue(completionEffects.contains { if case .recordHistory = $0 { true } else { false } })
     }
 
+    func testTargetChangingInsideDeliveryStillRecordsCopiedOutcome() async {
+        let clock = OutcomeFakeClock()
+        let session = DictationSessionActor(clock: clock)
+        let start = outcomeFixtureStart(selection: .init(location: 4, length: 8))
+        await reachCleanup(session, start: start, rawTranscript: "replacement")
+        _ = await session.handle(.cleanupCompleted(
+            start.id,
+            .cleaned(.init(text: "Replacement.", metadata: .init(changed: true, editCount: 2)))
+        ))
+        _ = await session.handle(.targetRevalidated(start.id, .valid))
+
+        let completionEffects = await session.handle(.deliveryCompleted(
+            start.id,
+            .copiedAfterTargetChanged
+        ))
+        let outcome = await session.snapshot().outcome
+
+        XCTAssertEqual(
+            outcome,
+            .targetChangedClipboard(source: .cleaned, recordingEnd: .released)
+        )
+        XCTAssertTrue(completionEffects.contains(.presentIndicator(.init(
+            dictationID: start.id,
+            state: .copiedBecauseTargetChanged
+        ))))
+    }
+
     func testNoTargetDictationRecordsThenCopiesWithoutRevalidatingAnyTarget() async {
         let clock = OutcomeFakeClock()
         let session = DictationSessionActor(clock: clock)

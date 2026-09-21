@@ -1,0 +1,610 @@
+{
+  "candidateDecisionSHA256": "4863dd71b936117ecc5f8e28dc781d58fbf856e8a616f2fd52ba3195d0fd48bd",
+  "createdAt": "2026-09-18T18:57:11.468731+00:00",
+  "executionIdentity": {
+    "audioFiles": {
+      "spoken-001.wav": {
+        "byteSize": 73398,
+        "sha256": "2017b21694701507aafc146d3a57ec303f5d6a5e6f6d30d74026995486976ae0"
+      },
+      "spoken-002.wav": {
+        "byteSize": 70984,
+        "sha256": "c805810c5f4823679a5e2060e6e1ea7b76daec4257f241d4f1516ab8919d08ca"
+      },
+      "spoken-003.wav": {
+        "byteSize": 72766,
+        "sha256": "62881326896970a229457fc21815f9ef6a514543b36f4d0a35c9cfb332645a42"
+      },
+      "spoken-004.wav": {
+        "byteSize": 121122,
+        "sha256": "1c85111128504e957f719f98c8472cfa477a3084ed75ca9fc97743c8bc3d5e0c"
+      },
+      "spoken-005.wav": {
+        "byteSize": 47078,
+        "sha256": "582d8cb1cc8e9ddd6077786609ccc7632563576787e9e48f344ee37a5829fd70"
+      },
+      "spoken-006.wav": {
+        "byteSize": 132900,
+        "sha256": "3eef9b49d45d0f78096903cd58d6e3453a4bf1f6faf60005ce9147439b923bc0"
+      },
+      "spoken-007.wav": {
+        "byteSize": 54128,
+        "sha256": "4a0d4d6f5ae5f4d73b8d7f1f7906dec409aadef97bce09aa1650705320d830f0"
+      },
+      "spoken-008.wav": {
+        "byteSize": 112536,
+        "sha256": "6de7b9fd388756f89bc64a971edabd0a869ac4deb841703a6216066375dfec03"
+      },
+      "spoken-009.wav": {
+        "byteSize": 60706,
+        "sha256": "a49fa371c49ac7817a265379921e7cd9fb2799ee7f20bd24b8f406713ae608d3"
+      },
+      "spoken-010.wav": {
+        "byteSize": 89932,
+        "sha256": "b107bbf4f92d6b23dc6f3142c9ac05030718c648407b5fbb7087ab0c409e166c"
+      },
+      "spoken-011.wav": {
+        "byteSize": 76742,
+        "sha256": "dd3c978b9803d02a689610c0d39e9e16038d8924b8b976c28e7ebac5e2a38ea6"
+      },
+      "spoken-012.wav": {
+        "byteSize": 446712,
+        "sha256": "7715b8f279e4151f79be5ab13e0d761c1a213f729bdbe8ba51cc4889efad8d44"
+      }
+    },
+    "fixturesSHA256": "1d18b90ada64d814b828279241a4b723b5802f86bbc0389261c3cabd1cf287f7",
+    "modelFiles": {
+      "cleanup": {
+        "cleanup/adapters/adapter_config.json": {
+          "byteSize": 1160,
+          "sha256": "863fcca07229a87ad1e0f9ec46c6ece7478e1b4dc067aebfc82b6e4a0f2ed1b8"
+        },
+        "cleanup/adapters/adapters.safetensors": {
+          "byteSize": 22456574,
+          "sha256": "4c1eabd18c6eb3c0b345aab0fa752679695871f8d43b04ce2232e2a13bcba08c"
+        },
+        "cleanup/base/LICENSE": {
+          "byteSize": 11544,
+          "sha256": "bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a"
+        },
+        "cleanup/base/README.md": {
+          "byteSize": 81,
+          "sha256": "748c964f9b7e5f2c3770ce013bbc0153be7c54311d9692c343b6188eefe77ac6"
+        },
+        "cleanup/base/chat_template.jinja": {
+          "byteSize": 7755,
+          "sha256": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+        },
+        "cleanup/base/config.json": {
+          "byteSize": 2625,
+          "sha256": "8893a91e9b7763d7b94c6db181f5b7c79c6f4881a69cefb11549eefcab1823bf"
+        },
+        "cleanup/base/model.safetensors": {
+          "byteSize": 1059404951,
+          "sha256": "44610b29c3ce91189a28195a3ef4fc34634330a781b6faed61bcd4bf40855e39"
+        },
+        "cleanup/base/model.safetensors.index.json": {
+          "byteSize": 60786,
+          "sha256": "3b2dffa510d1d73decdbc12d5e1bc7d6a9f7b2deb631bfd84238a1f8fc4e0fd1"
+        },
+        "cleanup/base/tokenizer.json": {
+          "byteSize": 19989325,
+          "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+        },
+        "cleanup/base/tokenizer_config.json": {
+          "byteSize": 1160,
+          "sha256": "386ba246ba3dfa4d3a21d8bc8712eba38de558e5ac94c2c90436d8f94d519d5e"
+        }
+      },
+      "recognition": {
+        "recognition/ctc/AudioEncoder.mlmodelc/analytics/coremldata.bin": {
+          "byteSize": 243,
+          "sha256": "8906c823e9bb3bf6b16d9f0308f98cd70573526333ad85dd767dc3f9ae6b25fa"
+        },
+        "recognition/ctc/AudioEncoder.mlmodelc/coremldata.bin": {
+          "byteSize": 505,
+          "sha256": "a88b002b58193b4c31211754cdfdf220a85f9651dc61caf336ab84400cbc191a"
+        },
+        "recognition/ctc/AudioEncoder.mlmodelc/metadata.json": {
+          "byteSize": 3456,
+          "sha256": "4f288bfe5cbe867ef1e592cdae33578b2fe59ada69182fc12209879558f985c2"
+        },
+        "recognition/ctc/AudioEncoder.mlmodelc/model.mil": {
+          "byteSize": 1060924,
+          "sha256": "2f84ef93a69115e55f3b5d8ce695b3c937de1833d4d229620634fae967cd587e"
+        },
+        "recognition/ctc/AudioEncoder.mlmodelc/weights/weight.bin": {
+          "byteSize": 100778304,
+          "sha256": "af0734b4a5d7465ad9e8bb170f0c53c5e6b91ebb75a9bdf88d3f59ae4ad6aebd"
+        },
+        "recognition/ctc/MelSpectrogram.mlmodelc/analytics/coremldata.bin": {
+          "byteSize": 243,
+          "sha256": "22f2a8cba1de25c984050566b534a1d8caf22a82f9fe6c1c6f3149a0dd7e8ae3"
+        },
+        "recognition/ctc/MelSpectrogram.mlmodelc/coremldata.bin": {
+          "byteSize": 330,
+          "sha256": "3a32ec67c76aa0aa2faef518413c311493e89aeb7fa11289fa4b8653ab8a160c"
+        },
+        "recognition/ctc/MelSpectrogram.mlmodelc/metadata.json": {
+          "byteSize": 1962,
+          "sha256": "5e11d21a65c02bcfc37db43e941978e5d60d59e0efeadfda08e41f33b4f835d3"
+        },
+        "recognition/ctc/MelSpectrogram.mlmodelc/model.mil": {
+          "byteSize": 12584,
+          "sha256": "0a7cb5693b39667295218bac5c7c09053f6bcd4b32699a83d06ac35d14ac6b79"
+        },
+        "recognition/ctc/MelSpectrogram.mlmodelc/weights/weight.bin": {
+          "byteSize": 567712,
+          "sha256": "0a89c055bfde9022029d3cc59a23e949385e063974460d8eaec3a7614c3eaaa8"
+        },
+        "recognition/ctc/README.md": {
+          "byteSize": 7419,
+          "sha256": "1aa99e33e37d4d36f01f15b7d81f878a43a85210c184aebebf1f27d5a4c3b189"
+        },
+        "recognition/ctc/source.json": {
+          "byteSize": 2386,
+          "sha256": "b4751bf05195a0825d50535d80c11d6733b4235f4df2f38535c6af3c0dc3ea7c"
+        },
+        "recognition/ctc/tokenizer.json": {
+          "byteSize": 360106,
+          "sha256": "9f7c517c0bf644b1b690ab037bab4d4c53aecd38e047e7154d011013ab9160db"
+        },
+        "recognition/ctc/vocab.json": {
+          "byteSize": 16086,
+          "sha256": "319d386eead79aadc80df9c3ecc8340d1a727efb7c02a8847eb940380dd61e1f"
+        },
+        "recognition/unified/README.md": {
+          "byteSize": 5323,
+          "sha256": "348925632679d32b9fc4d153f6c255f6450bcb83044065a5fa2918c53a1029e0"
+        },
+        "recognition/unified/metadata.json": {
+          "byteSize": 1046,
+          "sha256": "2b26a96b76fe1f7a04d3e867f50c75d6ce5dd1650d0dbcd4c35b591b22305f0e"
+        },
+        "recognition/unified/parakeet_unified_decoder.mlmodelc/analytics/coremldata.bin": {
+          "byteSize": 243,
+          "sha256": "9ae70f6559989f88b856b326e59315798f9f0d08207a19fcc2dd3287a30088a5"
+        },
+        "recognition/unified/parakeet_unified_decoder.mlmodelc/coremldata.bin": {
+          "byteSize": 560,
+          "sha256": "ce99c4488840fc463d59f8d4d6d2a9e8ceae8138ead51e3c265dde4d2ba4a0e9"
+        },
+        "recognition/unified/parakeet_unified_decoder.mlmodelc/model.mil": {
+          "byteSize": 13102,
+          "sha256": "6e60965b89c93943aa2be2d991c2461108145851fde05e1d048223a32d4cb20d"
+        },
+        "recognition/unified/parakeet_unified_decoder.mlmodelc/weights/weight.bin": {
+          "byteSize": 14429952,
+          "sha256": "96f990461a5986d5e7309ad1a0f36084fbf0f4b28aec35948f8b8d0dcbf8599e"
+        },
+        "recognition/unified/parakeet_unified_encoder_streaming_70_7_1_int8.mlmodelc/analytics/coremldata.bin": {
+          "byteSize": 243,
+          "sha256": "532a29eef8fb961a6670b82912bcfba6c5969de5f2a444192df917ba6f68ba24"
+        },
+        "recognition/unified/parakeet_unified_encoder_streaming_70_7_1_int8.mlmodelc/coremldata.bin": {
+          "byteSize": 513,
+          "sha256": "aebf6dec20848b9d6412e8a6643925479159314fcbee15ea0363350ce9fe732b"
+        },
+        "recognition/unified/parakeet_unified_encoder_streaming_70_7_1_int8.mlmodelc/model.mil": {
+          "byteSize": 928896,
+          "sha256": "6a26ecda0a7c19e0caec5640ac3c49c2111496e63230ec9e146f391f10f456e8"
+        },
+        "recognition/unified/parakeet_unified_encoder_streaming_70_7_1_int8.mlmodelc/weights/weight.bin": {
+          "byteSize": 589683392,
+          "sha256": "4d2056957de09ac202ffd17127e32acfe7e8c381978bf727400de64f88c7c4ff"
+        },
+        "recognition/unified/parakeet_unified_joint_decision_single_step.mlmodelc/analytics/coremldata.bin": {
+          "byteSize": 243,
+          "sha256": "163877ad14af97ec4107cd854fd1c6d336ee5d40ad25a657cc764fb763f452f5"
+        },
+        "recognition/unified/parakeet_unified_joint_decision_single_step.mlmodelc/coremldata.bin": {
+          "byteSize": 556,
+          "sha256": "68a081570a48b52ec9379e153bd56748a5408a50be16767601563f231eaeff03"
+        },
+        "recognition/unified/parakeet_unified_joint_decision_single_step.mlmodelc/model.mil": {
+          "byteSize": 9611,
+          "sha256": "03c21096090bcd0b71c896c5ae0eb815db31a91c6676f572a7868eee4299abe3"
+        },
+        "recognition/unified/parakeet_unified_joint_decision_single_step.mlmodelc/weights/weight.bin": {
+          "byteSize": 3446978,
+          "sha256": "06831afa6d1beb0c0b10350ebf7886bc37638e951d14e738d7e06fbd2a05012f"
+        },
+        "recognition/unified/source.json": {
+          "byteSize": 3049,
+          "sha256": "54d01aebd200fe2d7e086a45b3158734ee343e7cb43fce03b243f9c5bb6fe847"
+        },
+        "recognition/unified/vocab.json": {
+          "byteSize": 15088,
+          "sha256": "e1a7bff4f5df133c0f4ad47b8e43c96f6bf1865d99126a4c4725ef51d0108bec"
+        },
+        "vad/LICENSE.txt": {
+          "byteSize": 1075,
+          "sha256": "2e63e9a38b6e8fc0c7bc37ce174caca1862870856c6daf5697cfb785e925520b"
+        },
+        "vad/silero-vad-unified-256ms-v6.2.1.mlmodelc/analytics/coremldata.bin": {
+          "byteSize": 243,
+          "sha256": "8067594eb3126ab8318af507f0c00cabfed40d5fedb8a0ee5075dd02e903d909"
+        },
+        "vad/silero-vad-unified-256ms-v6.2.1.mlmodelc/coremldata.bin": {
+          "byteSize": 625,
+          "sha256": "7db35a4fd995222a7fb0129713473b15d1462572ab4a2e5e4d56bcaad9e40f41"
+        },
+        "vad/silero-vad-unified-256ms-v6.2.1.mlmodelc/metadata.json": {
+          "byteSize": 3335,
+          "sha256": "2740be542c611e1ba358e1849b4e265c65cdf0b17192767e1e5de86a31ac94d6"
+        },
+        "vad/silero-vad-unified-256ms-v6.2.1.mlmodelc/model.mil": {
+          "byteSize": 176918,
+          "sha256": "c6a9d1bf22d413265da0a07a1d14151c3ea2fad296b3aa5859275b33ef1c3270"
+        },
+        "vad/silero-vad-unified-256ms-v6.2.1.mlmodelc/weights/weight.bin": {
+          "byteSize": 882304,
+          "sha256": "53ecc8b5081146140ab654c89109cf001f2183abddd7a2411c5081feeffff063"
+        }
+      }
+    },
+    "modelManifestSHA256": "4f9148f56ea9a416a67f1c5f494c084ca5d6d899c1c4f0f60083cb61725fe7d5",
+    "runnerSHA256": "82d76ac1ce4725581d1f4dc9bd518c5909dff8b97ee6a299d3325beed33315c5",
+    "sourceSHA256": {
+      "App/Application/AppSettings.swift": "0d8c8458c0a12bb932dd0b8a5051384c80f441430c8acffeb1012b2ca0125270",
+      "App/Application/ApplicationClock.swift": "550e3688cfb8ec1ffa9500bf17e62e2ad13cc96b6e166d40354f08c65c6fe5ce",
+      "App/Application/ApplicationLaunchModel.swift": "789491634f6b268a137919b43c2bba369e8cffec4a6ed30f2f95eec2be105991",
+      "App/Application/DictationCoordinator.swift": "bec6adbfafa84c03b44691c82f7c5ab3b6ea30b50d164fc662c9db026688cc89",
+      "App/Application/HistoryListModel.swift": "fc359a152a299a5c9480947d56d5794c2574e2332c751495d7fe6850453e7d54",
+      "App/Application/OnboardingModel.swift": "25d75dbd4ad7ea1e88b72afdcc2001f62b06edd2213b31e69ab9d3709f562a42",
+      "App/Application/PersistenceAdapters.swift": "bafb5d42491e76d630db3ef8896ff25292fbd193e3bf906e4f0dbda4dbc485b8",
+      "App/Application/RuntimeAssembly.swift": "e58f50024d9479f5cb0f8c0d50d2813087a2b6883b3e57f0f98098886c06de5f",
+      "App/Application/SettingsModel.swift": "07db41bb41a4e21182214f68b9ff23ab985cc740368005412f053752608f964d",
+      "App/Application/ShortcutBindingModel.swift": "922fcd4e04bdb9afca0ece030e6fe65b6064cb4b0c3779f443828461b651e1b6",
+      "App/Application/SurfaceBoundaries.swift": "dfcf67e3f6d6f124be091211adec843db7ee9968db073664cabb294cece1dcb3",
+      "App/Application/SystemSurfaceAdapters.swift": "5dc23a534afb82cbe25b45a40a00662482751b618de0779549f6f0dda355a1ab",
+      "Package.resolved": "1f28a476049646105e9b0bf48665da852046fd1b00bc7dd587153b01fbf36dea",
+      "Package.swift": "e75c618f0cd015d87cd1717e9ab89224cba69a469c908b7b21d5beab6799bfd1",
+      "Packages/Cleanup/Package.resolved": "b4bac9a805ba03fa25c5139632be11e7c5c053d8710f89c736c66e49e0a6578d",
+      "Packages/Cleanup/Package.swift": "ecc96bbddd48e82cb6118f6ed6a4daccd32d1646552411747c6cc4ab13b7e151",
+      "Packages/Cleanup/Sources/Cleanup/CleanupEngine.swift": "a7263f48820747a27d4198fc27db9c71ddb5ac2ca627493c62dedb4428688b3a",
+      "Packages/Cleanup/Sources/Cleanup/CleanupModel.swift": "75d4f2784ecbfe7c38685f486de871ff481731b5f559db59a0edd706c885cb9e",
+      "Packages/Cleanup/Sources/Cleanup/CleanupPrompt.swift": "edf170c63c3e24d7148c2c4c3aa4d30037acc3e4b8e45994d372e1bb4d8d3130",
+      "Packages/Cleanup/Sources/Cleanup/EditPlan.swift": "79ebc733919b3532c3cbb642a7693026ef90a8ff3e12e6a766d40ff5cabe9405",
+      "Packages/Cleanup/Sources/Cleanup/EditPlanValidator.swift": "1d8813df41fd1fdc152feae06e2b48d7c35d1e1ae4c1424e377ef493a327eb59",
+      "Packages/Cleanup/Sources/Cleanup/ExplicitCorrections.swift": "443c4fae01c0968c29cbd5053247386f6709243f4fa54ed1f06ae19669654420",
+      "Packages/Cleanup/Sources/Cleanup/StableTranscript.swift": "9f3dbd9a182d59a5a0bbac310ddd39ac50165434d52a58a3f4a7114f550f3835",
+      "Packages/Cleanup/Sources/CleanupMLX/MLXCleanupModel.swift": "25ab8dab5db06df416fd3b4e44eb6d625ea310fd7d0b1a1b6f24e81ab74fadfd",
+      "Packages/DictationCore/Package.swift": "60fa1a7a3c879b9821dfa8c48d3230c1dfe12a415cebd6e44edb5d5941141814",
+      "Packages/DictationCore/Sources/DictationCore/BoundaryProtocols.swift": "5ae2039b45e7d55662416655c35f5ede0e84375eeb74204919896a1f1799e0e1",
+      "Packages/DictationCore/Sources/DictationCore/DictationSessionActor.swift": "2f6ef030fd4c7dda1fde6ecd111d645d1e79df0dce4263123a9fdfc9aeae0203",
+      "Packages/DictationCore/Sources/DictationCore/DomainTypes.swift": "d1de73ae0b9950bf3c82bb774d998518b60173613db2eafe1aa1afdaeeb11775",
+      "Packages/DictationCore/Sources/DictationCore/SessionContract.swift": "fed0326bd06050c4efedb0620eeefe04ee3a539b79f95ed487b48b5c8966126b",
+      "Packages/DictationCore/Sources/DictationCore/Time.swift": "d9920afbf36d4bb489803bf35f24b3c764f5daad4c50e778d4112202ba1f578b",
+      "Packages/ModelRuntime/Package.swift": "38f6e2377a0c85b1be74e45b8842f059c02ad9cd850360566f11003ae7bd3379",
+      "Packages/ModelRuntime/Sources/ModelRuntime/ActivePackRegistry.swift": "e1bc890b7c8b713e932148ff82d675d870745cf60bde82d0cfd2d3a6b829ab0e",
+      "Packages/ModelRuntime/Sources/ModelRuntime/Installer.swift": "aa68ce33af221a29c0a6856b8b7754aea3824b3097366acc03c33e106adde695",
+      "Packages/ModelRuntime/Sources/ModelRuntime/Manifest.swift": "ac1a579597aeffae116743053d0dc0c246748e2c4b19ff2520d8bdcb3cb947c0",
+      "Packages/ModelRuntime/Sources/ModelRuntime/ModelResidency.swift": "56a9ae579b7f2e0d64fd4ea64565811cd9c533b34ea548dca83dae506f820234",
+      "Packages/ModelRuntime/Sources/ModelRuntime/URLSessionResumableDownloader.swift": "0fb2b60e66ea3422c255e5a97a515c33823c2c9a02f9d180ed977d22cc442d6d",
+      "Packages/Persistence/Package.swift": "0aa38264beee016b9a29293a2376a3fe2bcb81242acf4b90ac9b0d424f91f213",
+      "Packages/Persistence/Sources/Persistence/Persistence.swift": "812a80e013cc29018fb95d85614474396ff29dffb2cceb41aa248c38b3e7a563",
+      "Packages/Recognition/Package.resolved": "c08908a65347b59bf7ece66eee3fb1eb404cbd568501e7faf6a081f18691adb5",
+      "Packages/Recognition/Package.swift": "5a297182cbc69089f5ab77d0f52487339f3485b1f397fcc21191e0b03bfceeab",
+      "Packages/Recognition/Sources/Recognition/AVAudioEngineCapture.swift": "0cdd003846e38f9d286fc073665b7cf47357fc2c0b9aaafccb402c86059f05cb",
+      "Packages/Recognition/Sources/Recognition/FluidAudioIncrementalRecognizer.swift": "4387f3ea37ae695ddf01b44e719446d077b492901ad136c61b02f156cc1f3522",
+      "Packages/Recognition/Sources/Recognition/RecognitionContracts.swift": "f53a0eb10c65e950ff6c8a99ef831085cfd857ece77c875edf7ffc283c92a636",
+      "Packages/Recognition/Sources/Recognition/RecognitionModelLayout.swift": "047beef6b450a94c171edd3e579457d031f8fd10cced2802b3f00050af156d81",
+      "Packages/Recognition/Sources/Recognition/RecognitionService.swift": "0922c1ceb533ce7d12a11babc420a6570d45dc1aec5900752862fd21293a8dda",
+      "Packages/Recognition/Sources/Recognition/ReplayAudioCapture.swift": "8e3f57182129c51c4b1b5e4cefcea9d8ca673acc275663529f283aeac42ecc1e",
+      "Packages/Recognition/Sources/Recognition/SpeechBandAnalyzer.swift": "cb9c42dfdc1424092e9d0e9c00b49d219154160e634f077eeb4c16f9fea98a6a",
+      "Packages/Recognition/Sources/Recognition/SpeechGate.swift": "340c74080c933e516c0c4d7bbde42738ba177ab5ad379e1bce3936b61f057549",
+      "Packages/Recognition/Sources/Recognition/SpeechGatePolicy.swift": "d08e2a2b559d828d6bc7700e6b80b1f454fd2747065465b7bf8e79d9172250d1",
+      "Packages/SystemIntegration/Package.swift": "7a98892059ad75d7f8a6828078a5ccac19445d233023c675593472432b286a45",
+      "Packages/SystemIntegration/Sources/SystemIntegration/AccessibilityTextService.swift": "b33267fe51de460ae6266d973aa5ffc897b3fc6f66d2d27d24a5e08a29c7f758",
+      "Packages/SystemIntegration/Sources/SystemIntegration/ClipboardPasteCoordinator.swift": "765ac14eb53827387c1e9bd8452cf34008519975153d075f2024e174b4906880",
+      "Packages/SystemIntegration/Sources/SystemIntegration/ClipboardPolicy.swift": "20fed65f8a896039f38de3881cbb671a0d1412e232f81eeeee04d7270d2e62ac",
+      "Packages/SystemIntegration/Sources/SystemIntegration/DictationShortcutMonitor.swift": "e2dfbbe82bcb6fac0a5ad96e1689fb2420391fe8eb72126f157b6c47a49dd314",
+      "Packages/SystemIntegration/Sources/SystemIntegration/IndicatorPolicy.swift": "a14d0a146adba8611d056d69fd5875bdb391feee2fad663590c0f9719c6759f0",
+      "Packages/SystemIntegration/Sources/SystemIntegration/IndicatorPresenter.swift": "cd12afc8c85a4e47f9c0ec4b2729680e529bc33712e5110cdc24c2bc7510eea3",
+      "Packages/SystemIntegration/Sources/SystemIntegration/InsertionEvidence.swift": "56a1fe2a1609cd6810e9c350a0e2bbd0fb96e108fb0ec380c0ae1be5628044a7",
+      "Packages/SystemIntegration/Sources/SystemIntegration/ShortcutBinding.swift": "77e1d4856f2a222d5c73979509f9326ccab328ced1706d985e203102b7aa5c47",
+      "Packages/SystemIntegration/Sources/SystemIntegration/ShortcutPolicy.swift": "6898488511b0e49e202ec5595572bd2259915c1c8dd2d8aed3cd45c3cbe0870b",
+      "Packages/SystemIntegration/Sources/SystemIntegration/TargetPolicy.swift": "01cb7a37f06e2d1962ca5a32417c67929dac59fbd405e40a3363898d6be1960a",
+      "Packages/SystemIntegration/Sources/SystemIntegration/WaveformEnvelope.swift": "9c46100a67ef4cdff933171d62a5f4ba3b81aa9d1be73247733b7b9ec51796e7",
+      "Scripts/benchmark_release.py": "f6c559e766c563c0f5509a214c5265f2457dac884322a7287db1f4c453b646b3",
+      "Scripts/model_files.py": "f7980e17147f4bb28212d8ab35ddff707f3c02ee2a17866f5bf1db66a5733599",
+      "Tools/Benchmark/Benchmark.swift": "c037adba7b7218f88210240abf5bbcb71c6987ece3609ce01e2e3f8784939cb4"
+    }
+  },
+  "limitations": [
+    "Strict deny script exits nonzero unless every fixture is cleaned; three safe Raw Transcript fallbacks make passed false.",
+    "M5 controlled-delivery timings cannot satisfy the physical 8 GB M1 or live insertion gate."
+  ],
+  "measurements": {
+    "bothModelsResident": true,
+    "cleanupTokenCeiling": 2048,
+    "deliveryMode": "controlled",
+    "mlxActiveBytes": 1123068916,
+    "p99Milliseconds": 1405.1278750000001,
+    "passed": true,
+    "peakFootprintBytes": 3598190608,
+    "sampleCount": 12,
+    "schemaVersion": 1,
+    "steadyStateFootprintBytes": 3598190608,
+    "within1500Milliseconds": 12
+  },
+  "passed": false,
+  "privacyChecks": {
+    "bothModelsResident": true,
+    "fixtureCoverage": true,
+    "historyReadback": true,
+    "ipDenialProven": true,
+    "settingsReadback": true
+  },
+  "qualityChecks": {
+    "allCleaned": false,
+    "deliveredTextMatchesExpected": 4,
+    "fallbacks": {
+      "spoken-005": "unsafeEditPlan",
+      "spoken-006": "unsafeEditPlan",
+      "spoken-012": "cleanupTimedOut"
+    },
+    "fixtures": 12,
+    "outcomes": {
+      "cleaned": 9,
+      "rawTranscript": 3
+    }
+  },
+  "results": [
+    {
+      "bothModelsResident": true,
+      "cleanupMilliseconds": 863.613,
+      "cleanupTokenCeiling": 2048,
+      "deliveredText": "I'm the gardener will return after lunch.",
+      "deliveryMilliseconds": 0.028959,
+      "deliveryMode": "controlled",
+      "elapsedMilliseconds": 1123.290834,
+      "fallbackReason": null,
+      "finalRecognitionMilliseconds": 259.648875,
+      "footprintBytes": 2367031312,
+      "historyReadback": true,
+      "historyRecordID": "E5FE4E8F-BD32-4B4E-B538-A6DA2EE60CED",
+      "id": "spoken-001",
+      "mlxActiveBytes": 1081747512,
+      "modelVersion": "0.0.0",
+      "outcome": "cleaned",
+      "peakFootprintBytes": 2527873040,
+      "rawTranscript": "I'm the gardener will return after lunch",
+      "settingsReadback": true
+    },
+    {
+      "bothModelsResident": true,
+      "cleanupMilliseconds": 720.813375,
+      "cleanupTokenCeiling": 2048,
+      "deliveredText": "New lock needs a smaller screw.",
+      "deliveryMilliseconds": 0.024708,
+      "deliveryMode": "controlled",
+      "elapsedMilliseconds": 969.557042,
+      "fallbackReason": null,
+      "finalRecognitionMilliseconds": 248.718959,
+      "footprintBytes": 2400946192,
+      "historyReadback": true,
+      "historyRecordID": "0376DC02-F07E-4369-BDC7-B202D24026D7",
+      "id": "spoken-002",
+      "mlxActiveBytes": 1081747512,
+      "modelVersion": "0.0.0",
+      "outcome": "cleaned",
+      "peakFootprintBytes": 2555250704,
+      "rawTranscript": "New lock needs needs a smaller screw.",
+      "settingsReadback": true
+    },
+    {
+      "bothModelsResident": true,
+      "cleanupMilliseconds": 378.866958,
+      "cleanupTokenCeiling": 2048,
+      "deliveredText": "Could you move the easel away from the doorway?",
+      "deliveryMilliseconds": 0.025125,
+      "deliveryMode": "controlled",
+      "elapsedMilliseconds": 631.490667,
+      "fallbackReason": null,
+      "finalRecognitionMilliseconds": 252.598584,
+      "footprintBytes": 2538637328,
+      "historyReadback": true,
+      "historyRecordID": "5C031BCE-2412-4BEA-8235-F044B8EBBDEF",
+      "id": "spoken-003",
+      "mlxActiveBytes": 1081747512,
+      "modelVersion": "0.0.0",
+      "outcome": "cleaned",
+      "peakFootprintBytes": 2635548688,
+      "rawTranscript": "Could you move the easel away from the doorway?",
+      "settingsReadback": true
+    },
+    {
+      "bothModelsResident": true,
+      "cleanupMilliseconds": 776.960042,
+      "cleanupTokenCeiling": 2048,
+      "deliveredText": "Take nine lanterns to the campsite before dusk..",
+      "deliveryMilliseconds": 0.024,
+      "deliveryMode": "controlled",
+      "elapsedMilliseconds": 1009.200125,
+      "fallbackReason": null,
+      "finalRecognitionMilliseconds": 232.216083,
+      "footprintBytes": 2701543440,
+      "historyReadback": true,
+      "historyRecordID": "657547D5-CED0-4FE7-8449-A998DCBD9F58",
+      "id": "spoken-004",
+      "mlxActiveBytes": 1081747512,
+      "modelVersion": "0.0.0",
+      "outcome": "cleaned",
+      "peakFootprintBytes": 2834778128,
+      "rawTranscript": "Take eight, I mean nine lanterns to the campsite before dusk.",
+      "settingsReadback": true
+    },
+    {
+      "bothModelsResident": true,
+      "cleanupMilliseconds": 840.901625,
+      "cleanupTokenCeiling": 2048,
+      "deliveredText": "And put the map beside it.",
+      "deliveryMilliseconds": 0.024834,
+      "deliveryMode": "controlled",
+      "elapsedMilliseconds": 1071.817959,
+      "fallbackReason": "unsafeEditPlan",
+      "finalRecognitionMilliseconds": 230.8915,
+      "footprintBytes": 2285029392,
+      "historyReadback": true,
+      "historyRecordID": "5B907253-3753-4E6C-9641-6AA13AED08D4",
+      "id": "spoken-005",
+      "mlxActiveBytes": 1081747512,
+      "modelVersion": "0.0.0",
+      "outcome": "rawTranscript",
+      "peakFootprintBytes": 2834778128,
+      "rawTranscript": "And put the map beside it.",
+      "settingsReadback": true
+    },
+    {
+      "bothModelsResident": true,
+      "cleanupMilliseconds": 795.984791,
+      "cleanupTokenCeiling": 2048,
+      "deliveredText": "Our new client at Maplecrest needs the complete packing list this afternoon.",
+      "deliveryMilliseconds": 0.023792,
+      "deliveryMode": "controlled",
+      "elapsedMilliseconds": 1068.257958,
+      "fallbackReason": "unsafeEditPlan",
+      "finalRecognitionMilliseconds": 272.249375,
+      "footprintBytes": 2681161744,
+      "historyReadback": true,
+      "historyRecordID": "1ED53E1A-7408-4611-B53F-AC9483D65EB4",
+      "id": "spoken-006",
+      "mlxActiveBytes": 1081747512,
+      "modelVersion": "0.0.0",
+      "outcome": "rawTranscript",
+      "peakFootprintBytes": 2834778128,
+      "rawTranscript": "Our new client at Maplecrest needs the complete packing list this afternoon.",
+      "settingsReadback": true
+    },
+    {
+      "bothModelsResident": true,
+      "cleanupMilliseconds": 385.929167,
+      "cleanupTokenCeiling": 2048,
+      "deliveredText": "I would not cancel the booking.",
+      "deliveryMilliseconds": 0.025,
+      "deliveryMode": "controlled",
+      "elapsedMilliseconds": 629.981,
+      "fallbackReason": null,
+      "finalRecognitionMilliseconds": 244.026833,
+      "footprintBytes": 2282997776,
+      "historyReadback": true,
+      "historyRecordID": "577792A8-35B2-493A-AB1B-8BED8115F06D",
+      "id": "spoken-007",
+      "mlxActiveBytes": 1081747512,
+      "modelVersion": "0.0.0",
+      "outcome": "cleaned",
+      "peakFootprintBytes": 2834778128,
+      "rawTranscript": "I would not cancel the booking.",
+      "settingsReadback": true
+    },
+    {
+      "bothModelsResident": true,
+      "cleanupMilliseconds": 400.904,
+      "cleanupTokenCeiling": 2048,
+      "deliveredText": "The invoice references 58,124.",
+      "deliveryMilliseconds": 0.02525,
+      "deliveryMode": "controlled",
+      "elapsedMilliseconds": 663.567167,
+      "fallbackReason": null,
+      "finalRecognitionMilliseconds": 262.637917,
+      "footprintBytes": 2515666960,
+      "historyReadback": true,
+      "historyRecordID": "332D5185-F073-4308-9C14-AE54A6DFA2EB",
+      "id": "spoken-008",
+      "mlxActiveBytes": 1081747512,
+      "modelVersion": "0.0.0",
+      "outcome": "cleaned",
+      "peakFootprintBytes": 2834778128,
+      "rawTranscript": "The invoice references 58,124.",
+      "settingsReadback": true
+    },
+    {
+      "bothModelsResident": true,
+      "cleanupMilliseconds": 373.339708,
+      "cleanupTokenCeiling": 2048,
+      "deliveredText": "Leave the note exactly as it is",
+      "deliveryMilliseconds": 0.024875,
+      "deliveryMode": "controlled",
+      "elapsedMilliseconds": 659.479208,
+      "fallbackReason": null,
+      "finalRecognitionMilliseconds": 286.114625,
+      "footprintBytes": 2451245072,
+      "historyReadback": true,
+      "historyRecordID": "77EDE050-52F9-4E47-9476-B767B8C51611",
+      "id": "spoken-009",
+      "mlxActiveBytes": 1081747512,
+      "modelVersion": "0.0.0",
+      "outcome": "cleaned",
+      "peakFootprintBytes": 2834778128,
+      "rawTranscript": "Leave the note exactly as it is",
+      "settingsReadback": true
+    },
+    {
+      "bothModelsResident": true,
+      "cleanupMilliseconds": 389.568875,
+      "cleanupTokenCeiling": 2048,
+      "deliveredText": "The package Linden Harbor arrived before the rain.",
+      "deliveryMilliseconds": 0.024542,
+      "deliveryMode": "controlled",
+      "elapsedMilliseconds": 638.57925,
+      "fallbackReason": null,
+      "finalRecognitionMilliseconds": 248.985833,
+      "footprintBytes": 2500806672,
+      "historyReadback": true,
+      "historyRecordID": "A8768F13-940B-432A-9322-D6DB9D0E9CCE",
+      "id": "spoken-010",
+      "mlxActiveBytes": 1081747512,
+      "modelVersion": "0.0.0",
+      "outcome": "cleaned",
+      "peakFootprintBytes": 2834778128,
+      "rawTranscript": "The package Linden Harbor arrived before the rain.",
+      "settingsReadback": true
+    },
+    {
+      "bothModelsResident": true,
+      "cleanupMilliseconds": 391.887042,
+      "cleanupTokenCeiling": 2048,
+      "deliveredText": "I will check the cupboard and the drawer again.",
+      "deliveryMilliseconds": 0.028375,
+      "deliveryMode": "controlled",
+      "elapsedMilliseconds": 646.866959,
+      "fallbackReason": null,
+      "finalRecognitionMilliseconds": 254.951542,
+      "footprintBytes": 2441398288,
+      "historyReadback": true,
+      "historyRecordID": "6B4E14EB-0938-401E-8DC4-8E62D0093FA8",
+      "id": "spoken-011",
+      "mlxActiveBytes": 1081747512,
+      "modelVersion": "0.0.0",
+      "outcome": "cleaned",
+      "peakFootprintBytes": 2834778128,
+      "rawTranscript": "I will check the cupboard and the drawer again.",
+      "settingsReadback": true
+    },
+    {
+      "bothModelsResident": true,
+      "cleanupMilliseconds": 1105.824291,
+      "cleanupTokenCeiling": 2048,
+      "deliveredText": "Before the visitors arrive, please move the folding screen into the corner and make sure the walkway is clear. We can leave the extra cushions in the basket beside the fireplace until everyone has chosen a seat. I will bring the tray from the kitchen. After the tea has finished brewing",
+      "deliveryMilliseconds": 0.0825,
+      "deliveryMode": "controlled",
+      "elapsedMilliseconds": 1405.1278750000001,
+      "fallbackReason": "cleanupTimedOut",
+      "finalRecognitionMilliseconds": 299.221084,
+      "footprintBytes": 3598190608,
+      "historyReadback": true,
+      "historyRecordID": "F70831A5-1FD4-4577-B005-92C721CA797D",
+      "id": "spoken-012",
+      "mlxActiveBytes": 1123068916,
+      "modelVersion": "0.0.0",
+      "outcome": "rawTranscript",
+      "peakFootprintBytes": 3598190608,
+      "rawTranscript": "Before the visitors arrive, please move the folding screen into the corner and make sure the walkway is clear. We can leave the extra cushions in the basket beside the fireplace until everyone has chosen a seat. I will bring the tray from the kitchen. After the tea has finished brewing",
+      "settingsReadback": true
+    }
+  ],
+  "scope": "M5 synthetic audio, controlled delivery, IP-denied execution; not human speech, live insertion, hosted download, or physical M1 evidence.",
+  "status": "Completed IP-denied selected-candidate pipeline; strict all-cleaned gate failed on safe fallbacks."
+}

@@ -9,12 +9,63 @@ import Testing
 
 @Suite("Runtime wiring")
 struct RuntimeWiringTests {
+    @Test("Signed individual files install directly into the runtime model layout")
+    func installsRuntimeModelFiles() async throws {
+        let root = try TemporaryDirectory()
+        let key = Curve25519.Signing.PrivateKey()
+        let files = ["recognition/unified/Encoder.mlmodelc/weights/weight.bin": Data("recognizer".utf8),
+                     "recognition/ctc/tokenizer.json": Data("{}".utf8),
+                     "vad/model.safetensors": Data("voice activity".utf8),
+                     "cleanup/config.json": Data("{}".utf8),
+                     "cleanup/tokenizer.json": Data("{}".utf8),
+                     "cleanup/tokenizer_config.json": Data("{}".utf8),
+                     "cleanup/model.safetensors": Data("weights".utf8)]
+        let artifacts = try files.keys.sorted().map { path in
+            let data = try #require(files[path])
+            return ModelArtifact(role: path.hasPrefix("cleanup/") ? .cleanup : .recognition,
+                url: try #require(URL(string: "https://models.example/" + path)), relativePath: path,
+                byteSize: Int64(data.count), sha256: SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined(),
+                license: .init(name: "test-only", url: try #require(URL(string: "https://models.example/license"))))
+        }
+        let manifest = try ModelPackManifest(identity: "layout-test", version: "1.0.0",
+            minimumApplicationVersion: PoptartRelease.version(), maximumApplicationVersion: PoptartRelease.version(),
+            cleanupTokenCeiling: 512, artifacts: artifacts)
+        let body = try JSONEncoder().encode(manifest)
+        let signed = try JSONEncoder().encode(SignedModelPackManifest(manifest: body, signature: key.signature(for: body)))
+        let installer = try ModelPackInstaller(rootDirectory: root.url, applicationVersion: PoptartRelease.version(),
+            manifestPublicKey: key.publicKey.rawRepresentation,
+            downloader: LayoutFileDownloader(files: files), smokeTester: LayoutFileSmokeTest())
+        let installed = try await installer.perform(.onboardingInstall, signedManifest: signed)
+        let located = try #require(try ApplicationModelPackLocator.installedPack(in: root.url,
+            manifestPublicKey: key.publicKey.rawRepresentation))
+        #expect(located.layout.root == installed.directory)
+        try Data("tampered".utf8).write(to: located.layout.cleanup.appendingPathComponent("model.safetensors"))
+        #expect(throws: ModelPackError.self) {
+            try ApplicationModelPackLocator.installedPack(in: root.url, manifestPublicKey: key.publicKey.rawRepresentation)
+        }
+    }
+
+    @Test("Development storage uses a separate, stable Keychain identity")
+    func developmentKeychainIsolation() {
+        let production = applicationKeychainService(developmentDirectory: nil)
+        #expect(production == "labs.playground.Poptart")
+        #expect(applicationKeychainService(developmentDirectory: "") == production)
+        #if DEBUG
+        let first = applicationKeychainService(developmentDirectory: "/tmp/poptart-fixture-a")
+        #expect(first != production)
+        #expect(first == applicationKeychainService(developmentDirectory: "/tmp/poptart-fixture-a/"))
+        #expect(first != applicationKeychainService(developmentDirectory: "/tmp/poptart-fixture-b"))
+        #else
+        #expect(applicationKeychainService(developmentDirectory: "/tmp/poptart-fixture-a") == production)
+        #endif
+    }
+
     @Test("the Cleanup token ceiling comes from the installed pack's manifest")
     func ceilingComesFromInstalledPack() throws {
         let root = try TemporaryDirectory()
         let pack = try root.installPack(version: "2.3.0", cleanupTokenCeiling: 913)
 
-        let located = try #require(try ApplicationModelPackLocator.installedPack(in: root.url))
+        let located = try #require(try ApplicationModelPackLocator.installedPack(in: root.url, manifestPublicKey: root.publicKey))
 
         #expect(located.cleanupTokenCeiling == 913)
         #expect(located.version == "2.3.0")
@@ -173,6 +224,8 @@ private struct FixedRuntimeClock: MonotonicClock {
 /// A scratch directory that stages a verifiable installed pack the way `ModelPackInstaller` does.
 final class TemporaryDirectory {
     let url: URL
+    private let signingKey = Curve25519.Signing.PrivateKey()
+    var publicKey: Data { signingKey.publicKey.rawRepresentation }
 
     init() throws {
         url = FileManager.default.temporaryDirectory
@@ -215,7 +268,11 @@ final class TemporaryDirectory {
             cleanupTokenCeiling: cleanupTokenCeiling,
             artifacts: artifacts
         )
-        let state = ActivationRecord(current: .init(directory: directory, manifest: manifest))
+        let manifestBytes = try JSONEncoder().encode(manifest)
+        let envelope = SignedModelPackManifest(manifest: manifestBytes,
+            signature: try signingKey.signature(for: manifestBytes))
+        let state = ActivationRecord(current: .init(directory: directory, manifest: manifest),
+            signedManifest: try JSONEncoder().encode(envelope))
         try JSONEncoder().encode(state).write(
             to: url.appendingPathComponent("active-model-pack.json"))
         return directory
@@ -227,6 +284,7 @@ final class TemporaryDirectory {
 
     private struct ActivationRecord: Codable {
         let current: InstalledModelPack
+        let signedManifest: Data
     }
 }
 
@@ -264,5 +322,30 @@ private final class RecordingActivation: @unchecked Sendable {
             stopShortcut: { [self] in shortcutStops.mutate { $0 += 1 } },
             presentReady: { [self] in readyPresentations.mutate { $0 += 1 } }
         )
+    }
+}
+
+private struct LayoutFileDownloader: ResumableArtifactDownloading {
+    let files: [String: Data]
+    func download(_ request: ResumableDownloadRequest) async throws -> ResumableDownloadResult {
+        let data = try #require(files[String(request.source.path.dropFirst())])
+        try data.write(to: request.destination)
+        return .init(bytesStored: Int64(data.count), isComplete: true)
+    }
+}
+
+/// This checks installation paths and bytes, not inference from the deliberately fake weights.
+private struct LayoutFileSmokeTest: ModelPackSmokeTesting {
+    func validate(packAt directory: URL, manifest: ModelPackManifest) async throws {
+        let layout = ApplicationModelPackLayout(root: directory)
+        #expect(try Data(contentsOf: layout.unifiedRecognition.appendingPathComponent("Encoder.mlmodelc/weights/weight.bin")) == Data("recognizer".utf8))
+        let ctc = try #require(layout.optionalCTC)
+        #expect(try Data(contentsOf: ctc.appendingPathComponent("tokenizer.json")) == Data("{}".utf8))
+        let vad = try #require(layout.optionalVAD)
+        #expect(try Data(contentsOf: vad.appendingPathComponent("model.safetensors")) == Data("voice activity".utf8))
+        for name in ["config.json", "tokenizer.json", "tokenizer_config.json"] {
+            #expect(try Data(contentsOf: layout.cleanup.appendingPathComponent(name)) == Data("{}".utf8))
+        }
+        #expect(try Data(contentsOf: layout.cleanup.appendingPathComponent("model.safetensors")) == Data("weights".utf8))
     }
 }

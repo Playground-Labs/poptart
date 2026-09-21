@@ -9,11 +9,32 @@ import Tokenizers
 /// This adapter has no model identifier or downloader API, so inference cannot reach a model hub.
 public actor MLXCleanupModel: CleanupModelBoundary {
   private let modelDirectory: URL
+  private let adapterDirectory: URL?
+  private let gemma3Challenger: Bool
   private var container: ModelContainer?
   private var activeGeneration: (id: UUID, task: Task<Void, Never>)?
+  private var lifecycleBusy = false
+  private var lifecycleWaiters: [CheckedContinuation<Void, Never>] = []
 
   public init(modelDirectory: URL) throws(CleanupModelError) {
-    let directory = modelDirectory.standardizedFileURL
+    try self.init(modelDirectory: modelDirectory, gemma3Challenger: false)
+  }
+
+  /// Evaluation-only access for the SPEC's Gemma comparison; the app initializer stays Qwen-only.
+  @_spi(Evaluation) public static func gemma3Challenger(
+    modelDirectory: URL
+  ) throws(CleanupModelError) -> MLXCleanupModel {
+    try MLXCleanupModel(modelDirectory: modelDirectory, gemma3Challenger: true)
+  }
+
+  private init(modelDirectory: URL, gemma3Challenger: Bool) throws(CleanupModelError) {
+    let root = modelDirectory.standardizedFileURL
+    let base = root.appendingPathComponent("base", isDirectory: true)
+    let adapters = root.appendingPathComponent("adapters", isDirectory: true)
+    let hasAdapterLayout = FileManager.default.fileExists(atPath: base.path)
+      || FileManager.default.fileExists(atPath: adapters.path)
+    // MLX recursively loads safetensors; keep base and adapter trees separate.
+    let directory = hasAdapterLayout ? base : root
     var isDirectory: ObjCBool = false
     let exists = FileManager.default.fileExists(atPath: directory.path, isDirectory: &isDirectory)
     let contents =
@@ -34,25 +55,47 @@ public actor MLXCleanupModel: CleanupModelBoundary {
       FileManager.default.fileExists(
         atPath: directory.appendingPathComponent("tokenizer_config.json").path),
       contents.contains(where: { $0.pathExtension == "safetensors" }),
-      modelType == "qwen3_5" || modelType == "qwen3_5_text"
+      (gemma3Challenger ? ["gemma3", "gemma3_text"] : ["qwen3_5", "qwen3_5_text"])
+        .contains(modelType ?? "")
     else { throw CleanupModelError.invalidLocalDirectory }
+    if hasAdapterLayout {
+      guard let configuration = try? JSONDecoder().decode(LoRAConfiguration.self,
+        from: Data(contentsOf: adapters.appendingPathComponent("adapter_config.json"))),
+        configuration.fineTuneType == .lora, configuration.numLayers > 0,
+        configuration.loraParameters.rank > 0,
+        configuration.loraParameters.keys?.isEmpty != true,
+        configuration.loraParameters.scale.isFinite, configuration.loraParameters.scale > 0,
+        let weights = try? adapters.appendingPathComponent("adapters.safetensors")
+          .resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]),
+        weights.isRegularFile == true, (weights.fileSize ?? 0) > 0
+      else { throw CleanupModelError.invalidLocalDirectory }
+      self.adapterDirectory = adapters
+    } else {
+      self.adapterDirectory = nil
+    }
     self.modelDirectory = directory
+    self.gemma3Challenger = gemma3Challenger
   }
 
   /// Loads and retains the verified local weights and tokenizer before the first Dictation.
   public func prepare() async throws(CleanupModelError) {
+    await acquireLifecycle()
+    defer { releaseLifecycle() }
+    guard !Task.isCancelled else { throw .generationFailed }
     _ = try await loadedContainer()
   }
 
   /// Diagnostics for the development benchmark; reading these does not load a model.
-  public var memoryState: (resident: Bool, activeBytes: Int) {
-    (container != nil, Memory.activeMemory)
+  public var memoryState: (resident: Bool, activeBytes: Int, cacheBytes: Int, peakActiveBytes: Int) {
+    (container != nil, Memory.activeMemory, Memory.cacheMemory, Memory.peakMemory)
   }
 
   /// Cancels generation, releases the resident Cleanup model, and returns MLX cache memory.
-  public func unload() {
-    activeGeneration?.task.cancel()
-    activeGeneration = nil
+  public func unload() async {
+    await acquireLifecycle()
+    defer { releaseLifecycle() }
+    await stopGeneration()
+    guard container != nil else { return }
     container = nil
     Memory.clearCache()
   }
@@ -60,10 +103,14 @@ public actor MLXCleanupModel: CleanupModelBoundary {
   public func tokenCount(
     for request: CleanupModelRequest
   ) async throws(CleanupModelError) -> Int {
+    await acquireLifecycle()
+    defer { releaseLifecycle() }
+    guard !Task.isCancelled else { throw .generationFailed }
+    await stopGeneration()
     do {
       let container = try await loadedContainer()
       return try await container.perform { context in
-        let input = try await context.processor.prepare(input: Self.input(for: request))
+        let input = try await context.processor.prepare(input: self.input(for: request))
         return input.text.tokens.size
       }
     } catch let error as CleanupModelError {
@@ -76,19 +123,25 @@ public actor MLXCleanupModel: CleanupModelBoundary {
   public func generate(
     _ request: CleanupModelRequest
   ) async throws(CleanupModelError) -> AsyncStream<String> {
+    await acquireLifecycle()
+    defer { releaseLifecycle() }
+    guard !Task.isCancelled else { throw .generationFailed }
+    await stopGeneration()
     let upstream: AsyncStream<Generation>
+    let generationTask: Task<Void, Never>
     do {
       let container = try await loadedContainer()
-      let input = try await container.prepare(input: Self.input(for: request))
-      upstream = try await container.generate(
-        input: input,
-        parameters: .init(
+      (upstream, generationTask) = try await container.perform { context in
+        let input = try await context.processor.prepare(input: self.input(for: request))
+        let iterator = try TokenIterator(input: input, model: context.model, parameters: .init(
           maxTokens: request.maximumOutputTokens,
           temperature: 0,
           topP: 1,
           topK: 1
-        )
-      )
+        ))
+        return MLXLMCommon.generateTask(promptTokenCount: input.text.tokens.size,
+          modelConfiguration: context.configuration, tokenizer: context.tokenizer, iterator: iterator)
+      }
     } catch let error as CleanupModelError {
       throw error
     } catch {
@@ -119,21 +172,48 @@ public actor MLXCleanupModel: CleanupModelBoundary {
           output = String(output[split...])
         }
       }
+      // Ending an AsyncStream does not join MLX computation. Drain it before the next
+      // request or process teardown can release the model and compiler caches.
+      generationTask.cancel()
+      await generationTask.value
       if !output.isEmpty { continuation.yield(output) }
       continuation.finish()
       await self?.generationEnded(generationID)
     }
-    activeGeneration?.task.cancel()
     activeGeneration = (generationID, task)
-    continuation.onTermination = { [weak self] _ in
+    continuation.onTermination = { _ in
       task.cancel()
-      Task { await self?.generationEnded(generationID) }
     }
     return stream
   }
 
+  private func stopGeneration() async {
+    guard let active = activeGeneration else { return }
+    active.task.cancel()
+    await active.task.value
+  }
+
+  // Actor reentrancy must not let unload or a second startup overtake registration.
+  // Streaming and generationEnded do not acquire this gate, so teardown can join them.
+  func acquireLifecycle() async {
+    if !lifecycleBusy { lifecycleBusy = true; return }
+    await withCheckedContinuation { lifecycleWaiters.append($0) }
+  }
+
+  func releaseLifecycle() {
+    if lifecycleWaiters.isEmpty { lifecycleBusy = false }
+    else { lifecycleWaiters.removeFirst().resume() }
+  }
+
+  var queuedLifecycleOperations: Int { lifecycleWaiters.count }
+
   private func generationEnded(_ id: UUID) {
-    if activeGeneration?.id == id { activeGeneration = nil }
+    if activeGeneration?.id == id {
+      activeGeneration = nil
+      // Prompt shapes vary between Dictations. Return unused buffers after MLX joins,
+      // while retaining the resident weights, instead of accumulating a device-sized cache.
+      Memory.clearCache()
+    }
   }
 
   private func loadedContainer() async throws(CleanupModelError) -> ModelContainer {
@@ -143,6 +223,21 @@ public actor MLXCleanupModel: CleanupModelBoundary {
         from: modelDirectory,
         using: LocalTokenizerLoader()
       )
+      if let adapterDirectory {
+        let adapter = try LoRAContainer.from(directory: adapterDirectory)
+        try await loaded.perform { context in
+          let initialized = try LoRAContainer.from(model: context.model, configuration: adapter.configuration)
+          let expected = Dictionary(uniqueKeysWithValues: initialized.parameters.flattened())
+          let actual = Dictionary(uniqueKeysWithValues: adapter.parameters.flattened())
+          // The upstream loader rejects extra keys but permits missing adapter tensors. Require
+          // the complete trained adapter instead of retaining randomly initialized replacements.
+          guard !expected.isEmpty, expected.keys.sorted() == actual.keys.sorted(),
+            expected.allSatisfy({ actual[$0.key]?.shape == $0.value.shape })
+          else { throw CleanupModelError.invalidLocalDirectory }
+          try context.model.update(parameters: adapter.parameters, verify: .noUnusedKeys)
+          eval(context.model)
+        }
+      }
       container = loaded
       return loaded
     } catch {
@@ -150,9 +245,10 @@ public actor MLXCleanupModel: CleanupModelBoundary {
     }
   }
 
-  private nonisolated static func input(for request: CleanupModelRequest) -> UserInput {
+  nonisolated func input(for request: CleanupModelRequest) -> UserInput {
     UserInput(
-      chat: [
+      // Gemma 3 has no system role: keep identical instruction/data text in its first user turn.
+      chat: gemma3Challenger ? [.user(request.systemInstruction + "\n\n" + request.prompt)] : [
         .system(request.systemInstruction),
         .user(request.prompt),
       ],

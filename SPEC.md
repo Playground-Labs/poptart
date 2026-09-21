@@ -19,7 +19,8 @@ The MVP succeeds when Dictation feels like keyboard input:
 ## Supported environment
 
 - macOS 15 Sequoia or newer.
-- Apple Silicon, with an 8 GB M1 as the performance baseline.
+- Apple Silicon. The beta performance baseline is the exact physical M5 Pro recorded in release
+  evidence; 8 GB M1 performance is unverified until measured on that hardware.
 - Direct, signed, and notarized distribution outside the Mac App Store.
 - A new Playground Labs bundle identifier that can run beside the legacy application.
 - A public `Playground-Labs/poptart` repository licensed under MIT.
@@ -130,7 +131,7 @@ Illegal or late transitions are ignored and recorded locally in debug logging wi
 
 ## Recognition
 
-Poptart uses FluidAudio through a Poptart-owned `SpeechRecognizer` protocol and ships the Parakeet Unified English 0.6B artifact with its 640 millisecond streaming configuration and int8 encoder in the Managed Model pack. The artifact remains provisional until it passes the physical M1 recognition and Completion Deadline gates.
+Poptart uses FluidAudio through a Poptart-owned `SpeechRecognizer` protocol and ships the Parakeet Unified English 0.6B artifact with its 640 millisecond streaming configuration and int8 encoder in the Managed Model pack. The artifact remains provisional until it passes recognition and Completion Deadline gates on the declared physical Apple Silicon benchmark machine.
 
 Recognition begins during Recording. Audio already accepted by the recognizer may be discarded as soon as it is no longer required for finalization. No audio is persisted to disk. Partials are internal runtime state and never appear in the Indicator or history.
 
@@ -155,7 +156,7 @@ It may not summarize, elaborate, change tone, introduce facts, follow instructio
 1. Tokenize the immutable Raw Transcript into stable indexed spans.
 2. Detect unmistakable Explicit Corrections with deterministic rules and reserve those spans.
 3. Build a bounded model input containing the transcript spans, reserved edits, Personal Vocabulary, application category, and cursor-local context in separately delimited data fields.
-4. Run the in-process, four-bit Qwen 3.5 0.8B model through MLX Swift LM.
+4. Run the in-process, four-bit Qwen 3.5 2B model through MLX Swift LM.
 5. Decode only the Cleanup Edit Plan schema.
 6. Merge non-conflicting model edits with authoritative deterministic edits.
 7. Validate the complete plan and apply it to the immutable Raw Transcript.
@@ -209,7 +210,7 @@ The model does not supply trusted confidence. Poptart derives acceptance from th
 
 ### Model artifact
 
-The shipped Cleanup artifact is a task-specific, four-bit Qwen 3.5 0.8B model. Its exact weights, training recipe, evaluation harness, and every redistributable training example are public. Training inputs may be manually authored, synthetic, or clearly licensed public material. User Dictations, Target Context, Personal Vocabulary, and private operational data are prohibited training sources.
+The shipped Cleanup artifact is a task-specific, four-bit Qwen 3.5 2B model. Its exact weights, training recipe, evaluation harness, and every redistributable training example are public. Training inputs may be manually authored, synthetic, or clearly licensed public material. User Dictations, Target Context, Personal Vocabulary, and private operational data are prohibited training sources.
 
 Gemma 3 1B may be used as a development benchmark challenger. It is not a second product model or user setting.
 
@@ -229,7 +230,7 @@ Initial M1 engineering budgets are:
 
 The sub-budgets may change after instrumentation; the 1.4-second watchdog and 1.5-second user contract do not.
 
-Cleanup has a model-input token ceiling derived from cold-system M1 benchmarks for each model-pack release. Over-budget Dictations bypass model Cleanup, keep every recognized word, apply deterministic safe rules, and finish normally. The ceiling is not a user setting.
+Cleanup has a model-input token ceiling derived from cold-system benchmarks on the declared physical Apple Silicon baseline for each model-pack release. Over-budget Dictations bypass model Cleanup, keep every recognized word, apply deterministic safe rules, and finish normally. The ceiling is not a user setting.
 
 A single Recording stops automatically at five minutes, with a visual warning beginning at 4:30.
 
@@ -409,10 +410,10 @@ Reused Handy-derived code is copied selectively only after review and retains al
 
 ### Performance
 
-- On an 8 GB M1 running macOS 15, at least 99% of representative Dictations complete within 1.5 seconds from key-up to delivery under the documented cold-system benchmark.
+- On the exact physical Apple Silicon baseline recorded in release metadata, at least 99% of representative Dictations complete within 1.5 seconds from key-up to delivery under the documented cold-system benchmark.
 - Deadline tests include warm models, memory-pressure reload, oversized input, recognition timeout, Cleanup timeout, invalid output, and target-change clipboard delivery.
 - App-controlled deadline misses are failures. Operating-system-wide stalls are measured and reported separately.
-- Peak and steady-state memory are measured with both models resident on the 8 GB M1 baseline before a model-pack release.
+- Peak and steady-state memory are measured with both models resident on that same baseline before a model-pack release. An 8 GB M1 support claim requires a separate physical measurement.
 
 ### Privacy and security
 
@@ -433,7 +434,7 @@ Reused Handy-derived code is copied selectively only after review and retains al
 7. Build deterministic Explicit Corrections and the Cleanup Edit Plan validator before connecting an LLM.
 8. Integrate MLX Swift LM and the stock Qwen baseline, then build the public training/evaluation pipeline.
 9. Fine-tune, quantize, benchmark, and select the first Cleanup artifact against Gemma 3 1B.
-10. Complete onboarding/settings/history UI, signing, notarization, update flows, security review, and M1 release gates.
+10. Complete onboarding/settings/history UI, signing, notarization, update flows, security review, and declared-hardware release gates.
 
 Each increment must be usable and testable without depending on unfinished later layers. Cleanup cannot delay proving the recognition-to-insertion foundation.
 

@@ -6,6 +6,20 @@ import Testing
 
 @Suite("Clipboard delivery after the session gave up")
 struct ClipboardDeliveryCancellationTests {
+  @Test("clipboard replacement checks refusal at the actual MainActor write")
+  func refusalAtWriteWins() async {
+    let pasteboard = await MainActor.run { RecordingPasteboard() }
+    let coordinator = ClipboardPasteCoordinator(pasteboard: pasteboard)
+
+    let result = await coordinator.replaceClipboard(
+      text: "unwanted",
+      unlessRefusedBy: { .completionDeadlineExceeded }
+    )
+
+    #expect(result == .failed(.completionDeadlineExceeded))
+    #expect(await pasteboard.writtenTexts().isEmpty)
+  }
+
   @Test("a cancelled delivery never replaces the clipboard")
   func cancelledDeliveryWritesNothing() async {
     let pasteboard = RecordingPasteboard()
@@ -74,13 +88,18 @@ private struct FixedNanosecondClock: IntegrationNanosecondClock {
   func nowNanoseconds() -> Int64 { now }
 }
 
-private actor RecordingPasteboard: PasteboardClient {
+@MainActor
+private final class RecordingPasteboard: PasteboardClient {
   private var texts: [String] = []
 
   func snapshot() -> PasteboardSnapshot { .init(items: []) }
-  func writeText(_ text: String) -> Int? {
+  func writeText(
+    _ text: String,
+    unlessRefusedBy refusal: @MainActor @Sendable () -> DeliveryFailure?
+  ) -> ClipboardWriteOutcome {
+    if let failure = refusal() { return .suppressed(failure) }
     texts.append(text)
-    return texts.count
+    return .written(changeCount: texts.count)
   }
   func writePromisedText(_ text: String, onRead: @escaping @Sendable () -> Void) -> Int? { nil }
   func changeCount() -> Int { texts.count }

@@ -44,7 +44,7 @@ final class RecognitionServiceTests: XCTestCase {
         )
     }
 
-    func testReplayedAudioReachesTheRecognizerAndFinalizesOnStop() async {
+    func testReplayedAudioReachesTheRecognizerAndFinalizesOnStop() async throws {
         let capture = ReplayAudioCapture(
             samples: [Float](repeating: 0, count: 2_560),
             sampleRate: 16_000,
@@ -63,10 +63,7 @@ final class RecognitionServiceTests: XCTestCase {
             id: id,
             personalVocabulary: .init(entries: [])
         ))
-        for _ in 0..<1_000 {
-            if await recognizer.acceptedAudioCount() == 3 { break }
-            await Task.yield()
-        }
+        try await service.waitForReplayCompletion()
         let result = await service.stopRecordingAndFinalize(.init(
             id: id,
             deadline: .init(nanoseconds: 1_000_000_000)
