@@ -243,6 +243,7 @@ public enum DeliveryFailure: String, Error, Equatable, Sendable {
 public enum DeliveryResult: Equatable, Sendable {
     case inserted(DeliveryMethod)
     case copiedToClipboard
+    case copiedAfterTargetChanged
     case failed(DeliveryFailure)
 }
 

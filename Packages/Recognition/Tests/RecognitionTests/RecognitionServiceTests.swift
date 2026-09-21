@@ -44,6 +44,36 @@ final class RecognitionServiceTests: XCTestCase {
         )
     }
 
+    func testReplayedAudioReachesTheRecognizerAndFinalizesOnStop() async throws {
+        let capture = ReplayAudioCapture(
+            samples: [Float](repeating: 0, count: 2_560),
+            sampleRate: 16_000,
+            frameCount: 1_024,
+            sleep: { _ in }
+        )
+        let recognizer = FakeIncrementalRecognizer(finalization: .final("Replayed words."))
+        let service = RecognitionService(
+            capture: capture,
+            recognizer: recognizer,
+            onEvent: { _ in }
+        )
+        let id = DictationID()
+
+        _ = await service.startRecording(.init(
+            id: id,
+            personalVocabulary: .init(entries: [])
+        ))
+        try await service.waitForReplayCompletion()
+        let result = await service.stopRecordingAndFinalize(.init(
+            id: id,
+            deadline: .init(nanoseconds: 1_000_000_000)
+        ))
+
+        let acceptedAudioCount = await recognizer.acceptedAudioCount()
+        XCTAssertEqual(acceptedAudioCount, 3)
+        XCTAssertEqual(result, .final(.init(text: "Replayed words.")))
+    }
+
     func testCancellationStopsCaptureAndDestroysRecognizerAudio() async {
         let capture = FakeAudioCapture()
         let recognizer = FakeIncrementalRecognizer(finalization: .final("unused"))

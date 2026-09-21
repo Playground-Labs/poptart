@@ -1,46 +1,94 @@
 # Cleanup model training
 
-This is a clean-room, reproducible recipe for Poptart's task-specific Cleanup model. Inputs are limited to manually authored synthetic examples committed here or redistributable public sources with an individual provenance record. User Dictations, Target Context, Personal Vocabulary, history, audio, clipboard contents, application content, logs, telemetry, support data, and private operational data are prohibited.
+This directory contains the clean-room recipe for Poptart's task-specific Cleanup model. Inputs
+are limited to manually authored synthetic examples committed here or redistributable public
+sources with an individual provenance record. User dictations, target context, personal
+vocabulary, history, audio, clipboard contents, application content, logs, telemetry, support
+data, and other private operational data are prohibited.
 
-The checked-in corpus is `CC0-1.0`, authored for Poptart, and contains invented names and applications only. Adding a source requires its stable URL, immutable revision, license, author, and redistribution rationale in every JSONL record. The verifier rejects unknown provenance kinds, missing licenses, and fields associated with private product data.
+The checked-in corpus is CC0-1.0, authored for Poptart, and uses invented names and applications.
+`prepare_corpus.py` rejects unknown provenance, missing licenses, duplicate utterances, direct
+evaluation leakage, invalid plans, and plans whose applied result differs from the labeled clean
+text.
 
-## The training target is a Cleanup Edit Plan
+## Training target
 
-The model decodes only the Cleanup Edit Plan schema, so that is what it is trained to emit — never a rewritten transcript. Each generated assistant message is the compact plan document followed by the `<END_PLAN>` stop marker, exactly what `BoundedEditPlanParser` accepts:
+The model emits a compact Cleanup Edit Plan followed by `<END_PLAN>`, never a rewritten
+transcript:
 
-```
+```json
 {"v":1,"e":[{"s":0,"e":1,"r":"","c":"filler"},{"s":6,"e":6,"r":".","c":"punctuation"}]}<END_PLAN>
 ```
 
-The system message is `CleanupPrompt.qwen35SystemInstruction` and the user message is the byte-counted untrusted-data payload `CleanupPrompt.build` produces, so training inputs have the same shape as inference inputs. `mask_prompt: true` in `config/lora.yaml` means only the plan contributes loss.
+Training uses the same system instruction and byte-counted untrusted-data payload as production.
+Only the assistant plan contributes loss. Each record in `data/corpus.jsonl` contains:
 
-### Corpus records
+| Field | Required | Meaning |
+| --- | --- | --- |
+| `id` | yes | Unique corpus and fixture identifier. |
+| `provenance` | yes | Authored-synthetic source, author, license, and repository source. |
+| `split` | yes | `train`, `valid`, or `test`. |
+| `raw` / `clean` | yes | Input transcript and expected text after applying the plan. |
+| `editPlan` | yes | Compact wire-format Cleanup Edit Plan. |
+| `vocabularyTerms` | no | Personal vocabulary entries used by the example. |
+| `targetContext` | no | Application and text-around-cursor context. |
+| `reservedEdits` | no | Deterministic Explicit Corrections, which the model may not author. |
 
-`data/corpus.jsonl`, one JSON object per line:
-
-| Field             | Required | Meaning                                                                          |
-| ----------------- | -------- | -------------------------------------------------------------------------------- |
-| `id`              | yes      | Unique across every corpus and fixture file.                                       |
-| `provenance`      | yes      | Exactly `{"kind":"authoredSynthetic","author":"Playground Labs","license":"CC0-1.0","source":"repository"}`. |
-| `split`           | yes      | `train`, `valid` or `test`.                                                        |
-| `raw`             | yes      | The Raw Transcript.                                                                |
-| `clean`           | yes      | The text the plan must reproduce. It is a check, never a training target.           |
-| `editPlan`        | yes      | The Cleanup Edit Plan to decode, in the compact wire schema.                        |
-| `vocabularyTerms` | no       | Personal vocabulary entries in play for this record. Defaults to `[]`.              |
-| `targetContext`   | no       | `{"applicationIdentifier","applicationCategory","textBeforeCursor","textAfterCursor","selectedText"}`. Defaults to an empty text-editor context. |
-| `reservedEdits`   | no       | Deterministic Explicit Corrections. Defaults to `[]`; a model-authored `correction` is rejected. |
-
-Before writing anything, `prepare_corpus.py` decodes each plan through the Python mirror of the runtime parser, checks it against **every** rule in `CleanupEditPlanValidator.validate`, applies it to `raw`, and aborts the whole build unless the result equals `clean`. Fixture and corpus plans are validated by the same mirror, `Evals/editplan.py`.
-
-Training the model on a plan the runtime would reject teaches it to produce fallbacks, so the change budget matters when authoring: a record's edits may change at most `max(8, ceil(characterCount * 0.35))` characters, counting `max(sourceCharacters, replacementCharacters)` per edit. A multi-span vocabulary correction is expensive, so the Dictation carrying it has to be long enough to pay for it.
+The current corpus has 1,088 records: 1,024 train, 32 validation, and 32 test.
 
 ## Reproduce
 
-1. Create a fresh Python 3.12 environment and install `requirements.txt` with hashes added by the release operator's locked environment export.
-2. Obtain `Qwen/Qwen3.5-0.8B` at revision `2fc06364715b967f1860aea9cf38778875588b17` under its Apache-2.0 license and place it at the local path in `config/lora.yaml`. Network access is an explicit preparation step, never part of Poptart.
-3. Run `python3 Training/prepare_corpus.py`; the script deterministically validates provenance, proves every Cleanup Edit Plan reproduces its clean text, and creates MLX chat JSONL splits.
-4. Run `mlx_lm.lora --config Training/config/lora.yaml`.
-5. Fuse against the same pinned base, then quantize with `mlx_lm.convert --q-bits 4 --q-group-size 64 --q-mode affine`.
-6. Run the exact production prompt/tokenizer/artifact evaluation and physical 8 GB M1 benchmark. Only the release script may populate hashes and measurements.
+Training requires Apple Silicon, macOS 26, Python 3.12, a local model, and the pinned package
+lock. Model download is an explicit preparation operation; training and the app run offline.
 
-The repository currently contains no trained weights and makes no quality or latency claim.
+```sh
+uv venv --python 3.12 .build/training-venv
+uv pip sync --python .build/training-venv/bin/python \
+  --require-hashes Training/requirements-macos26-arm64.lock
+uv pip check --python .build/training-venv/bin/python
+python3 Training/prepare_corpus.py --check
+.build/training-venv/bin/python Training/train.py \
+  --config Training/config/lora-2b.yaml
+```
+
+Place the four-bit affine/group-64 conversion of `Qwen/Qwen3.5-2B` revision
+`15852e8c16360a2fea060d615a32b45270f8a8fc` at the local path named by
+`config/lora-2b.yaml`. `train.py` disables remote tokenizer code and Hub access, validates prompt
+masking and sequence lengths, and refuses to overwrite an adapter directory.
+
+Keep the four-bit `base/` and F32 `adapters/` separate when packaging a candidate. Re-fusing the
+adapter into four-bit weights caused measured accuracy loss. Trained weights remain gitignored
+under `Models/Artifacts`; release metadata may only be populated by the release tooling after
+evaluation.
+
+## Selected candidate and evidence
+
+ADR 0054 selects Qwen 3.5 2B with the separate F32 adapter identified in the retained
+[candidate decision](experiments/practical-candidate-decision-2026-09-18.json). Across observed
+development and regression suites it achieved:
+
+| Measure | Result |
+| --- | ---: |
+| Exact Cleanup Edit Plan | 555 / 564 |
+| Meaning preservation | 558 / 564 |
+| Context fit | 561 / 564 |
+| Adversarial and runtime checks | all passed |
+
+The single frozen `release-v2` query achieved 48/48 meaning preservation, 4/4 applicable
+vocabulary checks, 22/22 adversarial checks, 70/70 runtime checks, and 38/48 delivered-text exact
+matches. The stricter gate did not pass: exact plans were 32/48 and context fit was 44/48. See the
+[release result](experiments/practical-candidate-release-v2-2026-09-18.json) and its two frozen
+plans for the full record.
+
+Known residuals are five unwanted vocabulary substitutions among 128 focused physical-object
+cases, one missed capitalization/punctuation cleanup, and one safe raw fallback. These are
+post-MVP iteration work; no further holdout-driven training or threshold change is planned.
+
+Only the compact final decision, offline check, frozen plans, and release result are committed.
+Intermediate training logs, repeated predictions, rejected candidates, and mutable local
+artifacts are intentionally excluded from review. The decision record retains the omitted source
+result's path and SHA-256 so an archived copy can be authenticated.
+
+Physical 8 GB M1 evidence cannot be collected on the available hardware. The M5 Pro benchmark,
+signed Model Pack capture, signing, notarization, and distribution smoke tests are separate
+release evidence.

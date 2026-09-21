@@ -21,11 +21,20 @@ public struct PasteboardSnapshot: Equatable, Sendable {
 
 public protocol PasteboardClient: Sendable {
   func snapshot() async -> PasteboardSnapshot
-  func writeText(_ text: String) async -> Int?
+  @MainActor func writeText(
+    _ text: String,
+    unlessRefusedBy refusal: @MainActor @Sendable () -> DeliveryFailure?
+  ) -> ClipboardWriteOutcome
   func writePromisedText(_ text: String, onRead: @escaping @Sendable () -> Void) async -> Int?
   func changeCount() async -> Int
   func restore(_ snapshot: PasteboardSnapshot) async -> Bool
   func releasePromisedData() async
+}
+
+public enum ClipboardWriteOutcome: Equatable, Sendable {
+  case written(changeCount: Int)
+  case suppressed(DeliveryFailure)
+  case failed
 }
 
 public struct SystemPasteboardClient: PasteboardClient {
@@ -47,14 +56,17 @@ public struct SystemPasteboardClient: PasteboardClient {
     }
   }
 
-  public func writeText(_ text: String) async -> Int? {
-    await MainActor.run {
-      PromisedPasteboardStore.shared.releaseProvider()
-      let pasteboard = NSPasteboard.general
-      pasteboard.clearContents()
-      guard pasteboard.setString(text, forType: .string) else { return nil }
-      return pasteboard.changeCount
-    }
+  @MainActor
+  public func writeText(
+    _ text: String,
+    unlessRefusedBy refusal: @MainActor @Sendable () -> DeliveryFailure?
+  ) -> ClipboardWriteOutcome {
+    if let failure = refusal() { return .suppressed(failure) }
+    PromisedPasteboardStore.shared.releaseProvider()
+    let pasteboard = NSPasteboard.general
+    pasteboard.clearContents()
+    guard pasteboard.setString(text, forType: .string) else { return .failed }
+    return .written(changeCount: pasteboard.changeCount)
   }
 
   public func writePromisedText(
@@ -92,23 +104,34 @@ public struct SystemPasteboardClient: PasteboardClient {
   }
 }
 
+public enum PasteCommandOutcome: Equatable, Sendable {
+  case dispatched
+  case suppressed
+  case failed
+}
+
 public protocol PasteCommandSynthesizer: Sendable {
-  func paste() async -> Bool
+  @MainActor func paste(ifAllowedBy authorization: @MainActor @Sendable () -> Bool)
+    -> PasteCommandOutcome
 }
 
 public struct SystemPasteCommandSynthesizer: PasteCommandSynthesizer {
   public init() {}
 
-  public func paste() async -> Bool {
+  @MainActor
+  public func paste(ifAllowedBy authorization: @MainActor @Sendable () -> Bool)
+    -> PasteCommandOutcome
+  {
+    guard authorization() else { return .suppressed }
     guard let source = CGEventSource(stateID: .combinedSessionState),
       let down = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: true),
       let up = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: false)
-    else { return false }
+    else { return .failed }
     down.flags = .maskCommand
     up.flags = .maskCommand
     down.post(tap: .cghidEventTap)
     up.post(tap: .cghidEventTap)
-    return true
+    return .dispatched
   }
 }
 
@@ -146,6 +169,8 @@ public enum ClipboardPasteOutcome: Equatable, Sendable {
   /// A consumer pulled the promised text, stayed quiet for the policy's quiet period, and the
   /// previous pasteboard contents were handed back. Necessary for an insertion; not sufficient.
   case promisedTextWasRead
+  /// The caller withdrew permission after the promised write but before Cmd-V.
+  case pasteSuppressed
   case failed(DeliveryFailure)
 }
 
@@ -176,7 +201,11 @@ public struct ClipboardPasteCoordinator: Sendable {
   ///
   /// The returned `promisedTextWasRead` says only that: the read happened. The caller must confirm
   /// against the target before reporting an insertion.
-  public func pastePreservingClipboard(text: String, deadline: MonotonicInstant) async
+  public func pastePreservingClipboard(
+    text: String,
+    deadline: MonotonicInstant,
+    shouldPaste: @escaping @MainActor @Sendable () -> Bool = { true }
+  ) async
     -> ClipboardPasteOutcome
   {
     let now = clock.nowNanoseconds()
@@ -194,7 +223,18 @@ public struct ClipboardPasteCoordinator: Sendable {
     guard let receiptCount = promisedWrite else {
       return .failed(.clipboardWriteFailed)
     }
-    guard await synthesizer.paste() else {
+    let paste = await synthesizer.paste(ifAllowedBy: {
+      clock.nowNanoseconds() < deadline.nanoseconds && shouldPaste()
+    })
+    if paste == .suppressed {
+      if await pasteboard.changeCount() == receiptCount {
+        _ = await pasteboard.restore(previous)
+      } else {
+        await pasteboard.releasePromisedData()
+      }
+      return .pasteSuppressed
+    }
+    guard paste == .dispatched else {
       if await pasteboard.changeCount() == receiptCount {
         _ = await pasteboard.restore(previous)
       } else {
@@ -243,10 +283,15 @@ public struct ClipboardPasteCoordinator: Sendable {
     }
   }
 
-  public func replaceClipboard(text: String) async -> DeliveryResult {
-    await pasteboard.writeText(text) == nil
-      ? .failed(.clipboardWriteFailed)
-      : .copiedToClipboard
+  public func replaceClipboard(
+    text: String,
+    unlessRefusedBy refusal: @escaping @MainActor @Sendable () -> DeliveryFailure? = { nil }
+  ) async -> DeliveryResult {
+    switch await pasteboard.writeText(text, unlessRefusedBy: refusal) {
+    case .written: .copiedToClipboard
+    case .suppressed(let failure): .failed(failure)
+    case .failed: .failed(.clipboardWriteFailed)
+    }
   }
 }
 

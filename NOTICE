@@ -1,0 +1,124 @@
+Poptart
+Copyright (c) 2026 Playground Labs
+
+This product is licensed under the MIT License. The full text is in LICENSE.
+
+
+Upstream provenance
+-------------------
+
+Poptart's earlier codebase was derived from Handy by CJ Pais. That codebase,
+and its development history, is archived as:
+
+    https://github.com/Playground-Labs/poptart-legacy
+
+The Swift redesign in this repository is a clean break (ADR 0001) and carries
+no Handy architecture forward. LICENSE retains CJ Pais's copyright notice
+to preserve that provenance (ADR 0001, ADR 0031).
+
+
+Third-party Swift packages
+--------------------------
+
+Poptart links the following packages. Each entry lists the package identity as
+written in Package.resolved, its upstream location, the pinned version, and the
+license read from that package's own LICENSE file at the pinned revision. Each
+package remains under its own license and retains its own notices.
+
+  eventsource           https://github.com/mattt/EventSource.git
+                        1.5.1 — MIT
+
+  fluidaudio            https://github.com/brandon-nextwork/FluidAudio.git
+                        61dc8edf915e528a11d81ded84b83d2709746713 — Apache-2.0
+                        Based on FluidInference/FluidAudio 0.15.6; local CTC directory
+                        retention and opt-out of transcript/vocabulary logging.
+
+  mlx-swift             https://github.com/ml-explore/mlx-swift.git
+                        0.31.4 — MIT
+
+  mlx-swift-lm          https://github.com/ml-explore/mlx-swift-lm.git
+                        3.31.4 — MIT
+
+  sparkle               https://github.com/sparkle-project/Sparkle
+                        2.10.0 — MIT, with bundled third-party notices in its LICENSE
+
+  swift-asn1            https://github.com/apple/swift-asn1.git
+                        1.7.1 — Apache-2.0
+
+  swift-collections     https://github.com/apple/swift-collections.git
+                        1.6.0 — Apache-2.0 with the Runtime Library Exception
+
+  swift-crypto          https://github.com/apple/swift-crypto.git
+                        4.5.1 — Apache-2.0
+
+  swift-huggingface     https://github.com/huggingface/swift-huggingface.git
+                        0.9.0 — Apache-2.0
+
+  swift-jinja           https://github.com/huggingface/swift-jinja.git
+                        2.4.2 — Apache-2.0
+
+  swift-numerics        https://github.com/apple/swift-numerics
+                        1.1.1 — Apache-2.0 with the Runtime Library Exception
+
+  swift-syntax          https://github.com/swiftlang/swift-syntax.git
+                        603.0.2 — Apache-2.0 with the Runtime Library Exception
+
+  swift-transformers    https://github.com/huggingface/swift-transformers.git
+                        1.3.3 — Apache-2.0
+
+  yyjson                https://github.com/ibireme/yyjson.git
+                        0.12.0 — MIT
+
+swift-asn1 and swift-crypto ship their own NOTICE.txt files; those travel with
+the packages and are not restated here.
+
+
+Model assets
+------------
+
+No model weights are stored in this repository. Poptart recognizes speech with
+Parakeet from FluidInference and cleans transcripts with a Qwen 3.5 derivative
+licensed Apache-2.0 (see Models/README.md). Both retain their upstream licenses
+and notices when packaged into a Model Pack.
+
+
+Managed recognition artifact attribution
+----------------------------------------
+
+Parakeet Unified English 0.6B is based on NVIDIA's Parakeet model; Core ML conversion
+and Swift integration are by FluidInference. The artifact, unlike the FluidAudio
+SDK, is CC-BY-4.0:
+https://huggingface.co/FluidInference/parakeet-unified-en-0.6b-coreml/tree/4252711f6f060f9a2f91e5f081a806d7f45eebd8
+https://creativecommons.org/licenses/by/4.0/
+
+Poptart selects the upstream 70/7/1 int8 streaming encoder, decoder, joint-decision
+bundle, vocabulary and metadata. These staged model files are unmodified.
+
+Personal Vocabulary uses the Parakeet TDT-CTC 110M model developed by NVIDIA
+and Suno, with Core ML conversion by FluidInference:
+https://huggingface.co/FluidInference/parakeet-ctc-110m-coreml/tree/accdafd8cf8a2ff1cabe3c11e54416b405d409aa
+https://huggingface.co/nvidia/parakeet-tdt_ctc-110m
+The original model and converted model-card metadata declare CC-BY-4.0.
+The converted card's Apache-2.0 body statement conflicts with that metadata;
+it is not evidence that NVIDIA's attribution terms have been removed.
+Poptart stages the encoder, spectrogram and tokenizer files without changing
+their bytes. Redistribution clarification remains part of release preparation.
+
+Optional voice activity detection uses Silero VAD, copyright 2020-present
+Silero Team, converted to Core ML by FluidInference, under the MIT License:
+https://huggingface.co/FluidInference/silero-vad-coreml/tree/b419383c55c110e2c9271fa6ee0ea83d03c70d96
+The selected bundle is silero-vad-unified-256ms-v6.2.1.mlmodelc, unmodified.
+The full copyright and permission notice is in Models/notices/Silero-LICENSE.txt
+and must accompany the VAD files in the distributed Model Pack.
+
+
+Development speech evidence
+---------------------------
+
+Recorded-speech probe references are from LibriSpeech, copyright 2014
+Vassil Panayotov, licensed Creative Commons Attribution 4.0 International:
+https://www.openslr.org/12
+https://creativecommons.org/licenses/by/4.0/
+LibriVox readers are credited per fixture in
+Models/evidence/public-speech-inputs-2026-09-17.json. Local probe audio is decoded
+from FLAC to PCM WAV without resampling; it is not bundled with Poptart.

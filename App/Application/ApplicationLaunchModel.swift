@@ -50,16 +50,27 @@ public final class ApplicationLaunchModel {
 
     private let modelPacks: any ActiveModelPackProviding
     private let startRuntime: RuntimeStart
+    private var startup: Task<Void, Never>?
 
     public init(modelPacks: any ActiveModelPackProviding, startRuntime: @escaping RuntimeStart) {
         self.modelPacks = modelPacks
         self.startRuntime = startRuntime
     }
 
-    /// Starts the runtime once. Calling it again while it is starting, or after it is ready, does
-    /// nothing; use ``restart()`` after granting a permission or installing a pack.
+    /// Starts the runtime once, joining any in-flight start. Use ``restart()`` after granting a
+    /// permission or installing a pack, including when an older pack is still starting.
     public func start() async {
-        guard status != .starting, status != .ready else { return }
+        if let startup { await startup.value; return }
+        guard status != .ready else { return }
+        let task = Task {
+            await performStart()
+            startup = nil
+        }
+        startup = task
+        await task.value
+    }
+
+    private func performStart() async {
         status = .starting
         let located: ActiveApplicationModelPack?
         do {
@@ -94,6 +105,7 @@ public final class ApplicationLaunchModel {
     }
 
     public func restart() async {
+        if let startup { await startup.value }
         status = .notStarted
         await start()
     }

@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import ModelRuntime
 import Persistence
@@ -28,8 +29,26 @@ struct SettingsSurfaceTests {
         #expect(harness.model.modelPack?.version == "1.4.0")
         #expect(harness.model.modelPack?.storageBytes == 1_500_000_000)
         #expect(harness.model.modelPack?.licenses.map(\.role).sorted() == ["cleanup", "recognition"])
+        #expect(Set(harness.model.modelPack?.licenses.map(\.id) ?? []).count == 2)
         #expect(harness.model.vocabularyDraft == "Poptart\nMLX")
         #expect(harness.model.launchesAtLogin)
+    }
+
+    @Test("signed offers collapse per-file artifacts into unique license rows")
+    func signedOfferLicensesAreUnique() throws {
+        let key = Curve25519.Signing.PrivateKey()
+        let manifest = stubManifest()
+        let manifestBytes = try JSONEncoder().encode(manifest)
+        let envelope = SignedModelPackManifest(
+            manifest: manifestBytes,
+            signature: try key.signature(for: manifestBytes)
+        )
+
+        let offer = try VerifiedModelPackOffers(publicKey: { key.publicKey.rawRepresentation })
+            .describe(signedManifest: JSONEncoder().encode(envelope))
+
+        #expect(offer.licenses.map(\.role).sorted() == ["cleanup", "recognition"])
+        #expect(Set(offer.licenses.map(\.id)).count == offer.licenses.count)
     }
 
     @Test("choosing a microphone points capture at it and remembers the choice")
@@ -115,6 +134,7 @@ struct SettingsSurfaceTests {
         await harness.model.checkForModelPackUpdate()
 
         #expect(harness.model.availableModelPack == nil)
+        #expect(harness.activations.value == 0)
         #expect(
             harness.model.modelPackActivity == .reported("Poptart already has Model Pack 1.2.0."))
     }
@@ -135,6 +155,17 @@ struct SettingsSurfaceTests {
         #expect(await harness.installer.performed.map(\.action) == [.update])
         #expect(harness.model.modelPackActivity == .reported("Model Pack 1.2.0 is active."))
         #expect(harness.model.availableModelPack == nil)
+        #expect(harness.activations.value == 1)
+    }
+
+    @Test("an installed pack is not reported active when its runtime fails to start")
+    func failedActivationIsReported() async {
+        let harness = SettingsHarness(pack: .stub(version: "1.0.0"))
+        harness.model.connectModelPackActivation { "Allow Microphone access." }
+        await harness.model.checkForModelPackUpdate()
+        await harness.installer.result(.stub(version: "1.2.0"))
+        await harness.model.updateModelPack()
+        #expect(harness.model.modelPackActivity == .reported("Model Pack 1.2.0 is installed. Allow Microphone access."))
     }
 
     @Test("Repair Model Pack reinstalls the version that should be installed")
@@ -149,7 +180,8 @@ struct SettingsSurfaceTests {
         #expect(requests.map(\.action) == [.repair])
         #expect(requests.map(\.version) == ["1.0.0"])
         #expect(await harness.installer.performed.map(\.action) == [.repair])
-        #expect(harness.model.modelPackActivity == .reported("Model Pack 1.0.0 verifies again."))
+        #expect(harness.model.modelPackActivity == .reported("Model Pack 1.0.0 verifies again and is active."))
+        #expect(harness.activations.value == 1)
     }
 
     @Test("a development Model Pack says plainly that there is nothing to repair")
@@ -195,6 +227,15 @@ struct SettingsSurfaceTests {
                 == .reported("The installed Model Pack no longer verifies. Use Repair Model Pack."))
     }
 
+    @Test("An unrecoverable repair failure survives the registry refresh")
+    func repairFailureIsNotOverwritten() async {
+        let harness = SettingsHarness(packFailure: ModelPackError.invalidActiveState)
+        await harness.manifests.fail(with: ModelPackError.unrecoverableActiveState)
+        await harness.model.repairModelPack()
+        #expect(harness.model.modelPackActivity == .reported(
+            "Model Pack verification data is damaged. Automatic repair is unavailable."))
+    }
+
     @Test("a pack with no measured Cleanup budget says Dictations keep the Raw Transcript")
     func packWithoutMeasuredCeilingIsExplained() async {
         let harness = SettingsHarness(pack: .stub(version: "0.9.0", cleanupTokenCeiling: nil))
@@ -230,17 +271,17 @@ struct SettingsSurfaceTests {
         #expect(harness.model.vocabularyMessage == "Personal Vocabulary cannot be read on this Mac.")
     }
 
-    @Test("the update check opens the releases page and asks the network for nothing")
-    func updateCheckOpensReleasesPage() async {
+    @Test("application updates start only after the explicit Settings action")
+    func updateCheckRequiresExplicitAction() async {
         let harness = SettingsHarness()
-
+        await harness.model.load()
+        #expect(harness.updateChecks.value == 0)
         harness.model.checkForApplicationUpdate()
-
-        #expect(harness.links.opened.value == [PoptartRelease.releasesURL])
+        #expect(harness.updateChecks.value == 1)
         #expect(await harness.manifests.requests.isEmpty)
         #expect(
             harness.model.applicationUpdateMessage
-                == "Opened the Poptart releases page. Poptart never checks for updates on its own.")
+                == "Checking for Poptart updates.")
     }
 
     @Test("only the missing permissions are requested")
@@ -293,7 +334,8 @@ private struct SettingsHarness {
     let installer: StubInstaller
     let vocabulary: StubVocabulary
     let records: StubRecordStore
-    let links: StubLinkOpener
+    let updateChecks: Box<Int>
+    let activations: Box<Int>
     let applied: Box<[ShortcutBinding]>
     let model: SettingsModel
 
@@ -337,7 +379,10 @@ private struct SettingsHarness {
         self.installer = StubInstaller()
         self.vocabulary = vocabularyStore ?? StubVocabulary(stored: vocabulary)
         self.records = recordStore
-        self.links = StubLinkOpener()
+        let updateChecks = Box<Int>(0)
+        self.updateChecks = updateChecks
+        let activations = Box<Int>(0)
+        self.activations = activations
         self.model = SettingsModel(
             shortcut: shortcut,
             history: history,
@@ -354,8 +399,15 @@ private struct SettingsHarness {
             installer: self.installer,
             storage: StubStorageMeasure(bytes: storageBytes),
             vocabulary: self.vocabulary,
-            links: self.links,
+            applicationUpdate: {
+                updateChecks.mutate { $0 += 1 }
+                return "Checking for Poptart updates."
+            },
             applicationVersion: "0.1.0"
         )
+        model.connectModelPackActivation {
+            activations.mutate { $0 += 1 }
+            return nil
+        }
     }
 }

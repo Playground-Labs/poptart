@@ -2,60 +2,138 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://playgroundlabs.com/poptart/model-pack.schema.json",
   "title": "Poptart Model Pack Manifest",
-  "description": "The signed manifest body. An installable manifest carries measured release evidence: byte sizes, hashes, and the Cleanup token ceiling. Only an exampleOnly template may leave that evidence null, and the installer refuses such a document.",
+  "description": "The signed manifest body. An installable manifest carries measured release evidence: byte sizes, hashes, and the Cleanup token ceiling. Only an exampleOnly template may leave that evidence null, and the installer refuses such a document. Each artifact is one regular file at its final runtime path, never an archive.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["identity", "version", "minimumApplicationVersion", "maximumApplicationVersion", "cleanupTokenCeiling", "artifacts"],
+  "required": [
+    "identity",
+    "version",
+    "minimumApplicationVersion",
+    "maximumApplicationVersion",
+    "cleanupTokenCeiling",
+    "artifacts"
+  ],
   "properties": {
-    "exampleOnly": { "const": true, "description": "Marks a non-installable template. Present only in Models/model-pack.example.json." },
-    "note": { "type": "string" },
-    "identity": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
-    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
-    "minimumApplicationVersion": { "type": "string" },
-    "maximumApplicationVersion": { "type": "string" },
+    "exampleOnly": {
+      "const": true,
+      "description": "Marks a non-installable template. Present only in Models/model-pack.example.json."
+    },
+    "note": {
+      "type": "string"
+    },
+    "identity": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "minimumApplicationVersion": {
+      "type": "string"
+    },
+    "maximumApplicationVersion": {
+      "type": "string"
+    },
     "cleanupTokenCeiling": {
       "description": "Cleanup model-input token ceiling measured on a cold M1 for this pack release. Never a default and never a user setting.",
-      "type": ["integer", "null"],
+      "type": [
+        "integer",
+        "null"
+      ],
       "minimum": 1
     },
     "artifacts": {
       "type": "array",
       "minItems": 2,
-      "maxItems": 2,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["role", "url", "relativePath", "byteSize", "sha256", "license"],
+        "required": [
+          "role",
+          "url",
+          "relativePath",
+          "byteSize",
+          "sha256",
+          "license"
+        ],
         "properties": {
-          "role": { "enum": ["recognition", "cleanup"] },
-          "url": { "type": "string", "format": "uri", "pattern": "^https://" },
-          "relativePath": { "type": "string", "pattern": "^(recognition|cleanup)/[^/]+$" },
-          "byteSize": { "type": ["integer", "null"], "minimum": 1 },
-          "sha256": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+          "role": {
+            "enum": [
+              "recognition",
+              "cleanup"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https://"
+          },
+          "relativePath": {
+            "type": "string",
+            "pattern": "^(recognition|cleanup|vad)/(?!\\.{1,2}(?:/|$))[^/]+(?:/(?!\\.{1,2}(?:/|$))[^/]+)*$"
+          },
+          "byteSize": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "sha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{64}$"
+          },
           "license": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["name", "url"],
+            "required": [
+              "name",
+              "url"
+            ],
             "properties": {
-              "name": { "type": "string", "minLength": 1 },
-              "url": { "type": "string", "format": "uri", "pattern": "^https://" }
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "pattern": "^https://"
+              }
             }
           }
         }
       }
     }
   },
-  "if": { "required": ["exampleOnly"] },
+  "if": {
+    "required": [
+      "exampleOnly"
+    ]
+  },
   "else": {
     "title": "Installable manifest",
     "description": "Without the exampleOnly marker, every measured field must be present and real.",
     "properties": {
-      "cleanupTokenCeiling": { "type": "integer", "minimum": 1 },
+      "cleanupTokenCeiling": {
+        "type": "integer",
+        "minimum": 1
+      },
       "artifacts": {
         "items": {
           "properties": {
-            "byteSize": { "type": "integer", "minimum": 1 },
-            "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+            "byteSize": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
           }
         }
       }

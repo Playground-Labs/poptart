@@ -8,12 +8,15 @@ let package = Package(
     products: [
         .library(name: "PoptartApplication", targets: ["PoptartApplication"]),
         .executable(name: "Poptart", targets: ["Poptart"]),
+        .executable(name: "PoptartBenchmark", targets: ["PoptartBenchmark"]),
+        .executable(name: "PoptartCleanupEval", targets: ["PoptartCleanupEval"]),
         // Compatibility harness. Deliberately separate products so that no shipping target ever
         // depends on them.
         .executable(name: "PoptartCompatHost", targets: ["PoptartCompatHost"]),
         .executable(name: "PoptartCompatDriver", targets: ["PoptartCompatDriver"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.0"),
         .package(path: "Packages/DictationCore"),
         .package(path: "Packages/Persistence"),
         .package(path: "Packages/ModelRuntime"),
@@ -37,8 +40,21 @@ let package = Package(
         ),
         .executableTarget(
             name: "Poptart",
-            dependencies: ["PoptartApplication", "Persistence", "ModelRuntime", "SystemIntegration"],
-            path: "App/Poptart"
+            dependencies: ["PoptartApplication", "Persistence", "ModelRuntime", "SystemIntegration",
+                .product(name: "Sparkle", package: "Sparkle")],
+            path: "App/Poptart",
+            linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]
+        ),
+        .executableTarget(
+            name: "PoptartBenchmark",
+            dependencies: ["PoptartApplication", "DictationCore", "Recognition", "Cleanup",
+                .product(name: "CleanupMLX", package: "Cleanup"), "ModelRuntime", "Persistence"],
+            path: "Tools/Benchmark"
+        ),
+        .executableTarget(
+            name: "PoptartCleanupEval",
+            dependencies: ["DictationCore", "Cleanup", .product(name: "CleanupMLX", package: "Cleanup")],
+            path: "Tools/CleanupEval"
         ),
         .executableTarget(
             name: "PoptartVerifier",
@@ -61,6 +77,10 @@ let package = Package(
         .testTarget(
             name: "IntegrationTests",
             dependencies: [
+                "Poptart",
+                "PoptartBenchmark",
+                "PoptartCleanupEval",
+                "Cleanup",
                 "PoptartApplication",
                 "DictationCore",
                 "Persistence",

@@ -1,0 +1,21 @@
+{
+  "checkedAt": "2026-09-17T10:44:23.271228+00:00",
+  "draftQuestion": ".context/ctc-license-question.md",
+  "limitations": [
+    "Current public cards were read; no inference that the conflicting conversion license is settled.",
+    "Pinned shipping candidates remain unchanged."
+  ],
+  "sources": [
+    {
+      "observedBody": "The License section still describes the model conversion and original NVIDIA model as Apache2.0.",
+      "observedMetadataLicense": "cc-by-4.0",
+      "url": "https://huggingface.co/FluidInference/parakeet-ctc-110m-coreml"
+    },
+    {
+      "observedBody": "The Licence section names CC-BY-4.0.",
+      "observedMetadataLicense": "cc-by-4.0",
+      "url": "https://huggingface.co/nvidia/parakeet-tdt_ctc-110m/raw/main/README.md"
+    }
+  ],
+  "status": "Unresolved; read-only public source recheck. No upstream message sent or redistribution approval inferred."
+}

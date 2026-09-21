@@ -35,7 +35,7 @@
         <mxCell id="11" value="Within measured&#xa;token budget?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="9">
           <mxGeometry x="450" y="55" width="180" height="100" as="geometry" />
         </mxCell>
-        <mxCell id="12" value="MLX Swift LM&#xa;fine-tuned Qwen 0.8B" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="9">
+        <mxCell id="12" value="MLX Swift LM&#xa;fine-tuned Qwen 2B" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="9">
           <mxGeometry x="700" y="70" width="230" height="70" as="geometry" />
         </mxCell>
         <mxCell id="13" value="Cleanup Edit Plan&#xa;span-anchored changes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="9">

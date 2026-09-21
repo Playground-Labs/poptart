@@ -1,0 +1,23 @@
+{
+  "adversarial": {
+    "count": 22,
+    "sha256": "d21e69817b1c0bb2a7425ab17dbf8046e22dd15a8461b8a74bb4d4e867d60a51"
+  },
+  "frozenOn": "2026-09-16",
+  "gold": {
+    "count": 48,
+    "sha256": "78355971f155e7840fa9c88817fa2ac0e5af6c72caa0a39cb749bddea5b2aa7d"
+  },
+  "independentReview": null,
+  "minimumRates": {
+    "adversarialSafe": 1.0,
+    "contextFit": 1.0,
+    "editPlanExact": 0.95,
+    "meaningPreservation": 1.0,
+    "runtimeConsistency": 1.0,
+    "vocabularyPreservation": 1.0
+  },
+  "purpose": "Untrained authored holdout; labels and policy require independent review before release eligibility.",
+  "schemaVersion": 1,
+  "suite": "cleanup-release-v1"
+}

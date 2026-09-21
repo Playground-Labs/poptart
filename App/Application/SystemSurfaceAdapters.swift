@@ -23,8 +23,6 @@ public enum PoptartRelease {
     }
 
     public static let sourceURL = URL(string: "https://github.com/playground-labs/poptart")!
-    public static let releasesURL = URL(
-        string: "https://github.com/playground-labs/poptart/releases")!
     public static let modelPackManifestBaseURL = URL(
         string: "https://downloads.playgroundlabs.com/poptart/model-pack")!
 }
@@ -165,16 +163,8 @@ public struct SMAppServiceLaunchAtLogin: LaunchAtLoginControlling {
     }
 }
 
-public struct WorkspaceLinkOpener: ExternalLinkOpening {
-    public init() {}
-
-    public func open(_ url: URL) {
-        NSWorkspace.shared.open(url)
-    }
-}
-
 /// Fetches the signed manifest for one explicit Model Pack action through ModelRuntime's resumable
-/// downloader, which is the only component in Poptart allowed to reach the network.
+/// downloader. The app's separate updater also requires an explicit action.
 public struct DownloadedModelPackManifestSource: ModelPackManifestSourcing {
     public enum SourceError: Error, Equatable, Sendable {
         case unsupportedVersion(String)
@@ -228,14 +218,27 @@ public struct DownloadedModelPackManifestSource: ModelPackManifestSourcing {
 /// Stands in when the build has no way to fetch a manifest. It reaches no network and reports the
 /// missing signing key, which is the same thing that stops the install itself.
 public struct UnavailableModelPackManifestSource: ModelPackManifestSourcing {
-    public init() {}
+    private let failure: ModelPackError?
+    public init(failure: ModelPackError? = nil) { self.failure = failure }
 
     public func signedManifest(for request: ModelPackManifestRequest) async throws -> Data {
+        if let failure { throw failure }
         throw ModelPackTrustError.signingKeyMissing
     }
 }
 
 extension ModelPackInstaller: ModelPackInstalling {}
+
+func modelPackLicenseSummaries(_ artifacts: [ModelArtifact]) -> [ModelPackLicenseSummary] {
+    artifacts.reduce(into: []) { summaries, artifact in
+        let summary = ModelPackLicenseSummary(
+            role: artifact.role.rawValue,
+            name: artifact.license.name,
+            url: artifact.license.url
+        )
+        if !summaries.contains(summary) { summaries.append(summary) }
+    }
+}
 
 /// Describes a signed manifest only after its signature verifies against the app-embedded key.
 public struct VerifiedModelPackOffers: ModelPackOfferDescribing {
@@ -254,9 +257,7 @@ public struct VerifiedModelPackOffers: ModelPackOfferDescribing {
             identity: manifest.identity,
             version: manifest.version,
             downloadBytes: manifest.artifacts.reduce(0) { $0 + $1.byteSize },
-            licenses: manifest.artifacts.map {
-                .init(role: $0.role.rawValue, name: $0.license.name, url: $0.license.url)
-            },
+            licenses: modelPackLicenseSummaries(manifest.artifacts),
             signedManifest: signedManifest
         )
     }
@@ -265,7 +266,8 @@ public struct VerifiedModelPackOffers: ModelPackOfferDescribing {
 /// Stands in when the build carries no Model Pack signing key. Every action reports the missing key
 /// instead of installing something Poptart cannot verify.
 public struct UnavailableModelPackInstaller: ModelPackInstalling {
-    public init() {}
+    private let failure: ModelPackError?
+    public init(failure: ModelPackError? = nil) { self.failure = failure }
 
     public func activePack() async -> InstalledModelPack? { nil }
 
@@ -274,6 +276,7 @@ public struct UnavailableModelPackInstaller: ModelPackInstalling {
         _ action: ExplicitModelPackAction,
         signedManifest: Data
     ) async throws -> InstalledModelPack {
+        if let failure { throw failure }
         throw ModelPackTrustError.signingKeyMissing
     }
 }
@@ -390,7 +393,10 @@ public struct PasteboardTextCopier: TextCopying {
     }
 
     public func copy(_ text: String) async -> Bool {
-        await pasteboard.writeText(text) != nil
+        if case .written = await pasteboard.writeText(text, unlessRefusedBy: { nil }) {
+            return true
+        }
+        return false
     }
 }
 
@@ -400,20 +406,24 @@ public struct PasteboardTextCopier: TextCopying {
 /// next step grants.
 public struct InstalledPackOfflineReadiness: OfflineReadinessChecking {
     private let modelRuntimeDirectory: URL
+    private let manifestPublicKey: Data?
     private let permissions: @Sendable () -> PermissionSnapshot
 
     public init(
         modelRuntimeDirectory: URL,
+        manifestPublicKey: Data? = nil,
         permissions: @escaping @Sendable () -> PermissionSnapshot
     ) {
         self.modelRuntimeDirectory = modelRuntimeDirectory
+        self.manifestPublicKey = manifestPublicKey
         self.permissions = permissions
     }
 
     public func check() async -> OfflineReadinessReport {
         let snapshot = permissions()
         do {
-            let pack = try ApplicationModelPackLocator.activePack(in: modelRuntimeDirectory)
+            let pack = try ApplicationModelPackLocator.activePack(in: modelRuntimeDirectory,
+                manifestPublicKey: manifestPublicKey)
             guard pack != nil else {
                 return .init(
                     modelPackVerified: false,

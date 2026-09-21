@@ -31,7 +31,7 @@ private final class IndicatorUI {
   private static func size(for shape: IndicatorShape) -> NSSize {
     switch shape {
     case .collapsed: NSSize(width: 51, height: 10)
-    case .waveform: NSSize(width: 128, height: 40)
+    case .waveform: NSSize(width: 109, height: 34)
     case .spinner: NSSize(width: 43, height: 26)
     }
   }
@@ -193,13 +193,13 @@ private final class IndicatorView: NSView {
   }
 
   private func drawWaveform() {
-    let inset: CGFloat = 9
+    let inset: CGFloat = 12
     let available = max(0, bounds.width - inset * 2)
     let levels = envelope.levels
     let pitch = available / CGFloat(levels.count)
     let barWidth = max(1, pitch * 0.55)
     let resting: CGFloat = 2
-    let tallest = max(resting, bounds.height - 8)
+    let tallest = max(resting, bounds.height - 14)
     NSColor.labelColor.setFill()
     for (index, level) in levels.enumerated() {
       let amplitude = min(1, max(0, level))

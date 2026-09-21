@@ -1,5 +1,8 @@
 import Foundation
 
+private let fluidAudioRevision = "61dc8edf915e528a11d81ded84b83d2709746713"
+private let fluidAudioRepository = "https://github.com/brandon-nextwork/FluidAudio.git"
+
 enum VerificationError: Error, CustomStringConvertible {
   case failed(String)
   var description: String {
@@ -23,29 +26,50 @@ struct Verifier {
   mutating func verifyProductionConfiguration() throws {
     let value = try json("Models/production-config.json")
     let recognition = try dictionary(value, "recognition")
-    try expect(recognition["runtimeVersion"] as? String == "0.15.6", "FluidAudio must be 0.15.6")
+    try expect(recognition["runtimeVersion"] as? String == "0.15.6-poptart.2", "FluidAudio fork version mismatch")
+    try expect(recognition["runtimeRevision"] as? String == fluidAudioRevision
+      && recognition["runtimeRepository"] as? String == fluidAudioRepository, "FluidAudio fork identity mismatch")
     try expect(recognition["leftFrames"] as? Int == 70 && recognition["chunkFrames"] as? Int == 7 && recognition["rightFrames"] as? Int == 1, "Unified context must be 70/7/1")
     try expect(recognition["encoderPrecision"] as? String == "int8", "Unified encoder must be int8")
     let cleanup = try dictionary(value, "cleanup")
     try expect(cleanup["runtimeVersion"] as? String == "3.31.4", "MLX Swift LM pin mismatch")
     try expect(cleanup["mlxSwiftVersion"] as? String == "0.31.4", "MLX Swift pin mismatch")
     try expect(cleanup["tokenizersVersion"] as? String == "1.3.3", "Tokenizer pin mismatch")
-    try expect(cleanup["baseModel"] as? String == "Qwen/Qwen3.5-0.8B", "Cleanup base model mismatch")
-    try expect(cleanup["baseRevision"] as? String == "2fc06364715b967f1860aea9cf38778875588b17", "Cleanup base revision mismatch")
+    try expect(cleanup["baseModel"] as? String == "Qwen/Qwen3.5-2B", "Cleanup base model mismatch")
+    try expect(cleanup["baseRevision"] as? String == "15852e8c16360a2fea060d615a32b45270f8a8fc", "Cleanup base revision mismatch")
     let quantization = try dictionary(cleanup, "quantization")
     try expect(quantization["bits"] as? Int == 4 && quantization["groupSize"] as? Int == 64 && quantization["mode"] as? String == "affine", "Cleanup quantization mismatch")
     try expect(value["releaseStatus"] as? String == "unreleased", "repository must remain unreleased until evidence is populated")
+    try expect(value["artifactHashFormat"] as? String == "sha256-canonical-file-inventory-v1",
+      "Model Pack identities must describe runtime files")
     for section in [recognition, cleanup] {
       try expect(section["byteSize"] is NSNull && section["sha256"] is NSNull, "unreleased artifacts must not contain fabricated size or hash")
-      try expect(section["license"] as? String == "Apache-2.0", "model license mismatch")
+
     }
+    try expect(recognition["license"] as? String == "CC-BY-4.0", "Parakeet artifact license mismatch")
+    try expect(recognition["modelRevision"] as? String == "4252711f6f060f9a2f91e5f081a806d7f45eebd8", "Parakeet artifact revision mismatch")
+    let vad = try dictionary(recognition, "vad")
+    try expect(vad["model"] as? String == "FluidInference/silero-vad-coreml"
+      && vad["modelRevision"] as? String == "b419383c55c110e2c9271fa6ee0ea83d03c70d96"
+      && vad["bundle"] as? String == "silero-vad-unified-256ms-v6.2.1.mlmodelc"
+      && vad["license"] as? String == "MIT", "Silero VAD identity or license mismatch")
+    try expect(cleanup["license"] as? String == "Apache-2.0", "Qwen artifact license mismatch")
     let measurements = try dictionary(value, "releaseMeasurements")
     try expect(measurements.values.allSatisfy { $0 is NSNull }, "unmeasured release evidence must remain null")
+    let performanceClaims = try dictionary(value, "performanceClaims")
+    try expect(performanceClaims["eightGBAppleM1"] as? String == "unverified",
+      "8 GB M1 performance must remain unverified until measured")
   }
 
   mutating func verifyDependencyPins() throws {
-    let recognition = try pins("Packages/Recognition/Package.resolved")
-    try expect(recognition["fluidaudio"] == "0.15.6", "FluidAudio resolved pin mismatch")
+    for path in ["Package.resolved", "Packages/Recognition/Package.resolved"] {
+      let entries = try json(path)["pins"] as? [[String: Any]] ?? []
+      let pin = entries.first { $0["identity"] as? String == "fluidaudio" }
+      let state = pin?["state"] as? [String: Any]
+      try expect(pin?["location"] as? String == fluidAudioRepository
+        && state?["revision"] as? String == fluidAudioRevision && state?["version"] == nil,
+        "FluidAudio resolved fork pin mismatch: \(path)")
+    }
     let cleanup = try pins("Packages/Cleanup/Package.resolved")
     try expect(cleanup["mlx-swift-lm"] == "3.31.4", "mlx-swift-lm resolved pin mismatch")
     try expect(cleanup["mlx-swift"] == "0.31.4", "mlx-swift resolved pin mismatch")
@@ -96,9 +120,9 @@ struct Verifier {
       let source = try String(contentsOf: file, encoding: .utf8)
       let relative = file.path.replacingOccurrences(of: root.path + "/", with: "")
       if source.contains("URLSession") && relative != "Packages/ModelRuntime/Sources/ModelRuntime/URLSessionResumableDownloader.swift" { throw VerificationError.failed("network API outside explicit downloader: \(relative)") }
-      for token in ["Sentry", "Crashlytics", "TelemetryClient", "AnalyticsClient", "AVAudioFile", "write(from:"] where source.contains(token) { throw VerificationError.failed("privacy-forbidden production API \(token) in \(relative)") }
+      for token in ["Sentry", "Crashlytics", "TelemetryClient", "AnalyticsClient", "NWConnection", "AVAudioFile", "write(from:"] where source.contains(token) { throw VerificationError.failed("privacy-forbidden production API \(token) in \(relative)") }
       if relative.hasPrefix("Packages/Recognition/") || relative.hasPrefix("Packages/Cleanup/") {
-        for token in ["downloadAndLoad", "ModelHub", "loadModels(to:"] where source.contains(token) { throw VerificationError.failed("inference network helper \(token) in \(relative)") }
+        for token in ["downloadAndLoad", "ModelHub", "loadModels(to:", "loadModels()"] where source.contains(token) { throw VerificationError.failed("inference network helper \(token) in \(relative)") }
       }
     }
     try expect(true, "privacy scan")

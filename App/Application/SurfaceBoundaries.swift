@@ -80,16 +80,12 @@ public protocol LaunchAtLoginControlling: Sendable {
     func setEnabled(_ enabled: Bool) throws
 }
 
-public protocol ExternalLinkOpening: Sendable {
-    func open(_ url: URL)
-}
-
 public struct ModelPackLicenseSummary: Equatable, Sendable, Identifiable {
     public let role: String
     public let name: String
     public let url: URL
 
-    public var id: String { "\(role)-\(name)" }
+    public var id: String { "\(role)-\(name)-\(url.absoluteString)" }
 
     public init(role: String, name: String, url: URL) {
         self.role = role
@@ -134,8 +130,8 @@ public struct ModelPackManifestRequest: Equatable, Sendable {
     }
 }
 
-/// Fetches the signed manifest for one explicit Model Pack action. This is the only place the
-/// surfaces reach the network, and only inside an action a person started.
+/// Fetches the signed manifest for one explicit Model Pack action. Model Pack network access
+/// stays inside an action a person started; application updates use their own explicit action.
 public protocol ModelPackManifestSourcing: Sendable {
     func signedManifest(for request: ModelPackManifestRequest) async throws -> Data
 }
@@ -160,7 +156,7 @@ public enum ModelPackFailureMessage {
             return "The Model Pack description did not verify. Poptart installed nothing."
         case .invalidCleanupTokenCeiling:
             return "The Model Pack ships no measured Cleanup budget. Poptart installed nothing."
-        case .artifactHashMismatch, .artifactSizeMismatch:
+        case .artifactHashMismatch, .artifactSizeMismatch, .artifactInventoryMismatch:
             return "A downloaded file did not match its published hash. Poptart installed nothing."
         case .smokeTestFailed:
             return "The downloaded Model Pack did not load. The previous pack is still active."
@@ -170,10 +166,12 @@ public enum ModelPackFailureMessage {
             return "That Model Pack does not support this version of Poptart."
         case .downgradeNotAllowed:
             return "That Model Pack is older than the one already installed."
-        case .noPreviousPack:
-            return "There is no earlier Model Pack to fall back to."
+        case .installationInProgress:
+            return "A Model Pack installation is already in progress."
         case .invalidActiveState, .fileSystemFailure:
             return "The installed Model Pack no longer verifies. Use Repair Model Pack."
+        case .unrecoverableActiveState:
+            return "Model Pack verification data is damaged. Automatic repair is unavailable."
         }
     }
 }

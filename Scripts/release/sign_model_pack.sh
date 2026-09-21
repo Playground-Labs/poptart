@@ -12,16 +12,14 @@ output=$3
 [ -f "$key" ] || { echo "Ed25519 private key file is required" >&2; exit 1; }
 command -v openssl >/dev/null || { echo "openssl is required" >&2; exit 1; }
 
-python3 - "$manifest" <<'PY'
+python3 - "$manifest" "$(dirname "$0")" <<'PY'
 import json, sys
-value=json.load(open(sys.argv[1]))
-if value.get("exampleOnly") or not isinstance(value.get("cleanupTokenCeiling"), int) or isinstance(value.get("cleanupTokenCeiling"), bool) or value.get("cleanupTokenCeiling") <= 0: raise SystemExit("refusing to sign example or unmeasured manifest")
-artifacts=value.get("artifacts", [])
-if {a.get("role") for a in artifacts}!={"recognition","cleanup"}: raise SystemExit("manifest must contain exactly recognition and cleanup roles")
-for artifact in artifacts:
-    if not isinstance(artifact.get("byteSize"), int) or artifact["byteSize"] <= 0: raise SystemExit("artifact byteSize is required")
-    digest=artifact.get("sha256", "")
-    if len(digest)!=64 or any(c not in "0123456789abcdef" for c in digest): raise SystemExit("artifact sha256 is required")
+from pathlib import Path
+sys.path.insert(0, sys.argv[2])
+from build_model_manifest import validate_manifest
+path=Path(sys.argv[1]); value=json.loads(path.read_text())
+config=json.loads((Path(sys.argv[2]).resolve().parents[1] / "Models/production-config.json").read_text())
+validate_manifest(value, path.parent, value.get("cleanupTokenCeiling"), config)
 PY
 
 signature=$(mktemp "${TMPDIR:-/tmp}/poptart-signature.XXXXXX")

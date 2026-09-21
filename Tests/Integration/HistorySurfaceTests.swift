@@ -58,7 +58,8 @@ struct HistorySurfaceTests {
             case .rawTranscript: "Raw Transcript fallback"
             case .oversized: "Too long for Cleanup — deterministic rules only"
             case .recognitionHypothesis: "Recognition fallback — not fully finalized"
-            case .copiedToClipboard: "Copied because the target changed"
+            case .copiedTargetChanged: "Copied because the target changed"
+            case .copiedNoTarget: "Copied because no text field was focused"
             case .emptyRecognition: "No usable text"
             case .cancelled: "Cancelled"
             case .safetyStop: "Stopped at the five-minute limit"
@@ -69,6 +70,37 @@ struct HistorySurfaceTests {
         #expect(
             DictationRecordPresenter.classification(outcome: outcome, cleanupChangedText: true)
                 == expected)
+    }
+
+    @Test(
+        "a Raw Transcript fallback says why Cleanup stepped aside",
+        arguments: [
+            (Persistence.RawTranscriptFallbackReason.cleanupTimedOut, "Cleanup timed out"),
+            (.cleanupFailed, "Cleanup failed"),
+            (.unsafeEditPlan, "Cleanup's edits were unsafe"),
+            (.modelUnavailable, "The Cleanup model was unavailable"),
+        ]
+    )
+    func fallbackReasonIsNamed(
+        reason: Persistence.RawTranscriptFallbackReason,
+        named: String
+    ) {
+        #expect(
+            DictationRecordPresenter.classification(
+                outcome: .rawTranscript,
+                cleanupChangedText: false,
+                fallbackReason: reason
+            ) == "Raw Transcript fallback — \(named)")
+    }
+
+    @Test("a copy says why Cleanup stepped aside as well as why it was a copy")
+    func fallbackReasonIsNamedOnACopy() {
+        #expect(
+            DictationRecordPresenter.classification(
+                outcome: .copiedNoTarget,
+                cleanupChangedText: false,
+                fallbackReason: .cleanupTimedOut
+            ) == "Copied because no text field was focused — Cleanup timed out")
     }
 
     @Test("a cleaned Dictation says so when Cleanup left the words alone")
@@ -271,6 +303,33 @@ struct ApplicationLaunchModelTests {
         #expect(model.status == .ready)
         #expect(starts.value == 1)
         #expect(model.activePack?.cleanupTokenCeiling == 768)
+    }
+
+    @Test("pack activation waits for initial startup and reloads the newly installed pack")
+    func restartAfterPackInstallationWaitsForStartup() async {
+        let provider = StubModelPackProvider(pack: .stub(version: "1.0.0"))
+        let started = AsyncStream<Void>.makeStream()
+        let resume = AsyncStream<Void>.makeStream()
+        let versions = Box<[String]>([])
+        let model = ApplicationLaunchModel(modelPacks: provider) { pack in
+            versions.mutate { $0.append(pack.version) }
+            if versions.value.count == 1 {
+                started.continuation.yield(())
+                for await _ in resume.stream { break }
+            }
+        }
+        let first = Task { await model.start() }
+        for await _ in started.stream { break }
+        await provider.install(.stub(version: "1.1.0"))
+        let restarting = Task { await model.restart() }
+        resume.continuation.yield(())
+        await first.value
+        await restarting.value
+        #expect(versions.value == ["1.0.0", "1.1.0"])
+        #expect(model.status == .ready)
+        #expect(model.activePack?.version == "1.1.0")
+        started.continuation.finish()
+        resume.continuation.finish()
     }
 
     @Test("restarting tries again after a permission is granted")

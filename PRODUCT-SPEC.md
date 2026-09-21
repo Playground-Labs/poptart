@@ -18,7 +18,7 @@ The person holds right Option, speaks, and releases. Poptart recognizes speech i
 
 The product exposes one Conservative Cleanup behavior and one primary shortcut. It has no Command Mode, cloud inference, account, activation, telemetry, or retained audio. Cursor-local Target Context and Personal Vocabulary improve Cleanup without reading an entire document or sending content off the Mac. A persistent transcript-free Indicator makes readiness, Recording, and processing visible through shape alone, and a brief Outcome Toast above it reports only the results a person cannot already see.
 
-The application installs one signed Model Pack during onboarding. That pack contains an English FluidAudio/Parakeet recognition model and a four-bit, task-specific Qwen 3.5 0.8B Cleanup model running in-process through MLX Swift LM. Both models normally remain warm for the application lifetime. The exact Cleanup weights, training recipe, evaluation harness, and redistributable training corpus are public.
+The application installs one signed Model Pack during onboarding. That pack contains an English FluidAudio/Parakeet recognition model and a four-bit, task-specific Qwen 3.5 2B Cleanup model running in-process through MLX Swift LM. Both models normally remain warm for the application lifetime. The exact Cleanup weights, training recipe, evaluation harness, and redistributable training corpus are public.
 
 ## User Stories
 
@@ -102,9 +102,9 @@ The application installs one signed Model Pack during onboarding. That pack cont
 78. As an open-source contributor, I want training data provenance and redistribution rights documented, so that the public model is legally and ethically reviewable.
 79. As an open-source contributor, I want domain modules separated from Apple and model framework adapters, so that behavior can be tested without microphones, UI automation, or loaded models.
 80. As an open-source contributor, I want late asynchronous results rejected by Dictation identity, so that concurrency cannot deliver text from an obsolete session.
-81. As a release maintainer, I want every release measured on an 8 GB M1, so that the stated minimum hardware has evidence behind it.
+81. As a release maintainer, I want every release measured on its exact declared physical Apple Silicon baseline, so that hardware claims have evidence behind them.
 82. As a release maintainer, I want at least 99% of representative Dictations delivered within 1.5 seconds, so that latency is a release criterion rather than an aspiration.
-83. As a release maintainer, I want privacy, network-deny, model-signature, interruption, and rollback tests, so that local-first behavior survives real failures.
+83. As a release maintainer, I want privacy, network-deny, model-signature, interruption, and atomic-activation tests, so that local-first behavior survives real failures.
 84. As a Playground Labs maintainer, I want the new Poptart to install beside the legacy application during beta, so that testers retain a reliable fallback.
 85. As a Playground Labs maintainer, I want no legacy data import, so that the native architecture begins with a clean security and migration boundary.
 
@@ -152,7 +152,7 @@ The application installs one signed Model Pack during onboarding. That pack cont
 - Capture microphone audio with native AVFoundation facilities and retain it only in bounded memory for the active Dictation.
 - Start recognition incrementally during Recording and keep partial hypotheses internal.
 - Define a Poptart-owned speech-recognition interface and implement FluidAudio as its first adapter.
-- Use FluidAudio Parakeet Unified English 0.6B with its 640 millisecond streaming configuration and int8 encoder for MVP recognition, subject to the physical M1 release gate.
+- Use FluidAudio Parakeet Unified English 0.6B with its 640 millisecond streaming configuration and int8 encoder for MVP recognition, subject to the declared physical Apple Silicon release gate.
 - Finalize the Raw Transcript after key-up. Do not begin model Cleanup on unstable partial hypotheses.
 - If final recognition misses the watchdog, deliver the latest nonempty usable Recognition Hypothesis without Cleanup.
 - If recognition produces no usable text, insert nothing and return an explicit failure outcome.
@@ -168,7 +168,7 @@ The application installs one signed Model Pack during onboarding. That pack cont
 - Tokenize the immutable Raw Transcript into stable indexed spans.
 - Make deterministic Explicit Corrections authoritative and reserve their spans against conflicting model edits.
 - Run one in-process Cleanup Managed Model through a narrow Poptart-owned interface implemented with MLX Swift LM.
-- Ship a task-specific, four-bit Qwen 3.5 0.8B model. Gemma 3 1B is a development benchmark challenger, not a product option.
+- Ship a task-specific, four-bit Qwen 3.5 2B model. Gemma 3 1B is a development benchmark challenger, not a product option.
 - Ask the model for a versioned, compact Cleanup Edit Plan rather than a regenerated transcript.
 - Represent replacements, deletions, casing changes, and punctuation insertions as operations over stable transcript spans.
 - Use greedy generation with a tight output cap and stop marker, parse the edit-plan schema incrementally, and reject malformed structures. MLX Swift LM does not provide a stable built-in grammar decoder.
@@ -176,7 +176,7 @@ The application installs one signed Model Pack during onboarding. That pack cont
 - Do not trust model-supplied confidence. Derive acceptance from the plan, validator, deadline, and evaluated behavior.
 - Copy every untouched Raw Transcript span deterministically.
 - Insert the Raw Transcript whenever model Cleanup times out, fails, or produces an unsafe plan.
-- Derive a maximum model-input token budget from M1 release benchmarks for each Model Pack.
+- Derive a maximum model-input token budget from the declared physical Apple Silicon release benchmark for each Model Pack.
 - For over-budget Raw Transcripts, skip model Cleanup, preserve all recognized words, and apply only deterministic safe edits.
 
 ### Target Context and insertion
@@ -200,7 +200,7 @@ The application installs one signed Model Pack during onboarding. That pack cont
 - Cancel unfinished recognition or Cleanup when the watchdog fires and select the best safe text available.
 - Use initial M1 p99 engineering allocations of 350 milliseconds for final recognition, 50 milliseconds for context/deterministic work/model decision, 700 milliseconds for MLX model input and edit-plan generation, 100 milliseconds for validation and delivery, and 200 milliseconds of scheduling margin.
 - Treat those sub-budgets as tunable implementation targets. Keep the 1.4-second watchdog and 1.5-second public contract fixed.
-- Require at least 99% of representative Dictations to complete within 1.5 seconds on an 8 GB M1 under the documented cold-system benchmark.
+- Require at least 99% of representative Dictations to complete within 1.5 seconds on the exact physical Apple Silicon baseline recorded in release metadata under the documented cold-system benchmark. The beta uses an M5 Pro; 8 GB M1 performance remains unverified.
 - Measure operating-system-wide stalls separately from app-controlled deadline misses.
 
 ### Model Pack and runtime lifecycle
@@ -271,11 +271,11 @@ The application installs one signed Model Pack during onboarding. That pack cont
 - Add contract tests around FluidAudio for partial/final ordering, cancellation, vocabulary capability reporting, audio release, and error translation.
 - Add contract tests around MLX for local artifact loading, bounded edit-plan parsing, cancellation, warm reuse, memory-pressure unload, and late completion.
 - Add macOS integration tests for secure-field detection, Accessibility target capture/revalidation, selected-range replacement, nonactivating Indicator and Outcome Toast behavior, and pasteboard restoration.
-- Add Model Pack integration tests with a local HTTP server for fresh and resumed downloads, valid and invalid ranges, interruption, cancellation, size limits, hash mismatch, manifest-signature failure, incompatible versions, smoke-test failure, atomic activation, and rollback.
+- Add Model Pack integration tests with a local HTTP server for fresh and resumed downloads, valid and invalid ranges, interruption, cancellation, size limits, hash mismatch, manifest-signature failure, incompatible versions, smoke-test failure, and atomic activation.
 - Add persistence tests proving sensitive values are not present as plaintext, expiry works, individual and bulk deletion work, Keychain key loss makes old records unreadable, and reset recovers a usable empty store.
 - Add network-deny tests proving normal startup, Dictation, settings, history, vocabulary, and inference work without outbound access.
 - Capture clean-install network traffic and require that only the explicit Model Pack download occurs.
-- Run performance tests on a physical 8 GB M1 with representative short, medium, corrected, context-aware, oversized, model-fallback, recognition-fallback, warm, and memory-pressure-reload cases.
+- Run performance tests on the declared physical Apple Silicon baseline with representative short, medium, corrected, context-aware, oversized, model-fallback, recognition-fallback, warm, and memory-pressure-reload cases. Test an 8 GB M1 separately before claiming support for it.
 - Report p50, p95, p99, maximum app-controlled duration, model input/output tokens, memory, and Fallback class. Gate release on p99 rather than cached repeated-prompt best cases.
 - Test the exact production prompt, tokenizer, quantized artifact, framework versions, and Model Pack layout. Do not substitute an optimistic benchmark harness.
 - Treat the legacy project’s shortcut event simulations, transcript finalization/Fallback cases, unsafe-output checks, clipboard transaction state tests, and resumable verified-download tests as behavioral prior art only.

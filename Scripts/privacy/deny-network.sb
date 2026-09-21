@@ -1,0 +1,18 @@
+;; Denies IP networking to a process tree while leaving everything else alone.
+;;
+;; What this proves: that Poptart's Dictation, history, settings, and model execution complete with
+;; every outbound, inbound, and bound IP socket refused by the kernel. It is a capability proof about
+;; one process tree, not a statement about the shipping product: the bundle under test is ad-hoc
+;; signed rather than notarized, and a sandbox says nothing about code that never ran. The clean
+;; install traffic capture in traffic_capture.sh is the observation proof that complements it.
+;;
+;; A plain (deny network*) also refuses AF_UNIX connects, which is how processes reach syslogd,
+;; the pasteboard server, and the window server, so the app dies at launch and the run proves
+;; nothing. AF_UNIX connects arrive as network-outbound carrying a filesystem path, so the socket
+;; directories system services listen in are allowed back.
+(version 1)
+(allow default)
+(deny network-outbound)
+(deny network-inbound)
+(deny network-bind)
+(allow network-outbound (regex #"^/private/var/run/" #"^/var/run/" #"^/private/tmp/"))

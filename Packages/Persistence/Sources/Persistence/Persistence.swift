@@ -80,12 +80,47 @@ public enum DictationOutcome: String, Codable, CaseIterable, Sendable {
   case rawTranscript
   case oversized
   case recognitionHypothesis
-  case copiedToClipboard
+  case copiedTargetChanged
+  case copiedNoTarget
   case emptyRecognition
   case cancelled
+  /// Legacy records lost their delivery outcome; new records retain it alongside `recordingEnd`.
   case safetyStop
   case recordingFailure
   case deliveryFailure
+
+  /// Dictation Records written before copying split in two stored `copiedToClipboard`. Every copy
+  /// was shown as "the target changed" back then, and the two kinds were never distinguishable in
+  /// those records, so that is what one becomes.
+  init?(storedRawValue: String) {
+    if storedRawValue == "copiedToClipboard" {
+      self = .copiedTargetChanged
+      return
+    }
+    guard let outcome = DictationOutcome(rawValue: storedRawValue) else { return nil }
+    self = outcome
+  }
+}
+
+/// Why a Dictation fell back to the Raw Transcript. Mirrors the dictation domain's reasons so a
+/// Dictation Record can keep the reason without this package depending on that domain.
+public enum RawTranscriptFallbackReason: String, Codable, CaseIterable, Sendable {
+  case cleanupTimedOut
+  case cleanupFailed
+  case unsafeEditPlan
+  case modelUnavailable
+}
+
+public enum DictationRecordingEnd: String, Codable, CaseIterable, Sendable {
+  case released
+  case fiveMinuteSafetyLimit
+}
+
+public enum DictationTextSource: String, Codable, CaseIterable, Sendable {
+  case cleaned
+  case rawTranscript
+  case oversized
+  case recognitionHypothesis
 }
 
 public struct DictationTimings: Codable, Equatable, Sendable {
@@ -108,6 +143,10 @@ public struct DictationRecord: Equatable, Sendable, Identifiable {
   public let destinationApplication: String
   public let cleanupChangedText: Bool
   public let outcome: DictationOutcome
+  public let fallbackReason: RawTranscriptFallbackReason?
+  /// Nil for older records that did not retain this dimension.
+  public let recordingEnd: DictationRecordingEnd?
+  public let textSource: DictationTextSource?
   public let timings: DictationTimings
 
   public init(
@@ -118,6 +157,9 @@ public struct DictationRecord: Equatable, Sendable, Identifiable {
     destinationApplication: String,
     cleanupChangedText: Bool,
     outcome: DictationOutcome,
+    fallbackReason: RawTranscriptFallbackReason? = nil,
+    recordingEnd: DictationRecordingEnd? = nil,
+    textSource: DictationTextSource? = nil,
     timings: DictationTimings
   ) {
     self.id = id
@@ -127,6 +169,9 @@ public struct DictationRecord: Equatable, Sendable, Identifiable {
     self.destinationApplication = destinationApplication
     self.cleanupChangedText = cleanupChangedText
     self.outcome = outcome
+    self.fallbackReason = fallbackReason
+    self.recordingEnd = recordingEnd
+    self.textSource = textSource
     self.timings = timings
   }
 }
@@ -153,6 +198,7 @@ public actor HistoryStore {
   }
 
   public func save(_ record: DictationRecord) throws {
+    _ = try? expireRecords()
     let metadata = RecordMetadata(record: record)
     let protected = ProtectedRecord(record: record)
     let aad = try encoder.encode(metadata)
@@ -165,6 +211,17 @@ public actor HistoryStore {
   public func records() throws -> [DictationRecord] {
     try expireRecords()
     return try recordURLs().map(load).sorted { $0.createdAt > $1.createdAt }
+  }
+
+  /// Keeps retention active even while History is closed. Storage failures retry at the next wake.
+  public func maintainRetention(
+    sleep: @Sendable () async throws -> Void = { try await Task.sleep(for: .seconds(60)) }
+  ) async {
+    // ponytail: expiry can lag by one minute while running; use per-record timers if tighter timing is needed.
+    while !Task.isCancelled {
+      _ = try? expireRecords()
+      do { try await sleep() } catch { return }
+    }
   }
 
   public func delete(_ id: UUID) throws {
@@ -188,18 +245,19 @@ public actor HistoryStore {
   public func expireRecords() throws -> Int {
     let cutoffMilliseconds = Int64((now().timeIntervalSince1970 - Self.retentionInterval) * 1_000)
     var removed = 0
+    var firstError: (any Error)?
     for url in try recordURLs() {
-      let stored: StoredRecord
       do {
-        stored = try decoder.decode(StoredRecord.self, from: Data(contentsOf: url))
+        let stored = try decoder.decode(StoredRecord.self, from: Data(contentsOf: url))
+        if stored.metadata.createdAtMilliseconds < cutoffMilliseconds {
+          try FileManager.default.removeItem(at: url)
+          removed += 1
+        }
       } catch {
-        throw PersistenceError.invalidStoredData
-      }
-      if stored.metadata.createdAtMilliseconds < cutoffMilliseconds {
-        try FileManager.default.removeItem(at: url)
-        removed += 1
+        firstError = firstError ?? PersistenceError.invalidStoredData
       }
     }
+    if let firstError { throw firstError }
     return removed
   }
 
@@ -215,7 +273,7 @@ public actor HistoryStore {
       let plaintext = try open(
         stored.encryptedPayload, authenticating: aad, key: keyProvider.encryptionKey())
       let protected = try decoder.decode(ProtectedRecord.self, from: plaintext)
-      return stored.metadata.record(with: protected)
+      return try stored.metadata.record(with: protected)
     } catch let error as PersistenceError {
       throw error
     } catch {
@@ -289,7 +347,17 @@ private struct RecordMetadata: Codable {
   let id: UUID
   let createdAtMilliseconds: Int64
   let cleanupChangedText: Bool
-  let outcome: DictationOutcome
+  /// The outcome as the raw string it was stored as, not as a `DictationOutcome`, so re-encoding
+  /// this metadata reproduces the exact bytes it was sealed against even when the stored raw value
+  /// is one this build no longer writes.
+  let outcome: String
+  /// Absent, not null, when there is no reason, so Dictation Records written before this field
+  /// existed still authenticate against the metadata they were sealed with. Stored as the raw
+  /// string for the same reason `outcome` is; a reason this build does not know reads back as none.
+  let fallbackReason: String?
+  // Optional raw strings preserve the exact authenticated bytes of older metadata.
+  let recordingEnd: String?
+  let textSource: String?
   let timings: DictationTimings
 
   init(record: DictationRecord) {
@@ -297,12 +365,18 @@ private struct RecordMetadata: Codable {
     self.id = record.id
     self.createdAtMilliseconds = Int64(record.createdAt.timeIntervalSince1970 * 1_000)
     self.cleanupChangedText = record.cleanupChangedText
-    self.outcome = record.outcome
+    self.outcome = record.outcome.rawValue
+    self.fallbackReason = record.fallbackReason?.rawValue
+    self.recordingEnd = record.recordingEnd?.rawValue
+    self.textSource = record.textSource?.rawValue
     self.timings = record.timings
   }
 
-  func record(with protected: ProtectedRecord) -> DictationRecord {
-    DictationRecord(
+  func record(with protected: ProtectedRecord) throws -> DictationRecord {
+    guard let outcome = DictationOutcome(storedRawValue: outcome) else {
+      throw PersistenceError.invalidStoredData
+    }
+    return DictationRecord(
       id: id,
       createdAt: Date(timeIntervalSince1970: TimeInterval(createdAtMilliseconds) / 1_000),
       rawTranscript: protected.rawTranscript,
@@ -310,6 +384,9 @@ private struct RecordMetadata: Codable {
       destinationApplication: protected.destinationApplication,
       cleanupChangedText: cleanupChangedText,
       outcome: outcome,
+      fallbackReason: fallbackReason.flatMap(RawTranscriptFallbackReason.init(rawValue:)),
+      recordingEnd: recordingEnd.flatMap(DictationRecordingEnd.init(rawValue:)),
+      textSource: textSource.flatMap(DictationTextSource.init(rawValue:)),
       timings: timings
     )
   }

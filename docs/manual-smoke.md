@@ -14,10 +14,19 @@ Record each result inline with a date and build. A blank result is not a pass.
 
 ## Prerequisites
 
-- A build launched through `Models/Artifacts/dev-run.sh` (ad-hoc signed so the
+- A build launched through `Scripts/dev-run.sh` (ad-hoc signed so the
   permission grants survive a rebuild).
-- A development Model Pack present. Without a Cleanup artifact, Cleanup fails
-  open and delivers the Raw Transcript; that is the expected smoke behaviour.
+- A complete development Model Pack with recognition and Cleanup assets, plus its
+  `manifest.json` and positive Cleanup token ceiling. An incomplete Cleanup directory
+  with a declared ceiling fails startup; it is not a successful fallback test.
+- Use the DEBUG `POPTART_SUPPORT_DIRECTORY` override with a fresh test directory to
+  isolate history, vocabulary, settings, and the Keychain service from normal use.
+  `POPTART_MODEL_PACK_DIRECTORY` selects the unpacked development pack. These variables
+  must reach the app process; see the isolated launch in `Scripts/privacy/network_deny.sh`.
+
+A DEBUG pack without a declared Cleanup ceiling deliberately bypasses model Cleanup.
+That can exercise raw-transcript delivery, but does not verify Cleanup or qualify a
+release. Record the build, exact pack, ceiling, and whether Cleanup ran with each result.
 
 ## Checks
 
@@ -63,6 +72,8 @@ Result:
 
 ## Out of scope here
 
-Deadline and memory measurements belong to the 8 GB M1 benchmark, not to this
-list. Network silence is proven by the privacy deny test. Cleanup quality is
-measured by the evaluation harness against a trained artifact.
+Deadline and memory measurements belong to the declared physical Apple Silicon benchmark, not to this
+list. The privacy checks are `Scripts/privacy/network_deny.sh` and
+`Scripts/privacy/traffic_capture.sh`; their prerequisites and evidence limits are
+in `Scripts/README.md`. A startup-only deny run does not prove offline Dictation.
+Cleanup quality is measured by the evaluation harness against a trained artifact.

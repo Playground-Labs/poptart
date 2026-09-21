@@ -324,6 +324,10 @@ public actor DictationSessionActor {
                 indicator = .copiedBecauseTargetChanged
             }
             deliveredText = candidate.text
+        case (.target, .copiedAfterTargetChanged):
+            outcome = .targetChangedClipboard(source: candidate.kind, recordingEnd: recordingEnd)
+            deliveredText = candidate.text
+            indicator = .copiedBecauseTargetChanged
         case (_, .failed(let failure)):
             outcome = .deliveryFailure(
                 source: candidate.kind,

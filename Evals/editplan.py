@@ -40,6 +40,7 @@ Everything is pure Python 3 standard library and free of model calls.
 """
 
 import math
+import re
 import unicodedata
 
 # Unicode ``White_Space=Yes``. Swift's ``Character.isWhitespace`` uses this
@@ -458,22 +459,33 @@ def apply_edits(edits, source, spans=None):
 
     pieces = []
     cursor = 0
+    rendered_edits = []
     for edit in edits:
+        previous = rendered_edits[-1] if rendered_edits else None
+        if (previous and previous["r"] == edit["r"] == "" and previous["s"] < previous["e"]
+                and edit["s"] < edit["e"] and previous["e"] == edit["s"]):
+            rendered_edits[-1] = dict(previous, e=edit["e"])
+        else:
+            rendered_edits.append(edit)
+    for index, edit in enumerate(rendered_edits):
         offsets = _source_offsets(edit, spans, total_units)
         if offsets is None:
             return source
         lower, upper = offsets
         if edit["r"] == "" and lower < upper:
-            # A deletion swallows the whitespace that followed it, or, at the end
-            # of the transcript, the whitespace that preceded it.
+            # Trim preceding whitespace at the end or before closing punctuation.
+            trim_before = edit["e"] == len(spans)
             if edit["e"] < len(spans):
+                following = rendered_edits[index + 1] if index + 1 < len(rendered_edits) else None
+                boundary = following["r"] if following and following["s"] == edit["e"] else spans[edit["e"]].text
+                first = next(iter(graphemes(boundary)), "")
+                trim_before = first in (".", ",", ";", ":", "!", "?", "…", ")", "]", "}")
                 following = spans[edit["e"]].start
                 if _all_whitespace(text(upper, following)):
                     upper = following
-            elif lower > cursor:
+            if trim_before and lower > cursor:
                 trimmed = _rtrim_whitespace(text(cursor, lower))
-                if trimmed:
-                    lower = cursor + utf16_width(trimmed)
+                lower = cursor + utf16_width(trimmed)
         if lower < cursor:
             return source
         pieces.append(text(cursor, lower))
@@ -549,6 +561,10 @@ def category_violation(edit, spans, source, vocabulary_terms, model_authored=Tru
         if model_authored:
             return "correction is a reserved deterministic category"
         return None
+    symbols = lambda value: "".join(cluster for cluster in graphemes(value)
+                                   if any(unicodedata.category(c).startswith("S") for c in cluster))
+    if symbols(text) != symbols(edit["r"]):
+        return "mechanical edit changes symbols"
     if category == "punctuation":
         if not (_is_punctuation_or_whitespace(edit["r"]) and _is_punctuation_or_whitespace(text)):
             return "punctuation edit touches non-punctuation"
@@ -640,6 +656,15 @@ def _trimmed_is_empty(text):
     )
 
 
+# Mirrors CleanupEditPlanValidator.literalPattern; preserve URL/numeric spelling.
+PROTECTED_LITERALS = re.compile(
+    r"\b(?:[A-Za-z][A-Za-z0-9+.-]*://|[mM][aA][iI][lL][tT][oO]:|[wW]{3}\.)\S+"
+    r"|\b(?:[\w-]+\.)+[\w-]+(?::[0-9]+)?(?:[/?#]\S*)?"
+    r"|(?:[+−-][ \t]*)?(?:\d+(?:[.,:/٫٬-]\d+)*|[.٫]\d+)(?:[eE][+−-]?\d+)?"
+    r"|[%‰٪]"
+)
+
+
 def plan_violation(
     edits,
     source,
@@ -659,6 +684,8 @@ def plan_violation(
     spans = tokenize(source)
     if len(edits) > configuration["maximumEdits"]:
         return f"tooManyEdits ({len(edits)} > {configuration['maximumEdits']})"
+    if any(_is_unsafe_scalar(character) for character in source):
+        return "unsafeUnicode (raw transcript)"
 
     previous_end = 0
     previous_insertion = False
@@ -705,7 +732,14 @@ def plan_violation(
         return f"excessiveChange ({changed_characters} changed characters, budget {allowed})"
 
     merged = sorted(list(reserved_edits) + list(edits), key=edit_order)
-    if _trimmed_is_empty(apply_edits(merged, source, spans)) and not _removes_only_filler(
+    output = apply_edits(merged, source, spans)
+    authoritative = list(reserved_edits)
+    if not model_authored:
+        authoritative += [edit for edit in edits if edit["c"] == "correction"]
+    baseline = apply_edits(sorted(authoritative, key=edit_order), source, spans)
+    if PROTECTED_LITERALS.findall(baseline) != PROTECTED_LITERALS.findall(output):
+        return "unsafeCategory (mechanical edit changes a URL or numeric literal)"
+    if _trimmed_is_empty(output) and not _removes_only_filler(
         merged, spans
     ):
         return "blankOutput (the plan empties the transcript)"

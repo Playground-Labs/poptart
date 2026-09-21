@@ -12,6 +12,7 @@ The prompt sides of the chat records mirror ``CleanupPrompt`` so that training
 inputs have the same shape as inference inputs.
 """
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -31,10 +32,10 @@ PROVENANCE = {
     "source": "repository",
 }
 
-# Mirrors the Cleanup system instruction in CleanupPrompt, without the leading
-# whitespace the Swift multi-line literal carries. Scripts/test_tooling.py checks
+# Mirrors the Cleanup system instruction in CleanupPrompt, including the two leading
+# spaces the Swift multi-line literal carries. Scripts/test_tooling.py checks
 # both this and PREAMBLE against that file so the two cannot drift apart.
-SYSTEM = (
+SYSTEM = "  " + (
     "You are Poptart's Conservative Cleanup planner. Return only the compact JSON edit plan "
     "followed by <END_PLAN>. Do not emit reasoning, markdown, or rewritten transcript text. "
     "Preserve wording and meaning. Model-authored categories are punctuation, capitalization, "
@@ -64,7 +65,7 @@ def user_message(record, spans):
             "applicationCategory": context["applicationCategory"],
             "textBeforeCursor": context["textBeforeCursor"],
             "textAfterCursor": context["textAfterCursor"],
-            "selectedText": context["selectedText"],
+            **({"selectedText": context["selectedText"]} if context["selectedText"] is not None else {}),
             "personalVocabulary": record.get("vocabularyTerms", []),
             "reservedEdits": record.get("reservedEdits", []),
         }
@@ -129,12 +130,47 @@ def build(record, seen):
     }
 
 
+def validate_partitions(records, evaluation_records):
+    """Reject duplicate examples and direct leakage into held-out evaluation data."""
+    seen_ids = set()
+    seen_text = {}
+    seen_inputs = set()
+    evaluation_text = {tuple(editplan.word_list(record["raw"])) for record in evaluation_records}
+    for record in evaluation_records + records:
+        identifier = record["id"]
+        if identifier in seen_ids:
+            raise ValueError(f"duplicate corpus/evaluation id: {identifier}")
+        seen_ids.add(identifier)
+        normalized = tuple(editplan.word_list(record["raw"]))
+        vocabulary_input = (normalized, tuple(sorted(set(record.get("vocabularyTerms", [])))))
+        previous = seen_text.get(normalized)
+        # Training may contrast supplied spellings for the same utterance. Reordering the
+        # vocabulary is not a new example; no contrast can cross a held-out boundary.
+        training_contrast = (previous is not None and previous.get("split") == record.get("split") == "train"
+                             and normalized not in evaluation_text and vocabulary_input not in seen_inputs
+                             and sorted("".join(term.lower().split()) for term in vocabulary_input[1])
+                             == sorted("".join(term.lower().split()) for term in set(previous.get("vocabularyTerms", []))))
+        if previous is not None and ("split" in record or "split" in previous) and not training_contrast:
+            raise ValueError(f"duplicate utterance or split leakage: {previous['id']} and {identifier}")
+        seen_inputs.add(vocabulary_input)
+        seen_text[normalized] = record
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--check", action="store_true", help="reject stale generated splits without writing")
+    arguments = parser.parse_args()
     records = [
         json.loads(line)
         for line in SOURCE.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
+    evaluation_records = [
+        json.loads(line)
+        for path in sorted((ROOT / "Evals/fixtures").rglob("*.jsonl"))
+        for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
+    validate_partitions(records, evaluation_records)
     splits = {"train": [], "valid": [], "test": []}
     seen = set()
     for record in records:
@@ -142,10 +178,16 @@ def main() -> None:
             raise ValueError(f"{record.get('id')!r}: unknown split {record.get('split')!r}")
         splits[record["split"]].append(build(record, seen))
 
-    OUTPUT.mkdir(parents=True, exist_ok=True)
+    if not arguments.check:
+        OUTPUT.mkdir(parents=True, exist_ok=True)
     for split, values in splits.items():
         text = "".join(compact(value) + "\n" for value in values)
-        (OUTPUT / f"{split}.jsonl").write_text(text, encoding="utf-8")
+        path = OUTPUT / f"{split}.jsonl"
+        if arguments.check:
+            if not path.is_file() or path.read_text(encoding="utf-8") != text:
+                raise ValueError(f"stale generated split: {path}; run Training/prepare_corpus.py")
+        else:
+            path.write_text(text, encoding="utf-8")
     print(
         json.dumps(
             {

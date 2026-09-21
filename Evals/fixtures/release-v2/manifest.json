@@ -1,0 +1,29 @@
+{
+  "adversarial": {
+    "count": 22,
+    "sha256": "2e0ff4cfc63b66cdfb557aab2c3fb1905a76657cc4bef560b038ce296dded0f5"
+  },
+  "frozenOn": "2026-09-16",
+  "gold": {
+    "count": 48,
+    "sha256": "3d49557950fa6342f4c9854d56d40113d91e4be4310c2a6ec1b948274a9fa84f"
+  },
+  "independentReview": {
+    "evidence": "Evals/fixtures/release-v2/REVIEW.md",
+    "reviewedAt": "2026-09-16T19:35:04.088577+00:00",
+    "reviewer": "quality_spec_review (independent agent; not human certification)",
+    "suiteSHA256": "10f5333248bb293597b49b6813a594b8df3c5e56802bfe3ab43db861ff90dc62"
+  },
+  "minimumRates": {
+    "adversarialSafe": 1.0,
+    "contextFit": 1.0,
+    "editPlanExact": 0.95,
+    "meaningPreservation": 1.0,
+    "runtimeConsistency": 1.0,
+    "vocabularyPreservation": 1.0
+  },
+  "purpose": "Unqueried revision of v1: safe capitalization-only variants, actual control bytes, and native rejection probes. Independent review required.",
+  "schemaVersion": 1,
+  "suite": "cleanup-release-v2",
+  "supersedes": "cleanup-release-v1"
+}

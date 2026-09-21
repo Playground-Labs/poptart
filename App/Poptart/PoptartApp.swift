@@ -6,25 +6,15 @@ import SwiftUI
 
 @main
 struct PoptartApp: App {
+    @NSApplicationDelegateAdaptor(PoptartLifecycle.self) private var lifecycle
     @State private var root = AppRoot.shared
-
-    init() {
-        Task { @MainActor in
-            await AppRoot.shared.start()
-        }
-    }
 
     var body: some Scene {
         Window("Poptart", id: "poptart") {
-            RootView(root: root)
-                .frame(minWidth: 720, minHeight: 560)
+            RootView(root: root, menuBar: lifecycle.menuBar)
+                .frame(minWidth: 560, minHeight: 560)
         }
-        .defaultSize(width: 860, height: 660)
-
-        MenuBarExtra("Poptart", systemImage: root.menuBarSymbol) {
-            PoptartMenu(root: root)
-        }
-        .menuBarExtraStyle(.menu)
+        .defaultSize(width: 560, height: 720)
     }
 }
 
@@ -60,6 +50,21 @@ final class AppRoot {
     func start() async {
         guard !started else { return }
         started = true
+        #if DEBUG
+        // The privacy deny test has no one watching the menu bar, so it reads the status from a file.
+        if let path = ProcessInfo.processInfo.environment["POPTART_STATUS_FILE"], !path.isEmpty {
+            Task {
+                var last = ""
+                while !Task.isCancelled {
+                    if statusMessage != last {
+                        last = statusMessage
+                        try? Data(last.utf8).write(to: URL(fileURLWithPath: path), options: .atomic)
+                    }
+                    try? await Task.sleep(for: .milliseconds(250))
+                }
+            }
+        }
+        #endif
         do {
             let environment = try AppEnvironment.make(downloader: .system)
             self.environment = environment
@@ -70,30 +75,13 @@ final class AppRoot {
     }
 }
 
-private struct PoptartMenu: View {
+private struct RootView: View {
     let root: AppRoot
+    let menuBar: PoptartMenuBar
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Text(root.statusMessage)
-        Divider()
-        Button("Open Poptart…") {
-            NSApp.activate(ignoringOtherApps: true)
-            openWindow(id: "poptart")
-        }
-        Button("Quit Poptart") {
-            Task {
-                await root.stop()
-                NSApp.terminate(nil)
-            }
-        }
-    }
-}
-
-private struct RootView: View {
-    let root: AppRoot
-
-    var body: some View {
+      Group {
         if let failure = root.failure {
             ContentUnavailableView(
                 "Poptart cannot start",
@@ -110,6 +98,8 @@ private struct RootView: View {
             ProgressView("Starting Poptart…")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+      }
+      .onAppear { menuBar.openWindow = { openWindow(id: "poptart") } }
     }
 }
 
@@ -121,8 +111,8 @@ private struct MainWindow: View {
             SettingsView(model: environment.settings, launch: environment.launch)
                 .tabItem { Label("Settings", systemImage: "gearshape") }
             HistoryView(model: environment.history)
+                .padding(16)
                 .tabItem { Label("History", systemImage: "clock") }
         }
-        .padding(16)
     }
 }

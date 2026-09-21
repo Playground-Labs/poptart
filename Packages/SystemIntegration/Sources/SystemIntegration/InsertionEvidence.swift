@@ -92,6 +92,8 @@ public enum PasteInsertionConfirmation {
     switch outcome {
     case .failed(let failure):
       return .failed(failure)
+    case .pasteSuppressed:
+      return .failed(.accessibilityAndPasteFailed)
     case .promisedTextWasRead:
       switch evidence {
       case .confirmed, .normalisedChange:

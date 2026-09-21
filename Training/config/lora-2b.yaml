@@ -1,0 +1,23 @@
+model: "Models/Artifacts/baseline-qwen-2b-4bit"
+train: true
+fine_tune_type: lora
+data: "Training/generated/mlx"
+seed: 20260824
+num_layers: 16
+batch_size: 1
+iters: 1200
+val_batches: -1
+learning_rate: 1.0e-5
+steps_per_report: 10
+steps_per_eval: 100
+save_every: 100
+max_seq_length: 2048
+grad_checkpoint: true
+mask_prompt: true
+adapter_path: "Training/output/adapters"
+lora_parameters:
+  rank: 8
+  dropout: 0.0
+  scale: 20.0
+report_to: null
+trust_remote_code: false

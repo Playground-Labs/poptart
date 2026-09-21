@@ -53,9 +53,13 @@ public struct InstalledModelPack: Codable, Equatable, Sendable {
   }
 }
 
-private struct ActiveState: Codable, Sendable {
+struct ActiveModelPackState: Codable, Sendable {
   var current: InstalledModelPack
-  var previous: InstalledModelPack?
+  let signedManifest: Data
+}
+
+private struct RetainedSignedManifest: Decodable {
+  let signedManifest: Data
 }
 
 /// The only production entry point that can reach the download boundary. Every operation requires
@@ -69,7 +73,9 @@ public actor ModelPackInstaller {
   private let verifier: ModelPackManifestVerifier
   private let downloader: any ResumableArtifactDownloading
   private let smokeTester: any ModelPackSmokeTesting
-  private var state: ActiveState?
+  private var state: ActiveModelPackState?
+  private var downgradeFloor: SemanticVersion?
+  private var isInstalling = false
 
   public init(
     rootDirectory: URL,
@@ -94,12 +100,21 @@ public actor ModelPackInstaller {
     try FileManager.default.createDirectory(at: packsDirectory, withIntermediateDirectories: true)
     if FileManager.default.fileExists(atPath: activeStateURL.path) {
       do {
-        self.state = try JSONDecoder().decode(
-          ActiveState.self, from: Data(contentsOf: activeStateURL))
-      } catch let error as ModelPackError {
-        throw error
+        let data = try Data(contentsOf: activeStateURL)
+        let retained = try JSONDecoder().decode(RetainedSignedManifest.self, from: data)
+        let authenticated = try verifier.verify(retained.signedManifest)
+        guard let version = SemanticVersion(authenticated.version) else {
+          throw ModelPackError.unrecoverableActiveState
+        }
+        self.downgradeFloor = version
+        // Mutable metadata may be unusable while the publisher-signed version remains trustworthy.
+        // Keep Repair available without forgetting the authenticated downgrade floor.
+        if let decoded = try? JSONDecoder().decode(ActiveModelPackState.self, from: data),
+          decoded.current.manifest == authenticated {
+          self.state = decoded
+        }
       } catch {
-        throw ModelPackError.invalidActiveState
+        throw ModelPackError.unrecoverableActiveState
       }
     }
   }
@@ -111,6 +126,9 @@ public actor ModelPackInstaller {
     _ action: ExplicitModelPackAction,
     signedManifest: Data
   ) async throws -> InstalledModelPack {
+    guard !isInstalling else { throw ModelPackError.installationInProgress }
+    isInstalling = true
+    defer { isInstalling = false }
     let manifest = try verifier.verify(signedManifest)
     try validate(manifest, for: action)
 
@@ -119,9 +137,12 @@ public actor ModelPackInstaller {
     try FileManager.default.createDirectory(at: stage, withIntermediateDirectories: true)
 
     do {
+      // Interrupted staging may contain listed files and their partials, but no unsigned paths.
+      try verifyModelPackInventory(manifest, at: stage, allowIncomplete: true)
       for artifact in manifest.artifacts {
         try await stageArtifact(artifact, in: stage)
       }
+      try verifyModelPackInventory(manifest, at: stage)
       do {
         try await smokeTester.validate(packAt: stage, manifest: manifest)
       } catch {
@@ -133,31 +154,23 @@ public actor ModelPackInstaller {
         UUID().uuidString, isDirectory: true)
       try FileManager.default.moveItem(at: stage, to: installedDirectory)
       let installed = InstalledModelPack(directory: installedDirectory, manifest: manifest)
-      let newState = ActiveState(current: installed, previous: state?.current)
+      let newState = ActiveModelPackState(current: installed, signedManifest: signedManifest)
       try persist(newState)
       state = newState
+      downgradeFloor = SemanticVersion(manifest.version)
       return installed
     } catch let error as ModelPackError {
+      switch error {
+      case .artifactInventoryMismatch, .artifactSizeMismatch, .artifactHashMismatch:
+        try? FileManager.default.removeItem(at: stage)
+      default: break
+      }
       throw error
     } catch is CancellationError {
       throw CancellationError()
     } catch {
       throw ModelPackError.fileSystemFailure
     }
-  }
-
-  @discardableResult
-  public func rollback() throws -> InstalledModelPack {
-    guard let current = state?.current, let previous = state?.previous else {
-      throw ModelPackError.noPreviousPack
-    }
-    guard FileManager.default.fileExists(atPath: previous.directory.path) else {
-      throw ModelPackError.invalidActiveState
-    }
-    let newState = ActiveState(current: previous, previous: current)
-    try persist(newState)
-    state = newState
-    return previous
   }
 
   private func stageArtifact(_ artifact: ModelArtifact, in stage: URL) async throws {
@@ -178,30 +191,29 @@ public actor ModelPackInstaller {
       try FileManager.default.removeItem(at: partialURL)
       resumeOffset = 0
     }
-    let result: ResumableDownloadResult
-    do {
-      result = try await downloader.download(
-        .init(
-          source: artifact.url,
-          destination: partialURL,
-          resumeOffset: resumeOffset,
-          expectedSize: artifact.byteSize
-        ))
-    } catch is CancellationError {
-      throw CancellationError()
-    } catch let error as ModelPackError {
-      throw error
-    } catch {
-      throw ModelPackError.downloadFailed
+    // A transfer may have stored every byte before interruption. Verify it below rather than
+    // requesting a Range starting at EOF, which a server can only reject.
+    if resumeOffset < artifact.byteSize {
+      let result: ResumableDownloadResult
+      do {
+        result = try await downloader.download(
+          .init(
+            source: artifact.url,
+            destination: partialURL,
+            resumeOffset: resumeOffset,
+            expectedSize: artifact.byteSize
+          ))
+      } catch is CancellationError {
+        throw CancellationError()
+      } catch let error as ModelPackError {
+        throw error
+      } catch {
+        throw ModelPackError.downloadFailed
+      }
+      guard result.isComplete else { throw ModelPackError.incompleteDownload }
     }
 
-    guard result.isComplete else { throw ModelPackError.incompleteDownload }
-    do {
-      try verifyArtifact(artifact, at: partialURL)
-    } catch {
-      try? FileManager.default.removeItem(at: stage)
-      throw error
-    }
+    try verifyArtifact(artifact, at: partialURL)
     try FileManager.default.moveItem(at: partialURL, to: finalURL)
   }
 
@@ -230,8 +242,7 @@ public actor ModelPackInstaller {
     guard (minimum...maximum).contains(applicationVersion) else {
       throw ModelPackError.incompatibleApplicationVersion
     }
-    if let activeVersionString = state?.current.manifest.version,
-      let activeVersion = SemanticVersion(activeVersionString),
+    if let activeVersion = downgradeFloor,
       let proposedVersion = SemanticVersion(manifest.version),
       proposedVersion < activeVersion
     {
@@ -261,7 +272,7 @@ public actor ModelPackInstaller {
       }
   }
 
-  private func persist(_ state: ActiveState) throws {
+  private func persist(_ state: ActiveModelPackState) throws {
     do {
       let encoder = JSONEncoder()
       encoder.outputFormatting = [.sortedKeys]

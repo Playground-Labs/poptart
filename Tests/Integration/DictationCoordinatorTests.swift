@@ -8,6 +8,51 @@ import Testing
 
 @Suite("Application dictation composition")
 struct DictationCoordinatorTests {
+    @Test("Runtime replacement finishes recording and refuses subsequent presses")
+    func finishesBeforeReplacement() async {
+        let harness = Harness(recognition: .final(.init(text: "Keep my words")))
+        await harness.coordinator.receive(.pressed)
+        await harness.coordinator.finishCurrentDictation()
+        #expect(await harness.history.records.count == 1)
+        #expect(await harness.delivery.insertedTexts == ["Keep my words"])
+        await harness.coordinator.receive(.pressed)
+        #expect(await harness.speech.startedCount == 1)
+    }
+
+    @Test("Runtime replacement preserves a press still capturing its target")
+    func finishesDuringCapture() async {
+        let target = SuspendedTargetBoundary()
+        let harness = Harness(targetBoundary: target)
+        let pressing = Task { await harness.coordinator.receive(.pressed) }
+        await target.waitUntilCaptureRequested()
+        let stopping = Task { await harness.coordinator.finishCurrentDictation() }
+        await target.resolve(with: .success(editableCapture()))
+        await pressing.value
+        await stopping.value
+        #expect(await harness.history.records.count == 1)
+        #expect(await harness.speech.finalizedCount == 1)
+    }
+
+    @Test("Runtime replacement waits for Cleanup, delivery, and history", arguments: ["cleanup", "delivery", "history"])
+    func joinsBoundaryWork(_ phase: String) async {
+        let gate = ManualPresentationInterval()
+        let harness = Harness(cleanupWait: phase == "cleanup" ? gate : nil,
+                              deliveryWait: phase == "delivery" ? gate : nil,
+                              historyWait: phase == "history" ? gate : nil)
+        let finished = Box(false)
+        await harness.coordinator.receive(.pressed)
+        let stopping = Task {
+            await harness.coordinator.finishCurrentDictation()
+            finished.mutate { $0 = true }
+        }
+        await gate.waitUntilRequested()
+        #expect(!finished.value)
+        await gate.elapse()
+        await stopping.value
+        #expect(await harness.history.records.count == 1)
+        #expect(await harness.delivery.insertedTexts == ["raw"])
+    }
+
     @Test("press, release, recognition, cleanup, and insertion form one usable Dictation")
     func cleanedInsertion() async {
         let harness = Harness(
@@ -50,6 +95,52 @@ struct DictationCoordinatorTests {
             recordingEnd: .released
         ))
         #expect(await harness.indicator.states.last == .copiedBecauseTargetChanged)
+    }
+
+    @Test("watchdog delivery does not wait for recognition teardown")
+    func watchdogDeliveryDoesNotWaitForRecognitionTeardown() async {
+        let clock = MutableClock(now: .zero)
+        let speech = SuspendedCancellationSpeech()
+        let target = FakeTarget(capture: editableCapture(), validity: .valid)
+        let delivery = FakeDelivery()
+        let history = FakeHistory()
+        let coordinator = DictationCoordinator(
+            session: .init(clock: clock),
+            target: target,
+            speech: speech,
+            cleanup: FakeCleanup(result: .rawTranscriptFallback(.modelUnavailable)),
+            delivery: delivery,
+            indicator: FakeIndicator(),
+            history: history,
+            deadlines: InertDeadlines(),
+            vocabulary: { .init(entries: []) }
+        )
+        await coordinator.receive(.pressed)
+        let id = (await coordinator.activeDictationID())!
+        await coordinator.receive(.recognitionHypothesis(id, .init(text: "usable partial")))
+        await coordinator.receive(.released)
+        clock.instant = .zero.advanced(by: .milliseconds(1_400))
+
+        await coordinator.receive(.watchdogFired(id))
+        await speech.waitUntilCancellationRequested()
+        let record = await history.nextRecord()
+
+        #expect(await delivery.insertedTexts == ["usable partial"])
+        #expect(record.outcome == .recognitionHypothesisFallback(
+            method: .accessibility, recordingEnd: .released))
+
+        await coordinator.receive(.completionPresentationElapsed(id))
+        let nextPress = Task { await coordinator.receive(.pressed) }
+        await target.waitForCaptureCount(2)
+        try? await Task.sleep(for: .milliseconds(10))
+        #expect(await speech.startedCount == 1)
+
+        await speech.finishCancellation()
+        try? await Task.sleep(for: .milliseconds(10))
+        #expect(await speech.startedCount == 1)
+        await speech.finishFinalization()
+        await nextPress.value
+        #expect(await speech.startedCount == 2)
     }
 
     @Test("a dictation with no editable target records and copies instead of failing")
@@ -215,6 +306,39 @@ struct DictationCoordinatorTests {
         ))
         #expect(try await store.records().count == 1)
     }
+
+    @Test("history keeps why a Dictation fell back and which copy it was")
+    func fallbackReasonAndClipboardResultsReachHistory() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = try HistoryStore(
+            directory: directory,
+            keyProvider: InMemoryKeyProvider(),
+            now: { Date(timeIntervalSince1970: 1_100) }
+        )
+        let history = EncryptedHistoryBoundary(store: store)
+
+        await history.record(recordIntent(outcome: .rawTranscriptFallback(
+            reason: .cleanupTimedOut, method: .accessibility, recordingEnd: .released
+        )))
+        await history.record(recordIntent(outcome: .targetChangedClipboard(
+            source: .cleaned, recordingEnd: .released
+        )))
+        await history.record(recordIntent(outcome: .noTargetClipboard(
+            source: .rawTranscriptFallback(.cleanupFailed), recordingEnd: .released
+        )))
+
+        let records = try await store.records()
+        #expect(
+            Set(records.map(\.outcome))
+                == [.rawTranscript, .copiedTargetChanged, .copiedNoTarget])
+        #expect(records.first { $0.outcome == .rawTranscript }?.fallbackReason == .cleanupTimedOut)
+        #expect(records.first { $0.outcome == .copiedTargetChanged }?.fallbackReason == nil)
+        #expect(records.first { $0.outcome == .copiedNoTarget }?.fallbackReason == .cleanupFailed)
+    }
 }
 
 private func recordIntent(outcome: DictationCore.DictationOutcome) -> DictationRecordIntent {
@@ -249,15 +373,18 @@ private struct Harness {
         recognition: RecognitionResult = .final(.init(text: "raw")),
         cleanup: CleanupResult = .rawTranscriptFallback(.modelUnavailable),
         validity: TargetValidity = .valid,
-        targetBoundary: (any InsertionTargetBoundary)? = nil
+        targetBoundary: (any InsertionTargetBoundary)? = nil,
+        cleanupWait: ManualPresentationInterval? = nil,
+        deliveryWait: ManualPresentationInterval? = nil,
+        historyWait: ManualPresentationInterval? = nil
     ) {
         let clock = FixedClock(now: .init(nanoseconds: 1_000))
         let target = targetBoundary ?? FakeTarget(capture: targetCapture, validity: validity)
         let speech = FakeSpeech(result: recognition)
-        let cleanupBoundary = FakeCleanup(result: cleanup)
-        let delivery = FakeDelivery()
+        let cleanupBoundary = FakeCleanup(result: cleanup, wait: cleanupWait)
+        let delivery = FakeDelivery(wait: deliveryWait)
         let indicator = FakeIndicator()
-        let history = FakeHistory()
+        let history = FakeHistory(wait: historyWait)
         let presentation = ManualPresentationInterval()
         self.speech = speech
         self.delivery = delivery
@@ -342,17 +469,39 @@ private struct FixedClock: MonotonicClock {
     func now() -> MonotonicInstant { instant }
 }
 
+private final class MutableClock: MonotonicClock, @unchecked Sendable {
+    private let value: Box<MonotonicInstant>
+    init(now: MonotonicInstant) { value = Box(now) }
+    var instant: MonotonicInstant {
+        get { value.value }
+        set { value.value = newValue }
+    }
+    func now() -> MonotonicInstant { instant }
+}
+
 private actor FakeTarget: InsertionTargetBoundary {
     let capture: DictationTargetCapture
     let validity: TargetValidity
+    private var captureCount = 0
+    private var captureWaiters: [(Int, CheckedContinuation<Void, Never>)] = []
     init(capture: DictationTargetCapture, validity: TargetValidity) {
         self.capture = capture
         self.validity = validity
     }
     func captureTarget(for id: DictationID) -> Result<DictationTargetCapture, TargetCaptureFailure> {
-        .success(capture)
+        captureCount += 1
+        captureWaiters.removeAll { waiter in
+            guard captureCount >= waiter.0 else { return false }
+            waiter.1.resume()
+            return true
+        }
+        return .success(capture)
     }
     func revalidateTarget(_ request: TargetRevalidationRequest) -> TargetValidity { validity }
+    func waitForCaptureCount(_ count: Int) async {
+        if captureCount >= count { return }
+        await withCheckedContinuation { captureWaiters.append((count, $0)) }
+    }
 }
 
 private actor SuspendedTargetBoundary: InsertionTargetBoundary {
@@ -430,17 +579,59 @@ private actor FakeSpeech: SpeechInputBoundary {
     func cancelRecognition(for id: DictationID) {}
 }
 
+private actor SuspendedCancellationSpeech: SpeechInputBoundary {
+    private var finalization: CheckedContinuation<Void, Never>?
+    private var cancellation: CheckedContinuation<Void, Never>?
+    private var requestWaiters: [CheckedContinuation<Void, Never>] = []
+    private var cancellationRequested = false
+    private(set) var startedCount = 0
+
+    func startRecording(_ request: RecordingRequest) -> Result<Void, RecordingFailure> {
+        startedCount += 1
+        return .success(())
+    }
+    func stopRecordingAndFinalize(_ request: RecognitionFinalizationRequest) async -> RecognitionResult {
+        await withCheckedContinuation { continuation in finalization = continuation }
+        return .failed(.cancelled)
+    }
+    func cancelRecognition(for id: DictationID) async {
+        cancellationRequested = true
+        requestWaiters.forEach { $0.resume() }
+        requestWaiters.removeAll()
+        await withCheckedContinuation { continuation in cancellation = continuation }
+    }
+    func waitUntilCancellationRequested() async {
+        if cancellationRequested { return }
+        await withCheckedContinuation { requestWaiters.append($0) }
+    }
+    func finishCancellation() {
+        cancellation?.resume()
+        cancellation = nil
+    }
+    func finishFinalization() {
+        finalization?.resume()
+        finalization = nil
+    }
+}
+
 private actor FakeCleanup: CleanupBoundary {
     let result: CleanupResult
-    init(result: CleanupResult) { self.result = result }
-    func clean(_ request: CleanupRequest) -> CleanupResult { result }
+    let wait: ManualPresentationInterval?
+    init(result: CleanupResult, wait: ManualPresentationInterval? = nil) { self.result = result; self.wait = wait }
+    func clean(_ request: CleanupRequest) async -> CleanupResult {
+        await wait?.wait(.zero)
+        return result
+    }
     func cancelCleanup(for id: DictationID) {}
 }
 
 private actor FakeDelivery: TextDeliveryBoundary {
+    let wait: ManualPresentationInterval?
+    init(wait: ManualPresentationInterval? = nil) { self.wait = wait }
     private(set) var insertedTexts: [String] = []
     private(set) var copiedTexts: [String] = []
-    func deliver(_ request: DeliveryRequest) -> DeliveryResult {
+    func deliver(_ request: DeliveryRequest) async -> DeliveryResult {
+        await wait?.wait(.zero)
         insertedTexts.append(request.text)
         return .inserted(.accessibility)
     }
@@ -471,9 +662,12 @@ private actor FakeIndicator: IndicatorBoundary {
 }
 
 private actor FakeHistory: HistoryBoundary {
+    let wait: ManualPresentationInterval?
+    init(wait: ManualPresentationInterval? = nil) { self.wait = wait }
     private(set) var records: [DictationRecordIntent] = []
     private var waiters: [CheckedContinuation<DictationRecordIntent, Never>] = []
-    func record(_ intent: DictationRecordIntent) {
+    func record(_ intent: DictationRecordIntent) async {
+        await wait?.wait(.zero)
         records.append(intent)
         if !waiters.isEmpty { waiters.removeFirst().resume(returning: intent) }
     }

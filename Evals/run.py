@@ -12,8 +12,11 @@ Everything here is deterministic Python 3 standard library. No model is called.
 """
 
 import argparse
+import hashlib
 import json
+import math
 import sys
+import unicodedata
 from pathlib import Path
 
 sys.dont_write_bytecode = True  # never leave a __pycache__ directory in the tree
@@ -50,7 +53,11 @@ FORBIDDEN_FIELDS = (
     "clipboard",
     "historyRecord",
 )
-SENTENCE_TERMINATORS = ".!?"
+RELEASE_DIRECTORY = ROOT / "Evals/fixtures/release-v2"
+PROBE_ERRORS = {"invalidSpans": "invalidBounds", "overlappingSpans": "unorderedOrOverlapping",
+                "hiddenUnicode": "unsafeUnicode", "controlCharacters": "unsafeUnicode"}
+RELEASE_MINIMUM_RATES = dict(editPlanExact=0.95, meaningPreservation=1.0,
+    vocabularyPreservation=1.0, contextFit=1.0, adversarialSafe=1.0, runtimeConsistency=1.0)
 
 
 def load(path):
@@ -77,7 +84,8 @@ def vocabulary_terms(record):
 
 
 def target_context(record):
-    return record.get("targetContext", editplan.DEFAULT_TARGET_CONTEXT)
+    value = record.get("targetContext", editplan.DEFAULT_TARGET_CONTEXT)
+    return dict(editplan.DEFAULT_TARGET_CONTEXT, textBeforeCursor=value) if isinstance(value, str) else value
 
 
 def context_text(record):
@@ -103,6 +111,8 @@ def edit_plan_exact(record, prediction):
     The prediction must carry a plan in the same compact wire schema the runtime
     parser accepts; a missing, malformed or unknown-key plan fails.
     """
+    if prediction.get("outcome") != "cleaned" or prediction.get("output") != record["expected"]:
+        return False
     value = prediction.get("editPlan")
     if value is None:
         return False
@@ -158,17 +168,14 @@ def _first_word(text):
 def context_fit(record, prediction):
     """The output joins the Target Context without borrowing from it.
 
-    Two deterministic rules, both derived from fixture data rather than from the
-    gold output:
+    Two deterministic checks:
 
     1. No copying. No output word of four or more characters may come from the
        Target Context unless it was also spoken in the Raw Transcript or is a
        vocabulary term. This mirrors ``CleanupEditPlanValidator.copiesContext``.
-    2. Correct join. When the text before the cursor is empty or ends a sentence,
-       the first cased letter of the output must be uppercase; otherwise the
-       output continues a sentence and that letter must be lowercase. Either way
-       a first word that is a vocabulary term, or that appears with exactly that
-       capitalization in the Raw Transcript, is accepted.
+    2. Correct join. Compare the first word's case to the authored gold output,
+       which accounts for sentence boundaries and proper names. A preserved
+       vocabulary term is allowed. Unchanged raw casing alone is not a pass.
     """
     output = prediction.get("output")
     if not isinstance(output, str):
@@ -185,15 +192,12 @@ def context_fit(record, prediction):
     first = _first_word(output)
     if first is None or first in terms:
         return True
-    if first in {span.text for span in editplan.tokenize(record["raw"])}:
-        return True
     letter = next(character for character in first if character.isalpha())
     if letter.lower() == letter.upper():
         return True
-    before = target_context(record).get("textBeforeCursor", "")
-    trimmed = before.rstrip()
-    starts_sentence = trimmed == "" or trimmed[-1] in SENTENCE_TERMINATORS
-    return letter.isupper() if starts_sentence else letter.islower()
+    expected_first = _first_word(record["expected"])
+    expected_letter = next((c for c in expected_first or "" if c.isalpha()), letter)
+    return letter.isupper() == expected_letter.isupper()
 
 
 DIMENSIONS = (
@@ -243,7 +247,7 @@ def validate_gold(record):
         raise ValueError(
             f"{identifier}: gold plan produces {produced!r}, expected {record['expected']!r}"
         )
-    reference = {"output": record["expected"], "editPlan": record["editPlan"]}
+    reference = {"output": record["expected"], "editPlan": record["editPlan"], "outcome": "cleaned"}
     for name, measure in DIMENSIONS:
         if not measure(record, reference):
             raise ValueError(f"{identifier}: the gold output itself fails {name}")
@@ -252,17 +256,38 @@ def validate_gold(record):
 def validate_adversarial(record):
     identifier = record["id"]
     reject_unmirrored(identifier, record["raw"])
-    if record.get("expectedOutcome") != "fallback":
-        raise ValueError(f"{identifier}: adversarial fixtures must expect a fallback")
-    if record["category"] != "invalidSpans":
+    allowed = record.get("allowedCleanedOutputs")
+    if not isinstance(allowed, list) or any(not isinstance(text, str) or not text for text in allowed):
+        raise ValueError(f"{identifier}: explicit allowedCleanedOutputs required (empty means fallback only)")
+    if len(set(allowed)) != len(allowed):
+        raise ValueError(f"{identifier}: duplicate allowed output")
+    category = record["category"]
+    scalar_category = {"hiddenUnicode": "Cf", "controlCharacters": "Cc"}.get(category)
+    if scalar_category and not any(unicodedata.category(c) == scalar_category for c in record["raw"]):
+        raise ValueError(f"{identifier}: fixture lacks an actual {scalar_category} scalar")
+    if category not in PROBE_ERRORS:
         return
     probes = record.get("probeEditPlans") or []
     if not probes:
-        raise ValueError(f"{identifier}: the invalidSpans fixture needs probe plans")
-    span_count = len(editplan.tokenize(record["raw"]))
+        raise ValueError(f"{identifier}: {category} fixture needs probe plans")
     for probe in probes:
-        if editplan.bounds_violation(editplan.parse_plan(probe), span_count) != "invalidBounds":
-            raise ValueError(f"{identifier}: probe plan is not span-invalid: {probe}")
+        violation = editplan.plan_violation(editplan.parse_plan(probe), record["raw"],
+            vocabulary_terms(record), reserved_edits(record), target_context(record))
+        if not violation or violation.split(" ")[0] != PROBE_ERRORS[category]:
+            raise ValueError(f"{identifier}: probe must fail with {PROBE_ERRORS[category]}: {violation}")
+
+
+def validate_native_probes(rows, adversarial):
+    expected = {f"{r['id']}#probe-{i}": r for r in adversarial
+                for i, _ in enumerate(r.get("probeEditPlans", []))}
+    if not isinstance(rows, list) or not expected:
+        raise ValueError("native rejection probe evidence required")
+    predictions = prediction_map([], [dict(id=identifier) for identifier in expected], rows)
+    for identifier, row in predictions.items():
+        fixture = expected[identifier]
+        if (row.get("validationError") != PROBE_ERRORS[fixture["category"]]
+            or row["outcome"] != "fallback" or row["output"] != fixture["raw"]):
+            raise ValueError(f"{identifier}: native probe did not reject and preserve raw text")
 
 
 def validate_fixtures(gold, adversarial):
@@ -301,13 +326,43 @@ def validate_prediction(identifier, prediction):
         raise ValueError(f"{identifier}: outcome must be cleaned or fallback")
     if not isinstance(prediction.get("output"), str):
         raise ValueError(f"{identifier}: output must be a string")
+    if prediction["outcome"] == "fallback" and prediction.get("fallbackReason") != "unsafeEditPlan":
+        raise ValueError(f"{identifier}: fallback must identify a rejected plan; inference failures are not quality evidence")
     elapsed = prediction.get("elapsedMilliseconds")
-    if not isinstance(elapsed, (int, float)) or isinstance(elapsed, bool) or elapsed < 0:
+    if not isinstance(elapsed, (int, float)) or isinstance(elapsed, bool) or not math.isfinite(elapsed) or elapsed < 0:
         raise ValueError(f"{identifier}: elapsedMilliseconds must be a non-negative number")
 
 
 def tally(records, passed):
     return {"applicable": len(records), "passed": sum(1 for record in records if passed(record))}
+
+
+def runtime_consistent(record, prediction):
+    """A reported result must be possible under the native validator and applier."""
+    if prediction["outcome"] == "fallback":
+        return prediction.get("fallbackReason") == "unsafeEditPlan" and prediction["output"] == record["raw"]
+    try:
+        plan = editplan.parse_plan(prediction.get("editPlan"))
+        reserved = reserved_edits(record)
+        return (not editplan.plan_violation(plan, record["raw"], vocabulary_terms(record), reserved,
+                                           target_context(record))
+                and editplan.resolve(record["raw"], plan, reserved) == prediction["output"])
+    except (editplan.PlanError, TypeError):
+        return False
+
+
+def adversarial_safe(record, prediction):
+    return runtime_consistent(record, prediction) and (
+        prediction["outcome"] == "fallback" or prediction["output"] in record["allowedCleanedOutputs"])
+
+
+def prediction_map(gold, adversarial, rows):
+    predictions = {row["id"]: row for row in rows}
+    if len(rows) != len(predictions) or set(predictions) != {r["id"] for r in gold + adversarial}:
+        raise ValueError("missing, duplicate, or unexpected prediction ids")
+    for identifier, row in predictions.items():
+        validate_prediction(identifier, row)
+    return predictions
 
 
 def score(gold, adversarial, predictions):
@@ -320,36 +375,82 @@ def score(gold, adversarial, predictions):
         )
         figures[name] = tally(applicable, lambda record: measure(record, predictions[record["id"]]))
     figures["adversarialSafe"] = tally(
-        adversarial, lambda record: predictions[record["id"]]["outcome"] == "fallback"
+        adversarial, lambda record: adversarial_safe(record, predictions[record["id"]])
     )
+    figures["runtimeConsistency"] = tally(gold + adversarial,
+        lambda record: runtime_consistent(record, predictions[record["id"]]))
     return figures
+
+
+def digest(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def frozen_suite(directory=RELEASE_DIRECTORY):
+    manifest = json.loads((directory / "manifest.json").read_text())
+    if manifest.get("schemaVersion") != 1 or manifest.get("minimumRates") != RELEASE_MINIMUM_RATES:
+        raise ValueError("unsupported release suite or quality policy")
+    for name in ("gold", "adversarial"):
+        path = directory / (name + ".jsonl")
+        if manifest[name] != dict(sha256=digest(path), count=len(load(path))):
+            raise ValueError(f"frozen {name} fixtures changed; create a new suite version")
+    return manifest
+
+
+def review_digest(manifest):
+    scope = {key: value for key, value in manifest.items() if key != "independentReview"}
+    return hashlib.sha256(json.dumps(scope, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def quality_gate(figures, manifest):
+    failures = [name for name, minimum in RELEASE_MINIMUM_RATES.items()
+                if figures[name]["applicable"] == 0
+                or figures[name]["passed"] / figures[name]["applicable"] < minimum]
+    review = manifest.get("independentReview")
+    if (not isinstance(review, dict) or review.get("suiteSHA256") != review_digest(manifest)
+        or not all(isinstance(review.get(k), str) and review[k].strip()
+                   for k in ("reviewer", "reviewedAt", "evidence"))):
+        failures.append("independentReview")
+    return dict(passed=not failures, failures=failures, minimumRates=RELEASE_MINIMUM_RATES)
+
+
+def build_report(gold_path, adversarial_path, predictions_path=None, release=False):
+    gold, adversarial = load(gold_path), load(adversarial_path)
+    validate_fixtures(gold, adversarial)
+    manifest = None
+    if release:
+        if gold_path.resolve() != (RELEASE_DIRECTORY / "gold.jsonl").resolve() or adversarial_path.resolve() != (RELEASE_DIRECTORY / "adversarial.jsonl").resolve():
+            raise ValueError("release scoring requires the frozen suite")
+        manifest = frozen_suite()
+    report = dict(schemaVersion=3, mode="fixture-integrity", qualityClaim=False,
+        suite=RELEASE_DIRECTORY.name if release else "development", goldFixtures=len(gold), adversarialFixtures=len(adversarial),
+        goldSHA256=digest(gold_path), adversarialSHA256=digest(adversarial_path),
+        scorerSHA256={name: digest(ROOT / "Evals" / name) for name in ("run.py", "editplan.py")})
+    if manifest:
+        report["manifestSHA256"] = digest(RELEASE_DIRECTORY / "manifest.json")
+    if predictions_path:
+        predictions = prediction_map(gold, adversarial, load(predictions_path))
+        report.update(mode="model-results", qualityClaim=True, predictionsSHA256=digest(predictions_path))
+        figures = score(gold, adversarial, predictions)
+        report.update(figures)
+        if manifest:
+            report["releaseGate"] = quality_gate(figures, manifest)
+    return report
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--gold", type=Path)
+    parser.add_argument("--release-suite", action="store_true", help="use the current frozen release holdout")
     parser.add_argument("--predictions", type=Path, help="JSONL of production-model results")
     parser.add_argument("--output", type=Path, help="write the JSON report here as well as stdout")
     arguments = parser.parse_args()
 
-    gold = load(ROOT / "Evals/fixtures/gold.jsonl")
-    adversarial = load(ROOT / "Evals/fixtures/adversarial.jsonl")
-    validate_fixtures(gold, adversarial)
-
-    report = {
-        "schemaVersion": 2,
-        "mode": "fixture-integrity",
-        "qualityClaim": False,
-        "goldFixtures": len(gold),
-        "adversarialFixtures": len(adversarial),
-    }
-    if arguments.predictions:
-        predictions = {record["id"]: record for record in load(arguments.predictions)}
-        if set(predictions) != {record["id"] for record in gold + adversarial}:
-            raise ValueError("prediction ids do not exactly match fixtures")
-        for identifier, prediction in sorted(predictions.items()):
-            validate_prediction(identifier, prediction)
-        report.update({"mode": "model-results", "qualityClaim": True})
-        report.update(score(gold, adversarial, predictions))
+    if arguments.gold and arguments.release_suite:
+        parser.error("--gold cannot override the frozen release suite")
+    directory = RELEASE_DIRECTORY if arguments.release_suite else ROOT / "Evals/fixtures"
+    report = build_report(arguments.gold or directory / "gold.jsonl", directory / "adversarial.jsonl",
+                          arguments.predictions, arguments.release_suite)
 
     text = json.dumps(report, sort_keys=True, separators=(",", ":"))
     if arguments.output:

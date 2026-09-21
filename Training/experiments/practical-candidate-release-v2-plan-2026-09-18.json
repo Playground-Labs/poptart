@@ -1,0 +1,65 @@
+{
+  "candidate": "Models/Artifacts/diverse-contexts-step128",
+  "command": [
+    "/usr/local/bin/python3",
+    "Evals/baseline.py",
+    "--runner",
+    ".build/release-v2-selected-runner/PoptartCleanupEval",
+    "--model",
+    "Models/Artifacts/diverse-contexts-step128",
+    "--output-directory",
+    ".build/practical-candidate-release-v2",
+    "--release-suite"
+  ],
+  "executionIdentity": {
+    "adversarialSHA256": "2e0ff4cfc63b66cdfb557aab2c3fb1905a76657cc4bef560b038ce296dded0f5",
+    "goldSHA256": "3d49557950fa6342f4c9854d56d40113d91e4be4310c2a6ec1b948274a9fa84f",
+    "modelFiles": {
+      "adapters/adapter_config.json": "863fcca07229a87ad1e0f9ec46c6ece7478e1b4dc067aebfc82b6e4a0f2ed1b8",
+      "adapters/adapters.safetensors": "4c1eabd18c6eb3c0b345aab0fa752679695871f8d43b04ce2232e2a13bcba08c",
+      "base/LICENSE": "bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a",
+      "base/README.md": "748c964f9b7e5f2c3770ce013bbc0153be7c54311d9692c343b6188eefe77ac6",
+      "base/chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80",
+      "base/config.json": "8893a91e9b7763d7b94c6db181f5b7c79c6f4881a69cefb11549eefcab1823bf",
+      "base/model.safetensors": "44610b29c3ce91189a28195a3ef4fc34634330a781b6faed61bcd4bf40855e39",
+      "base/model.safetensors.index.json": "3b2dffa510d1d73decdbc12d5e1bc7d6a9f7b2deb631bfd84238a1f8fc4e0fd1",
+      "base/tokenizer.json": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523",
+      "base/tokenizer_config.json": "386ba246ba3dfa4d3a21d8bc8712eba38de558e5ac94c2c90436d8f94d519d5e"
+    },
+    "runnerSHA256": "ba300b2b605ab9762a0c54193935ee4a76d6e66b02170aa091687da37aefbb07",
+    "sourceSHA256": {
+      "Evals/baseline.py": "c3c6abac9332e4c58496b1e67763f2a08b7d5220b8eba7c359239beee1556a15",
+      "Evals/editplan.py": "d310aed37db6f9ef42e962efa815456497fc2bc620eca0691e57250b13747777",
+      "Evals/run.py": "5db545e69ca6cce928a5fde788a1311da91bece33c13e1491388186cf65d9440",
+      "Package.resolved": "1f28a476049646105e9b0bf48665da852046fd1b00bc7dd587153b01fbf36dea",
+      "Packages/Cleanup/Sources/Cleanup/CleanupEngine.swift": "a7263f48820747a27d4198fc27db9c71ddb5ac2ca627493c62dedb4428688b3a",
+      "Packages/Cleanup/Sources/Cleanup/CleanupModel.swift": "75d4f2784ecbfe7c38685f486de871ff481731b5f559db59a0edd706c885cb9e",
+      "Packages/Cleanup/Sources/Cleanup/CleanupPrompt.swift": "edf170c63c3e24d7148c2c4c3aa4d30037acc3e4b8e45994d372e1bb4d8d3130",
+      "Packages/Cleanup/Sources/Cleanup/EditPlan.swift": "79ebc733919b3532c3cbb642a7693026ef90a8ff3e12e6a766d40ff5cabe9405",
+      "Packages/Cleanup/Sources/Cleanup/EditPlanValidator.swift": "1d8813df41fd1fdc152feae06e2b48d7c35d1e1ae4c1424e377ef493a327eb59",
+      "Packages/Cleanup/Sources/Cleanup/ExplicitCorrections.swift": "443c4fae01c0968c29cbd5053247386f6709243f4fa54ed1f06ae19669654420",
+      "Packages/Cleanup/Sources/Cleanup/StableTranscript.swift": "9f3dbd9a182d59a5a0bbac310ddd39ac50165434d52a58a3f4a7114f550f3835",
+      "Packages/Cleanup/Sources/CleanupMLX/MLXCleanupModel.swift": "25ab8dab5db06df416fd3b4e44eb6d625ea310fd7d0b1a1b6f24e81ab74fadfd",
+      "Packages/DictationCore/Sources/DictationCore/BoundaryProtocols.swift": "5ae2039b45e7d55662416655c35f5ede0e84375eeb74204919896a1f1799e0e1",
+      "Packages/DictationCore/Sources/DictationCore/DictationSessionActor.swift": "2f6ef030fd4c7dda1fde6ecd111d645d1e79df0dce4263123a9fdfc9aeae0203",
+      "Packages/DictationCore/Sources/DictationCore/DomainTypes.swift": "d1de73ae0b9950bf3c82bb774d998518b60173613db2eafe1aa1afdaeeb11775",
+      "Packages/DictationCore/Sources/DictationCore/SessionContract.swift": "fed0326bd06050c4efedb0620eeefe04ee3a539b79f95ed487b48b5c8966126b",
+      "Packages/DictationCore/Sources/DictationCore/Time.swift": "d9920afbf36d4bb489803bf35f24b3c764f5daad4c50e778d4112202ba1f578b",
+      "Scripts/model_files.py": "f7980e17147f4bb28212d8ab35ddff707f3c02ee2a17866f5bf1db66a5733599",
+      "Tools/CleanupEval/CleanupEval.swift": "3d0a1cca57034068028543cd07bd6240a536493c405a1c7cecbe51065e7d546b"
+    },
+    "systemPromptSourceSHA256": "edf170c63c3e24d7148c2c4c3aa4d30037acc3e4b8e45994d372e1bb4d8d3130"
+  },
+  "outputDirectory": ".build/practical-candidate-release-v2",
+  "policy": {
+    "additionalTrainingAllowed": false,
+    "candidateAlreadySelected": true,
+    "queries": 1,
+    "reselectionAllowed": false
+  },
+  "releaseSuite": "Evals/fixtures/release-v2",
+  "schemaVersion": 1,
+  "selectionDecision": "Training/experiments/practical-candidate-decision-2026-09-18.json",
+  "selectionDecisionSHA256": "4863dd71b936117ecc5f8e28dc781d58fbf856e8a616f2fd52ba3195d0fd48bd",
+  "status": "Frozen before the only release-v2 inference for the selected practical MVP candidate."
+}
