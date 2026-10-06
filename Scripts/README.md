@@ -8,3 +8,7 @@
 - `release/notarize_app.sh` verifies Developer ID signing, submits with an existing Keychain profile, staples, and validates.
 
 No script contains credentials, downloads a model implicitly, or turns absent evidence into success.
+
+Recognition's opt-in production-adapter audio replay and the remaining ADR 0051
+qualification requirements are documented in [recognition-benchmark.md](../docs/recognition-benchmark.md).
+The replay is exploratory; it does not certify the full application's M1 deadline.
