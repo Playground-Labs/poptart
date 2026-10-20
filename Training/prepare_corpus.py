@@ -64,7 +64,8 @@ def user_message(record, spans):
             "applicationCategory": context["applicationCategory"],
             "textBeforeCursor": context["textBeforeCursor"],
             "textAfterCursor": context["textAfterCursor"],
-            "selectedText": context["selectedText"],
+            # Synthesized Swift Encodable omits a nil optional rather than writing null.
+            **({"selectedText": context["selectedText"]} if context["selectedText"] is not None else {}),
             "personalVocabulary": record.get("vocabularyTerms", []),
             "reservedEdits": record.get("reservedEdits", []),
         }

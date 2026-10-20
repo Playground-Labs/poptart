@@ -19,6 +19,8 @@ sys.path.insert(0, str(ROOT / "Training"))
 
 import editplan  # noqa: E402
 import prepare_corpus  # noqa: E402
+import evaluate_candidate  # noqa: E402
+import compare_swift_candidates  # noqa: E402
 
 GOLD = ROOT / "Evals/fixtures/gold.jsonl"
 ADVERSARIAL = ROOT / "Evals/fixtures/adversarial.jsonl"
@@ -119,6 +121,14 @@ def evaluate(arguments, expect_success=True):
 
 
 class ToolingTests(unittest.TestCase):
+    def test_control_character_corruption_falls_back(self):
+        record = {"raw": "hello\x07world"}
+        generated = ('{"v":1,"e":[{"s":0,"e":1,"r":"Hello","c":"capitalization"},'
+                     '{"s":2,"e":2,"r":".","c":"punctuation"}]}<END_PLAN>')
+        result = evaluate_candidate.resolve_output(record, generated)
+        self.assertEqual(result["outcome"], "fallback")
+        self.assertEqual(result["output"], record["raw"])
+
     def test_control_guard_preserves_whitespace_emoji_and_empty_plans(self):
         edit = {"s": 0, "e": 1, "r": "Hello", "c": "capitalization"}
         for control in ("\x00", "\x07", "\x1b", "\x1f", "\x7f", "\x9b"):
@@ -130,7 +140,6 @@ class ToolingTests(unittest.TestCase):
             raw = "hello" + separator + "world"
             self.assertIsNone(editplan.plan_violation([edit], raw))
             self.assertEqual(editplan.resolve(raw, [edit], []), "Hello" + separator + "world")
-
 
     def test_model_edits_preserve_entire_url_literals(self):
         for prefix in ("visit", "👍 visit"):
@@ -151,6 +160,70 @@ class ToolingTests(unittest.TestCase):
             self.assertIsNone(editplan.plan_violation(
                 [{"s": visit, "e": visit + 1, "r": "Visit", "c": "capitalization"}], raw))
 
+    def test_training_prompt_omits_nil_selection_like_swift_encoder(self):
+        record = dict(load(CORPUS)[0])
+        context = dict(editplan.DEFAULT_TARGET_CONTEXT)
+        for selection in (None, "", "selected words"):
+            context["selectedText"] = selection
+            record["targetContext"] = context
+            message = prepare_corpus.user_message(record, editplan.tokenize(record["raw"]))
+            _, header, payload = message.split("\n", 2)
+            self.assertEqual(int(header.split("=")[1]), len(payload.encode("utf-8")))
+            value = json.loads(payload)
+            if selection is None:
+                self.assertNotIn("selectedText", value)
+            else:
+                self.assertEqual(value["selectedText"], selection)
+
+    def test_candidate_evaluation_rejects_bad_output_and_applies_valid_plans(self):
+        record = load(GOLD)[0]
+        valid = json.dumps(record["editPlan"]) + editplan.STOP_MARKER
+        result = evaluate_candidate.resolve_output(record, valid)
+        self.assertEqual(result["outcome"], "cleaned")
+        self.assertEqual(result["output"], record["expected"])
+        for generated in (
+            valid + "extra", valid.removesuffix(editplan.STOP_MARKER),
+            '{"v":1,"v":1,"e":[]}<END_PLAN>',
+            '{"v":1,"e":[{"s":0,"e":999,"r":"","c":"filler"}]}<END_PLAN>',
+            'x' * 8193 + editplan.STOP_MARKER,
+        ):
+            with self.subTest(generated=generated[:100]):
+                rejected = evaluate_candidate.resolve_output(record, generated)
+                self.assertEqual(rejected["outcome"], "fallback")
+                self.assertEqual(rejected["output"], record["raw"])
+
+    def test_swift_comparison_reports_regressions_and_rejects_missing_predictions(self):
+        rows = load(GOLD)[:2]
+        baseline = [dict(id=r["id"], output=r["expected"], outcome="cleaned",
+                         elapsedMilliseconds=1) for r in rows]
+        candidate = [dict(r) for r in baseline]
+        candidate[0]["output"] = "Wrong output."
+        candidate[0]["outcome"] = "fallback"
+        report = compare_swift_candidates.compare({"gold": rows}, baseline, candidate)
+        self.assertEqual(report["groups"]["gold"]["regressed"], [rows[0]["id"]])
+        self.assertEqual(report["groups"]["gold"]["candidate"]["exactOutput"], 1)
+        for invalid in (candidate[:1], candidate + candidate[:1]):
+            with self.assertRaises(ValueError):
+                compare_swift_candidates.compare({"gold": rows}, baseline, invalid)
+
+    def test_training_inputs_do_not_overlap_held_out_or_evaluation_text(self):
+        corpus = load(CORPUS)
+        normalize = lambda text: " ".join(editplan.word_list(text))
+        train = {normalize(row["raw"]) for row in corpus if row["split"] == "train"}
+        additional = [row for path in sorted((ROOT / "Training/data").glob("round*-holdout.jsonl"))
+                      for row in load(path)]
+        seen = {row["id"] for row in corpus}
+        for record in additional:
+            self.assertEqual(record["split"], "test")
+            prepare_corpus.build(record, seen)
+        held_out = {normalize(row["raw"]) for row in corpus + additional if row["split"] != "train"}
+        evaluation_text = {normalize(row["raw"]) for row in load(GOLD) + load(ADVERSARIAL)}
+        fresh_text = {normalize(row["raw"]) for row in additional}
+        self.assertEqual(len(fresh_text), len(additional))
+        self.assertFalse(fresh_text & {normalize(row["raw"]) for row in corpus})
+        self.assertFalse(fresh_text & evaluation_text)
+        self.assertFalse(train & held_out)
+        self.assertFalse(train & evaluation_text)
 
     def test_fixture_integrity_is_deterministic_and_not_a_quality_claim(self):
         first = evaluate([]).stdout

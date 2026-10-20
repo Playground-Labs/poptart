@@ -45,9 +45,12 @@ public actor MLXCleanupModel: CleanupModelBoundary {
   }
 
   /// Cancels generation, releases the resident Cleanup model, and returns MLX cache memory.
-  public func unload() {
-    activeGeneration?.task.cancel()
-    activeGeneration = nil
+  public func unload() async {
+    while let generation = activeGeneration {
+      generation.task.cancel()
+      await generation.task.value
+      generationEnded(generation.id)
+    }
     container = nil
     Memory.clearCache()
   }
@@ -72,18 +75,23 @@ public actor MLXCleanupModel: CleanupModelBoundary {
     _ request: CleanupModelRequest
   ) async throws(CleanupModelError) -> AsyncStream<String> {
     let upstream: AsyncStream<Generation>
+    let inferenceTask: Task<Void, Never>
     do {
       let container = try await loadedContainer()
-      let input = try await container.prepare(input: Self.input(for: request))
-      upstream = try await container.generate(
-        input: input,
-        parameters: .init(
-          maxTokens: request.maximumOutputTokens,
-          temperature: 0,
-          topP: 1,
-          topK: 1
+      (upstream, inferenceTask) = try await container.perform { context in
+        let input = try await context.processor.prepare(input: Self.input(for: request))
+        let iterator = try TokenIterator(
+          input: input, model: context.model,
+          parameters: .init(
+            maxTokens: request.maximumOutputTokens, temperature: 0, topP: 1, topK: 1
+          )
         )
-      )
+        return MLXLMCommon.generateTask(
+          promptTokenCount: input.text.tokens.size,
+          modelConfiguration: context.configuration,
+          tokenizer: context.tokenizer, iterator: iterator
+        )
+      }
     } catch let error as CleanupModelError {
       throw error
     } catch {
@@ -93,7 +101,10 @@ public actor MLXCleanupModel: CleanupModelBoundary {
     let stopMarker = request.stopMarker
     let (stream, continuation) = AsyncStream<String>.makeStream()
     let generationID = UUID()
+    let previous = activeGeneration?.task
+    previous?.cancel()
     let task = Task { [weak self] in
+      await previous?.value
       var output = ""
       for await generation in upstream {
         guard !Task.isCancelled else { break }
@@ -115,14 +126,16 @@ public actor MLXCleanupModel: CleanupModelBoundary {
         }
       }
       if !output.isEmpty { continuation.yield(output) }
+      // Ending the stream does not join MLX's worker; it may still use model resources.
+      inferenceTask.cancel()
+      await inferenceTask.value
       continuation.finish()
       await self?.generationEnded(generationID)
     }
-    activeGeneration?.task.cancel()
     activeGeneration = (generationID, task)
-    continuation.onTermination = { [weak self] _ in
+    continuation.onTermination = { _ in
+      inferenceTask.cancel()
       task.cancel()
-      Task { await self?.generationEnded(generationID) }
     }
     return stream
   }

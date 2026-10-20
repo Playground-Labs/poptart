@@ -8,6 +8,7 @@ let package = Package(
   products: [
     .library(name: "Cleanup", targets: ["Cleanup"]),
     .library(name: "CleanupMLX", targets: ["CleanupMLX"]),
+    .executable(name: "CleanupEvaluation", targets: ["CleanupEvaluation"]),
   ],
   dependencies: [
     .package(path: "../DictationCore"),
@@ -25,6 +26,10 @@ let package = Package(
     ),
   ],
   targets: [
+    .executableTarget(
+      name: "CleanupEvaluation",
+      dependencies: ["Cleanup", "CleanupMLX", "DictationCore"]
+    ),
     .target(
       name: "Cleanup",
       dependencies: ["DictationCore"]
