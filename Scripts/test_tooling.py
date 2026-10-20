@@ -119,6 +119,39 @@ def evaluate(arguments, expect_success=True):
 
 
 class ToolingTests(unittest.TestCase):
+    def test_control_guard_preserves_whitespace_emoji_and_empty_plans(self):
+        edit = {"s": 0, "e": 1, "r": "Hello", "c": "capitalization"}
+        for control in ("\x00", "\x07", "\x1b", "\x1f", "\x7f", "\x9b"):
+            raw = "hello" + control + "world"
+            self.assertIn("unsafeUnicode", editplan.plan_violation([edit], raw))
+            self.assertIsNone(editplan.plan_violation([], raw))
+            self.assertEqual(editplan.resolve(raw, [], []), raw)
+        for separator in (" ", "\t", "\n", "\r\n", "\x85", "\u2028", "👩‍💻"):
+            raw = "hello" + separator + "world"
+            self.assertIsNone(editplan.plan_violation([edit], raw))
+            self.assertEqual(editplan.resolve(raw, [edit], []), "Hello" + separator + "world")
+
+
+    def test_model_edits_preserve_entire_url_literals(self):
+        for prefix in ("visit", "👍 visit"):
+            raw = prefix + " https://example.test/a?x=1"
+            spans = editplan.tokenize(raw)
+            slash = next(s.index for s in spans if s.text == "/")
+            word = next(s.index for s in spans if s.text == "example")
+            for start, end, replacement, category in (
+                (slash, slash + 1, ".", "punctuation"),
+                (slash, slash + 1, "", "punctuation"),
+                (slash, slash, ".", "punctuation"),
+                (word, word + 1, "Example", "capitalization"),
+                (len(spans), len(spans), ".", "punctuation"),
+            ):
+                edits = [{"s": start, "e": end, "r": replacement, "c": category}]
+                self.assertIn("touches a URL", editplan.plan_violation(edits, raw))
+            visit = next(s.index for s in spans if s.text == "visit")
+            self.assertIsNone(editplan.plan_violation(
+                [{"s": visit, "e": visit + 1, "r": "Visit", "c": "capitalization"}], raw))
+
+
     def test_fixture_integrity_is_deterministic_and_not_a_quality_claim(self):
         first = evaluate([]).stdout
         second = evaluate([]).stdout

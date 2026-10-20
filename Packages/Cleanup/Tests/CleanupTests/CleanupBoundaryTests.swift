@@ -6,6 +6,74 @@ import Testing
 
 @Suite("Cleanup boundary")
 struct CleanupBoundaryTests {
+  @Test("Captured control-character punctuation corruption falls back to raw text")
+  func rejectsControlCharacterCorruption() async {
+    let raw = "hello\u{7}world"
+    let model = ScriptedModel(output:
+      #"{"v":1,"e":[{"s":0,"e":1,"r":"Hello","c":"capitalization"},{"s":2,"e":2,"r":".","c":"punctuation"}]}"#
+      + CleanupPrompt.stopMarker)
+    let cleanup = CleanupEngine(model: model, deadlineWaiter: NeverDeadlineWaiter(),
+                                configuration: .init(maximumInputTokens: 1_024))
+    #expect(await cleanup.clean(request(text: raw)) == .rawTranscriptFallback(.unsafeEditPlan))
+  }
+
+  @Test("Non-whitespace controls preserve raw text but permit empty plans",
+        arguments: ["\u{0}", "\u{7}", "\u{1b}", "\u{1f}", "\u{7f}", "\u{9b}"])
+  func rejectsEditsWithControlCharacters(control: String) throws {
+    let raw = "hello" + control + "world"
+    let input = request(text: raw)
+    let transcript = StableTranscript(raw)
+    let validator = CleanupEditPlanValidator(configuration: .init(maximumInputTokens: 1_024))
+    let edit = CleanupEdit(startSpan: 0, endSpan: 1, replacement: "Hello", category: .capitalization)
+    #expect(throws: CleanupEditValidationError.unsafeUnicode) {
+      try validator.validate(.init(edits: [edit]), transcript: transcript, reservedEdits: [],
+                             targetContext: input.targetContext, personalVocabulary: input.personalVocabulary)
+    }
+    let edits = try validator.validate(.init(edits: []), transcript: transcript, reservedEdits: [],
+                                       targetContext: input.targetContext, personalVocabulary: input.personalVocabulary)
+    #expect(CleanupEditApplier.apply(edits, to: transcript) == raw)
+  }
+
+  @Test("Ordinary whitespace and joined emoji still allow cleanup",
+        arguments: [" ", "\t", "\n", "\r\n", "\u{85}", "\u{2028}", "👩‍💻"])
+  func allowsCleanupWithWhitespaceAndEmoji(separator: String) throws {
+    let raw = "hello" + separator + "world"
+    let input = request(text: raw)
+    let transcript = StableTranscript(raw)
+    let validator = CleanupEditPlanValidator(configuration: .init(maximumInputTokens: 1_024))
+    let edit = CleanupEdit(startSpan: 0, endSpan: 1, replacement: "Hello", category: .capitalization)
+    let edits = try validator.validate(.init(edits: [edit]), transcript: transcript, reservedEdits: [],
+                                       targetContext: input.targetContext, personalVocabulary: input.personalVocabulary)
+    #expect(CleanupEditApplier.apply(edits, to: transcript) == "Hello" + separator + "world")
+  }
+
+  @Test("Model edits cannot alter URL punctuation or case", arguments: ["visit", "👍 visit"])
+  func preservesURLLiterals(prefix: String) throws {
+    let raw = "\(prefix) https://example.test/a?x=1"
+    let transcript = StableTranscript(raw)
+    let slash = try #require(transcript.spans.first(where: { $0.text == "/" })?.index)
+    let word = try #require(transcript.spans.first(where: { $0.text == "example" })?.index)
+    let validator = CleanupEditPlanValidator(configuration: .init(maximumInputTokens: 1_024))
+    let input = request(text: raw)
+    for edit in [
+      CleanupEdit(startSpan: slash, endSpan: slash + 1, replacement: ".", category: .punctuation),
+      CleanupEdit(startSpan: slash, endSpan: slash + 1, replacement: "", category: .punctuation),
+      CleanupEdit(startSpan: slash, endSpan: slash, replacement: ".", category: .punctuation),
+      CleanupEdit(startSpan: word, endSpan: word + 1, replacement: "Example", category: .capitalization),
+      CleanupEdit(startSpan: transcript.spans.count, endSpan: transcript.spans.count,
+                  replacement: ".", category: .punctuation),
+    ] {
+      #expect(throws: CleanupEditValidationError.unsafeCategory) {
+        try validator.validate(.init(edits: [edit]), transcript: transcript, reservedEdits: [],
+                               targetContext: input.targetContext, personalVocabulary: input.personalVocabulary)
+      }
+    }
+    let visit = try #require(transcript.spans.first(where: { $0.text == "visit" })?.index)
+    let safe = CleanupEdit(startSpan: visit, endSpan: visit + 1, replacement: "Visit", category: .capitalization)
+    #expect(try validator.validate(.init(edits: [safe]), transcript: transcript, reservedEdits: [],
+                                   targetContext: input.targetContext, personalVocabulary: input.personalVocabulary) == [safe])
+  }
+
   @Test("An unmistakable spoken correction is applied deterministically")
   func explicitCorrection() async {
     let model = ScriptedModel(output: #"{"v":1,"e":[]}"# + CleanupPrompt.stopMarker)

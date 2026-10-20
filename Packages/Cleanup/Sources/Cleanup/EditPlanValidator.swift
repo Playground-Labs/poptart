@@ -32,9 +32,20 @@ public struct CleanupEditPlanValidator: Sendable {
       throw CleanupEditValidationError.tooManyEdits
     }
 
+    // Non-whitespace controls make word boundaries ambiguous; preserve raw text instead of guessing.
+    if !plan.edits.isEmpty, transcript.source.unicodeScalars.contains(where: {
+      $0.properties.generalCategory == .control
+        && !CharacterSet.whitespacesAndNewlines.contains($0)
+    }) {
+      throw CleanupEditValidationError.unsafeUnicode
+    }
+
     var previousEnd = 0
     var previousWasInsertion = false
     var changedCharacters = 0
+    let protectedURLs = Self.urlPattern.matches(
+      in: transcript.source, range: NSRange(location: 0, length: transcript.source.utf16.count)
+    ).map(\.range)
     for (position, edit) in plan.edits.enumerated() {
       guard edit.startSpan >= 0,
         edit.endSpan >= edit.startSpan,
@@ -42,6 +53,14 @@ public struct CleanupEditPlanValidator: Sendable {
       else { throw CleanupEditValidationError.invalidBounds }
 
       let isInsertion = edit.startSpan == edit.endSpan
+      let lower = edit.startSpan == transcript.spans.count
+        ? transcript.source.utf16.count : transcript.spans[edit.startSpan].utf16Range.lowerBound
+      let upper = isInsertion ? lower : transcript.spans[edit.endSpan - 1].utf16Range.upperBound
+      guard !protectedURLs.contains(where: { url in
+        isInsertion
+          ? lower >= url.location && lower <= NSMaxRange(url)
+          : lower < NSMaxRange(url) && upper > url.location
+      }) else { throw CleanupEditValidationError.unsafeCategory }
       if position > 0,
         edit.startSpan < previousEnd
           || (isInsertion && previousWasInsertion && edit.startSpan == previousEnd)
@@ -125,6 +144,9 @@ public struct CleanupEditPlanValidator: Sendable {
   }
 
   private static let fillerWords: Set<String> = ["ah", "er", "erm", "hmm", "like", "uh", "um"]
+  // URL punctuation and path case carry meaning. Model edits must leave the entire
+  // whitespace-delimited literal intact, including insertions at its boundaries.
+  private static let urlPattern = try! NSRegularExpression(pattern: #"(?i)\bhttps?://[^\s]+"#)
 
   private static func isPunctuationOrWhitespace(_ scalar: Unicode.Scalar) -> Bool {
     CharacterSet.punctuationCharacters.contains(scalar)

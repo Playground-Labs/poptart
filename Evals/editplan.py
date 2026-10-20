@@ -40,6 +40,7 @@ Everything is pure Python 3 standard library and free of model calls.
 """
 
 import math
+import re
 import unicodedata
 
 # Unicode ``White_Space=Yes``. Swift's ``Character.isWhitespace`` uses this
@@ -660,14 +661,31 @@ def plan_violation(
     if len(edits) > configuration["maximumEdits"]:
         return f"tooManyEdits ({len(edits)} > {configuration['maximumEdits']})"
 
+    if edits and any(
+        unicodedata.category(character) == "Cc"
+        and ord(character) not in _WHITESPACE_AND_NEWLINES
+        for character in source
+    ):
+        return "unsafeUnicode (raw transcript contains a non-whitespace control)"
+
     previous_end = 0
     previous_insertion = False
     changed_characters = 0
+    protected_urls = list(re.finditer(r"\bhttps?://[^\s]+", source, re.IGNORECASE))
+    index_of = _utf16_index_map(source)
     for position, edit in enumerate(edits):
         start, end = edit["s"], edit["e"]
         if start < 0 or end < start or end > len(spans):
             return f"invalidBounds (edit {position} spans {start}..{end} of {len(spans)})"
         insertion = start == end
+        lower = len(source) if start == len(spans) else index_of[spans[start].start]
+        upper = lower if insertion else index_of[spans[end - 1].end]
+        if any(
+            match.start() <= lower <= match.end() if insertion
+            else lower < match.end() and upper > match.start()
+            for match in protected_urls
+        ):
+            return f"unsafeCategory (edit {position} touches a URL)"
         if position > 0 and (
             start < previous_end or (insertion and previous_insertion and start == previous_end)
         ):
