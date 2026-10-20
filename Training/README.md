@@ -268,6 +268,13 @@ now falls back to raw text; the other 78 model-evaluation results are unchanged.
 records the before/after results and the intentionally conservative input policy.
 
 
+## Optional NVIDIA training pilot
+
+[The CUDA benchmark guide](CUDA_BENCHMARK.md) provides a bounded 20-step probe
+for an existing Linux NVIDIA host using the same pinned MLX stack. CUDA model
+compatibility and speedup remain unmeasured; no cloud resources have been rented.
+
+
 ## Complete-pass continuation
 
 A further full 262-record training pass lowered token loss but only tied the
