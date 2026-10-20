@@ -1,0 +1,17 @@
+{
+  "releaseQualified": false,
+  "scope": "post-training diagnostic ranking, independent of original loss-only selection; no test data used",
+  "candidates": [
+    0,
+    100,
+    200
+  ],
+  "primary": "highest exact resolved output on all 47 validation records",
+  "tieBreak": "fewer continuation steps",
+  "otherMeasures": "report individual quality dimensions, accepted plans, and regression IDs; do not combine quality metrics or promote a release",
+  "originalLosses": {
+    "0": 0.031,
+    "100": 0.031,
+    "200": 0.034
+  }
+}

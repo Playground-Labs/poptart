@@ -1,0 +1,54 @@
+{
+  "releaseQualified": false,
+  "validationCount": 47,
+  "ranking": [
+    {
+      "additionalSteps": 0,
+      "exactOutput": 38,
+      "acceptedPlans": 42,
+      "improved": [],
+      "regressed": []
+    },
+    {
+      "additionalSteps": 262,
+      "exactOutput": 38,
+      "acceptedPlans": 40,
+      "improved": [
+        "candidate-repetition-011",
+        "round2-filler-011",
+        "round3-command-011",
+        "round8-trailing-012"
+      ],
+      "regressed": [
+        "round3-vocabulary-012",
+        "round8-repetition-011",
+        "round8-leading_um-012",
+        "round8-vocabulary-012"
+      ]
+    },
+    {
+      "additionalSteps": 131,
+      "exactOutput": 33,
+      "acceptedPlans": 41,
+      "improved": [
+        "candidate-repetition-011",
+        "round3-command-011",
+        "round3-command-012",
+        "round8-trailing-012"
+      ],
+      "regressed": [
+        "round2-filler-012",
+        "round3-filler-011",
+        "round3-filler-012",
+        "round3-vocabulary-012",
+        "round8-statement-011",
+        "round8-repetition-011",
+        "round8-new_sentence-011",
+        "round8-new_sentence-012",
+        "round8-vocabulary-012"
+      ]
+    }
+  ],
+  "outputSelectedAdditionalSteps": 0,
+  "interpretation": "Diagnostic ranking on validation only; separate dimensions and regressions require review. This is the predeclared output-based selection, not release qualification."
+}

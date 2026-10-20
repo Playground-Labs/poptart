@@ -1,0 +1,14 @@
+{
+  "sha256": {
+    "Training/runs/2026-10-17-round9/validation.jsonl": "02e6c76186981fc3cd3a9be0288471d8317b42ad7931043db6c1d23ffdb32138",
+    "Training/runs/2026-10-17-round9/protocol.json": "93cd707c169cb7275af38e328f84815620946b7f3d8ba77a817c2bf78787ad66",
+    "Packages/Cleanup/Sources/CleanupEvaluation/CleanupEvaluation.swift": "0f537b6ceb1ff66ca965da2266f293ca2e8c785a34528ee512d265fe47b547ca",
+    "Training/runs/2026-10-17-round7/candidate-4bit-artifact.json": "b178988a984c6442fc94c2104ed27c7113c49d00b8e9b084c1c5ec251c8e0866",
+    ".context/cleanup-round8/adapters/0000100_adapters.safetensors": "61625e8f0be9c3b6a2ac6247f5fc60e2dea8ae7432ce040d21448baed198a455",
+    ".context/cleanup-round8/adapters/0000200_adapters.safetensors": "f75d163a8da01e2a6f54064e3fc51bd6c0399e0fdc62c5896dfc6dc5b593f849",
+    "Training/runs/2026-10-17-round9/run.sh": "2b54e2f79bd1323ca99926357949f3d9d6cc690bd060bfc43096e7975f6440ba",
+    "Training/runs/2026-10-17-round9/score.py": "a68aa4bbff77187a205ff497d3bcfb83df7d399e3b76f56efe3702768e1ba8ca",
+    "Training/runs/2026-10-17-round9/compare_evaluation.py": "69cf5e9f62351943305afd0ee24fb4fb1cfaca01d38e296584f52bd1539ab3c7",
+    ".context/cleanup-round8/evaluation.jsonl": "530aaa665ef9376b4ff31a87569822599f37789f8a949900f86a7454c3e87b0c"
+  }
+}

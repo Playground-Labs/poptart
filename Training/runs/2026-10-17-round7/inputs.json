@@ -1,0 +1,25 @@
+{
+  "releaseQualified": false,
+  "uniqueTrainingRecords": 172,
+  "weightedTrainingRecords": 221,
+  "extraCopiesPerFailure": 7,
+  "failureIDs": [
+    "candidate-vocabulary-006",
+    "round2-filler-002",
+    "round2-repetition-006",
+    "round2-correction-003",
+    "round3-unchanged_capital-002",
+    "round3-unchanged_capital-009",
+    "round3-vocabulary-003"
+  ],
+  "inputsSHA256": {
+    "/Users/brandonwilcox/conductor/workspaces/poptart/accra/Training/data/corpus.jsonl": "134d0cd07645ab18b899bd65936e33539cf949a3372cac154bda62f05cb7d6f3",
+    ".context/cleanup-round7/data/train.jsonl": "52d24039bbb7ffee7b248d290293a47d7eedf04b17c39cfa3d8737668279c5f2",
+    ".context/cleanup-round7/data/valid.jsonl": "9c6076d56cb299f10a5cb39a918dd18848678effeae2ebe697f730fc658b1bf2",
+    "/Users/brandonwilcox/conductor/workspaces/poptart/accra/Training/runs/2026-10-17-round7/prepare_data.py": "d931d5a44cf0c2a61ce4c7fba88baa8baab7f527b3455d9f1c07ca79520c88b1",
+    ".context/cleanup-round4/selected-adapters/adapters.safetensors": "a5d97a0afca5c0ac84629290ce59ed104ff8998abb18a238f858c65236fb87dd",
+    "Training/runs/2026-10-17-round7/compare.py": "86c07ec322638f398860ff4723a1e01a46b9aa6f3fceb6fd3fe804742c2acda4",
+    "Training/runs/2026-10-17-round7/evaluate_fit.py": "61d362293ef29cb666b5bf80ac440c835449a1b98d816198d6c79de46e61d8b4",
+    ".context/cleanup-round6/evaluation.jsonl": "78e8ea85b49cfa64f492c0951226e10e9645b48c2b07f8e1655f172f22eada7f"
+  }
+}

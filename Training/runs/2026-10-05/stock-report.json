@@ -1,0 +1,85 @@
+{
+  "adversarialMetricNote": "Existing adversarialSafe counts fallback only; safe accepted edits also fail this strict metric. Inspect raw outputs.",
+  "fixtures": {
+    "adversarialSafe": {
+      "applicable": 11,
+      "passed": 11
+    },
+    "contextFit": {
+      "applicable": 12,
+      "passed": 12
+    },
+    "editPlanExact": {
+      "applicable": 12,
+      "passed": 0
+    },
+    "meaningPreservation": {
+      "applicable": 12,
+      "passed": 7
+    },
+    "vocabularyPreservation": {
+      "applicable": 2,
+      "passed": 2
+    }
+  },
+  "goldAcceptedPlans": 0,
+  "goldExactOutput": 0,
+  "hardware": "Apple M3 Pro",
+  "holdout": {
+    "adversarialSafe": {
+      "applicable": 0,
+      "passed": 0
+    },
+    "contextFit": {
+      "applicable": 8,
+      "passed": 8
+    },
+    "editPlanExact": {
+      "applicable": 8,
+      "passed": 0
+    },
+    "meaningPreservation": {
+      "applicable": 8,
+      "passed": 4
+    },
+    "vocabularyPreservation": {
+      "applicable": 0,
+      "passed": 0
+    }
+  },
+  "holdoutAcceptedPlans": 0,
+  "holdoutExactOutput": 1,
+  "inputsSHA256": {
+    "Evals/editplan.py": "ac21a58022146a2eb40c9ec154100c32d64825a31fc73a4050fc962309191b8b",
+    "Evals/fixtures/adversarial.jsonl": "1a03fd7105a837ff1c8218bd6afe5b7ddc6dd3b2dc6b34f3d5e8242dfab5666b",
+    "Evals/fixtures/gold.jsonl": "aefb5eb48c1c7ee51b712bcf785371f8db54378b54b95c9d82cb542b2101fb5f",
+    "Evals/run.py": "9240ab48fc4c425e1cf9e75b069b70b9f21cea10294dfff5a326a636f3d5143e",
+    "Training/data/corpus.jsonl": "49b86ed34ccb0adb5f055205db7a58f7f20c6c34cfcdfdd78ddd252c377dcf71",
+    "Training/evaluate_candidate.py": "6c8177cadc574650c25885603466862d22501b1263f9eb3e04c3d29acbb27089",
+    "Training/prepare_corpus.py": "36af2648b60d745d07555ac41716c08ba4b5575222ee9d59f9c373dadcde49e6"
+  },
+  "modelFilesSHA256": {
+    "chat_template.jinja": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80",
+    "config.json": "919d818806acc6093475afcccc40b4c27deb509ef1508ba940c71c9b3ce83ab5",
+    "model.safetensors": "268de1e6659fda36822fe5b4043b916be0840a8f6c533305f96feefcf1ad983d",
+    "model.safetensors.index.json": "d95a2e17af08ab870498266088eccee4d0a012338c604465ae7df24b976c488e",
+    "tokenizer.json": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42",
+    "tokenizer_config.json": "49e2b6e395f959f077f1e992b338919c0d4a9732fc6e613995e06557f843500c"
+  },
+  "os": "macOS-27.0.1-arm64-arm-64bit",
+  "peakMLXMemoryBytes": 916009480,
+  "physicalMemoryBytes": 38654705664,
+  "predictionFilesSHA256": {
+    "holdout.jsonl": "728618cfd44065286c9a3ba4cefaec9c23ed9dd261659700551e69fa55eff06c",
+    "predictions.jsonl": "2d23a912b4445cb15c70e0db8ce49d31b9e17e911721ee6d90fa06133c589e13"
+  },
+  "releaseQualified": false,
+  "runtimeVersions": {
+    "mlx": "0.32.3",
+    "mlx-lm": "0.31.3",
+    "tokenizers": "0.23.2",
+    "transformers": "5.18.0"
+  },
+  "schemaVersion": 1,
+  "scope": "Python MLX, 128 output tokens, no deadline; Swift parity and physical M1 outstanding"
+}

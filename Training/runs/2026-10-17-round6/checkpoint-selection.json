@@ -1,0 +1,12 @@
+{
+  "releaseQualified": false,
+  "criterion": "lowest validation loss, ties favor fewer steps",
+  "losses": {
+    "baseline": 0.042,
+    "100": 0.044,
+    "200": 0.048
+  },
+  "selectedForReplacement": "baseline",
+  "diagnosticCheckpoint": 100,
+  "diagnosticReason": "Best new checkpoint, solely to measure training-plan learnability; failed replacement selection."
+}

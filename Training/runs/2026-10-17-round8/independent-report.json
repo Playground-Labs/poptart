@@ -1,0 +1,94 @@
+{
+  "releaseQualified": false,
+  "model": ".context/cleanup-round7/candidate-4bit",
+  "count": 16,
+  "exactOutput": 8,
+  "metrics": {
+    "editPlanExact": {
+      "applicable": 16,
+      "passed": 8
+    },
+    "meaningPreservation": {
+      "applicable": 16,
+      "passed": 10
+    },
+    "vocabularyPreservation": {
+      "applicable": 0,
+      "passed": 0
+    },
+    "contextFit": {
+      "applicable": 16,
+      "passed": 15
+    },
+    "adversarialSafe": {
+      "applicable": 0,
+      "passed": 0
+    }
+  },
+  "failures": [
+    {
+      "id": "round8-independent-002",
+      "raw": "send it uh",
+      "expected": "Send it.",
+      "actual": "send it uh",
+      "outcome": "fallback",
+      "generated": "{\"v\":1,\"e\":[{\"s\":0,\"e\":1,\"r\":\"Send\",\"c\":\"capitalization\"},{\"s\":3,\"e\":4,\"r\":\"\",\"c\":\"filler\"},{\"s\":4,\"e\":4,\"r\":\".\",\"c\":\"punctuation\"}]}<END_PLAN>"
+    },
+    {
+      "id": "round8-independent-003",
+      "raw": "the gardener planted six rows of lavender along the southern fence um",
+      "expected": "The gardener planted six rows of lavender along the southern fence.",
+      "actual": "The gardener planted six rows of lavender along the southern fence um.",
+      "outcome": "cleaned",
+      "generated": "{\"v\":1,\"e\":[{\"s\":0,\"e\":1,\"r\":\"The\",\"c\":\"capitalization\"},{\"s\":12,\"e\":12,\"r\":\".\",\"c\":\"punctuation\"}]}<END_PLAN>"
+    },
+    {
+      "id": "round8-independent-005",
+      "raw": "um take the spare helmet to the loading dock",
+      "expected": "Take the spare helmet to the loading dock.",
+      "actual": "take the spare helmet to the loading dock.",
+      "outcome": "cleaned",
+      "generated": "{\"v\":1,\"e\":[{\"s\":0,\"e\":1,\"r\":\"\",\"c\":\"filler\"},{\"s\":9,\"e\":9,\"r\":\".\",\"c\":\"punctuation\"}]}<END_PLAN>"
+    },
+    {
+      "id": "round8-independent-006",
+      "raw": "we need the green green ribbon for the award ceremony",
+      "expected": "We need the green ribbon for the award ceremony.",
+      "actual": "We need the green green ribbon for the award ceremony.",
+      "outcome": "cleaned",
+      "generated": "{\"v\":1,\"e\":[{\"s\":0,\"e\":1,\"r\":\"We\",\"c\":\"capitalization\"},{\"s\":10,\"e\":10,\"r\":\".\",\"c\":\"punctuation\"}]}<END_PLAN>"
+    },
+    {
+      "id": "round8-independent-007",
+      "raw": "I moved the small small amplifier into the rehearsal booth",
+      "expected": "I moved the small amplifier into the rehearsal booth.",
+      "actual": "I moved the small small amplifier into the rehearsal booth.",
+      "outcome": "cleaned",
+      "generated": "{\"v\":1,\"e\":[{\"s\":10,\"e\":10,\"r\":\".\",\"c\":\"punctuation\"}]}<END_PLAN>"
+    },
+    {
+      "id": "round8-independent-010",
+      "raw": "and the spare keys are inside the drawer",
+      "expected": "and the spare keys are inside the drawer.",
+      "actual": "And the spare keys are inside the drawer.",
+      "outcome": "cleaned",
+      "generated": "{\"v\":1,\"e\":[{\"s\":0,\"e\":1,\"r\":\"And\",\"c\":\"capitalization\"},{\"s\":8,\"e\":8,\"r\":\".\",\"c\":\"punctuation\"}]}<END_PLAN>"
+    },
+    {
+      "id": "round8-independent-011",
+      "raw": "please forward the dune crest estimate to the purchasing office by noon",
+      "expected": "Please forward the Dunecrest estimate to the purchasing office by noon.",
+      "actual": "Please forward the dune crest estimate to the purchasing office by noon.",
+      "outcome": "cleaned",
+      "generated": "{\"v\":1,\"e\":[{\"s\":0,\"e\":1,\"r\":\"Please\",\"c\":\"capitalization\"},{\"s\":12,\"e\":12,\"r\":\".\",\"c\":\"punctuation\"}]}<END_PLAN>"
+    },
+    {
+      "id": "round8-independent-012",
+      "raw": "I saved the latest wave glen drawings beside the signed inspection forms",
+      "expected": "I saved the latest Waveglen drawings beside the signed inspection forms.",
+      "actual": "I saved the latest wave glen drawings beside the signed inspection forms.",
+      "outcome": "cleaned",
+      "generated": "{\"v\":1,\"e\":[{\"s\":12,\"e\":12,\"r\":\".\",\"c\":\"punctuation\"}]}<END_PLAN>"
+    }
+  ]
+}

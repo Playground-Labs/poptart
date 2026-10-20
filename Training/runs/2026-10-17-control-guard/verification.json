@@ -1,0 +1,21 @@
+{
+  "releaseQualified": false,
+  "completed": "2026-10-18",
+  "swiftTests": 23,
+  "pythonTests": 20,
+  "nativeRecheckExitCode": 0,
+  "fullEvaluationRecords": 79,
+  "changedResultIDs": [
+    "adv-control"
+  ],
+  "nonAdversarialExactOutput": 49,
+  "nonAdversarialCount": 68,
+  "inputsSHA256": {
+    "Packages/Cleanup/Sources/Cleanup/EditPlanValidator.swift": "ad825d28ef0e1339daab17d21b5b6ad34feba3b0513fa17da1616485cf705e9d",
+    "Evals/editplan.py": "4c1488a09124605e9ad39f77876eaf3f35e1be9d357753bfedb8625778f73cf2",
+    "Packages/Cleanup/Tests/CleanupTests/CleanupBoundaryTests.swift": "ac5db829c20db25df0a3ceae95f1803edb0222a35d6b53d1750fa37677e1bb12",
+    "Scripts/test_tooling.py": "96215c3d9b0a9cf353f4cdfcac55d130b254135d21314c37f6ad799c73dc18d3",
+    "Training/runs/2026-10-17-round9/artifact-200.json": "fc763501d0152368caa362b7810684f7fe1704a9c7e628debe5edde21d1ceb09",
+    ".context/cleanup-round8/evaluation.jsonl": "530aaa665ef9376b4ff31a87569822599f37789f8a949900f86a7454c3e87b0c"
+  }
+}

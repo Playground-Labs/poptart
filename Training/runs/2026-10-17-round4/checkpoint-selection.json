@@ -1,0 +1,10 @@
+{
+  "validationLosses": {
+    "1": 0.059,
+    "100": 0.063,
+    "200": 0.041
+  },
+  "selectedAdditionalStep": 200,
+  "optimizerStateReset": true,
+  "evaluationInspected": false
+}

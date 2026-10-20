@@ -1,0 +1,13 @@
+{
+  "releaseQualified": false,
+  "inputsSHA256": {
+    "Training/data/corpus.jsonl": "342c32e3776fd74e80b0460c1efebc7872ecb695398bf42401a5c073bd005655",
+    "Training/runs/2026-10-17-round8/independent.jsonl": "b58064323b035db09ea043407f923ec6191bdabfbe65bb1cef96c0d23860dc25",
+    "Training/runs/2026-10-17-round8/new-examples.jsonl": "bfd1e1205bfeec24ab7350f2c2ec553b0c86a00f7163adab1a0efddc6de2bc0f",
+    "Training/runs/2026-10-17-round8/author_examples.py": "b9088acca3d67d586056c3c68b314ae16a3e397eeeaf92dd375701b461edfc03",
+    ".context/cleanup-round7/selected-adapters/adapters.safetensors": "82bd34027d14b49fc4eadc246880d79d2803b9abc0cf742dfd3147f67e732f5f",
+    "Training/generated/mlx/train.jsonl": "42147490871165b06ac73e5e39770671862ca36b7fb95b8dfb688e0586f8a183",
+    "Training/generated/mlx/test.jsonl": "2a6a7782f14b3b114ba9f08c8b9042c5177e2f73e2084675c75f660f052b5e60",
+    "Training/generated/mlx/valid.jsonl": "fd4e5c1ad3780af2440087e29c781ac260d55e34b7089caeea3fc1869a69bfb5"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "releaseQualified": false,
+  "trainingIDs": [
+    "train-001",
+    "candidate-period-002",
+    "candidate-period-009",
+    "candidate-question-006",
+    "candidate-filler-003",
+    "candidate-filler-010",
+    "candidate-repetition-008",
+    "candidate-noop-005",
+    "candidate-context-002",
+    "candidate-context-009",
+    "candidate-vocabulary-006",
+    "round2-statement-007",
+    "round2-question-005",
+    "round2-filler-002",
+    "round2-filler-009",
+    "round2-repetition-006",
+    "round2-correction-003",
+    "round2-correction-010",
+    "round2-preserve-008",
+    "round3-filler-005",
+    "round3-unchanged_capital-002",
+    "round3-unchanged_capital-009",
+    "round3-command-006",
+    "round3-vocabulary-003"
+  ],
+  "sha256": {
+    "Training/runs/2026-10-17-round4/training-sample.jsonl": "c1d63776779d5ca3f5a4579657c7164d3be62cb16650da747eaba4997e427439",
+    ".context/cleanup-round6/data/train.jsonl": "d5c3d0cc819f0e1ebe4ac609982f00b0e4afda165e5aafc5a77b51a24a32dd0f",
+    "Training/generated/mlx/valid.jsonl": "9c6076d56cb299f10a5cb39a918dd18848678effeae2ebe697f730fc658b1bf2",
+    ".context/cleanup-round4/selected-adapters/adapters.safetensors": "a5d97a0afca5c0ac84629290ce59ed104ff8998abb18a238f858c65236fb87dd",
+    "Training/runs/2026-10-17-round6/unseen.jsonl": "c189548a2e9791d61eff0c67c5633ae5aa914a43904394daeeb8ae2b4d87f718",
+    "Training/runs/2026-10-17-round6/evaluate_fit.py": "2772666a6a0b1ce6d50d31ea65472c6edc45fe977ed3d03512b326b8ee866490",
+    "Training/runs/2026-10-17-round6/reproduce.sh": "a71600d4da994628c9aa992f79218c682b1272860b72d228a4d90ae28df61f65"
+  }
+}

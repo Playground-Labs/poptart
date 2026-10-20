@@ -1,0 +1,10 @@
+{
+  "releaseQualified": false,
+  "criterion": "lowest validation loss including baseline, ties favor fewer steps",
+  "losses": {
+    "100": 0.037,
+    "200": 0.03,
+    "0": 0.042
+  },
+  "selectedAdditionalSteps": 200
+}

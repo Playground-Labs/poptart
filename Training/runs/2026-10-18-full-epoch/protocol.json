@@ -1,0 +1,19 @@
+{
+  "releaseQualified": false,
+  "trainingRecords": 262,
+  "validationRecords": 47,
+  "steps": 262,
+  "checkpointSteps": [
+    0,
+    131,
+    262
+  ],
+  "primarySelection": "highest exact resolved output through Swift at 4-bit precision on frozen validation set",
+  "tieBreak": "fewer additional steps",
+  "secondaryReview": "report separate quality dimensions and regressions; no automatic release promotion",
+  "startingAdapter": ".context/cleanup-round8/adapters/0000200_adapters.safetensors",
+  "startingModel": ".context/cleanup-round9/step-200/candidate-4bit",
+  "baselineValidationPredictions": "Training/runs/2026-10-17-round9/step-200.jsonl",
+  "baselineValidationExact": 38,
+  "evaluation": "same 79-case set only after validation selection; already exposed development material"
+}

@@ -1,0 +1,25 @@
+{
+  "newHoldoutRecords": 8,
+  "releaseQualified": false,
+  "selectionRule": "Choose lower validation loss at step 100 or 200; tie uses 100; select before evaluating either checkpoint.",
+  "sha256": {
+    "Evals/editplan.py": "ac21a58022146a2eb40c9ec154100c32d64825a31fc73a4050fc962309191b8b",
+    "Evals/fixtures/adversarial.jsonl": "1a03fd7105a837ff1c8218bd6afe5b7ddc6dd3b2dc6b34f3d5e8242dfab5666b",
+    "Evals/fixtures/gold.jsonl": "aefb5eb48c1c7ee51b712bcf785371f8db54378b54b95c9d82cb542b2101fb5f",
+    "Evals/run.py": "9240ab48fc4c425e1cf9e75b069b70b9f21cea10294dfff5a326a636f3d5143e",
+    "Packages/Cleanup/Package.resolved": "b4bac9a805ba03fa25c5139632be11e7c5c053d8710f89c736c66e49e0a6578d",
+    "Packages/Cleanup/Sources/CleanupEvaluation/CleanupEvaluation.swift": "0f537b6ceb1ff66ca965da2266f293ca2e8c785a34528ee512d265fe47b547ca",
+    "Packages/Cleanup/Sources/CleanupMLX/MLXCleanupModel.swift": "95ad4b71a87fce6b58a006bd82c44fb5cde92a934b87f73e2b4a36a58e2aee58",
+    "Training/compare_swift_candidates.py": "368323efb73930fef6be77a9c93d8cd4f180e711178fd2bbe50e9501cce94ba4",
+    "Training/config/lora.yaml": "7e1df156a526390a8f6abe8297ae6251b57dc219281e0aea8fc369439bb6dbba",
+    "Training/data/corpus.jsonl": "134d0cd07645ab18b899bd65936e33539cf949a3372cac154bda62f05cb7d6f3",
+    "Training/data/round2-holdout.jsonl": "24fe6f6fffa4247006eb9aa8fa7d662c40ebc70cf75692707a63e30269ccde1d",
+    "Training/data/round3-holdout.jsonl": "24bda50d9a2241afab64df7ef6eb9afb2e1a7e90561cfd1b0616393cbfeb905b",
+    "Training/generated/mlx/test.jsonl": "2a6a7782f14b3b114ba9f08c8b9042c5177e2f73e2084675c75f660f052b5e60",
+    "Training/generated/mlx/train.jsonl": "90cdfb0ab31f52306400079c5b294cfd8063f8d03ee416e405a8d424513cfe10",
+    "Training/generated/mlx/valid.jsonl": "9c6076d56cb299f10a5cb39a918dd18848678effeae2ebe697f730fc658b1bf2",
+    "Training/prepare_corpus.py": "36af2648b60d745d07555ac41716c08ba4b5575222ee9d59f9c373dadcde49e6"
+  },
+  "trainingRecords": 172,
+  "validationRecords": 29
+}

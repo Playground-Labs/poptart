@@ -1,0 +1,38 @@
+{
+  "releaseQualified": false,
+  "localPath": ".context/cleanup-round9/step-100/candidate-4bit",
+  "files": {
+    "LICENSE": {
+      "bytes": 11544,
+      "sha256": "bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a"
+    },
+    "README.md": {
+      "bytes": 81,
+      "sha256": "748c964f9b7e5f2c3770ce013bbc0153be7c54311d9692c343b6188eefe77ac6"
+    },
+    "chat_template.jinja": {
+      "bytes": 7755,
+      "sha256": "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
+    },
+    "config.json": {
+      "bytes": 2625,
+      "sha256": "919d818806acc6093475afcccc40b4c27deb509ef1508ba940c71c9b3ce83ab5"
+    },
+    "model.safetensors": {
+      "bytes": 424026782,
+      "sha256": "7fa5feb2bac4881fb32a474cc0479e79e2e2a3b5008e1e8170105a4db8263e9d"
+    },
+    "model.safetensors.index.json": {
+      "bytes": 60784,
+      "sha256": "d95a2e17af08ab870498266088eccee4d0a012338c604465ae7df24b976c488e"
+    },
+    "tokenizer.json": {
+      "bytes": 12807982,
+      "sha256": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42"
+    },
+    "tokenizer_config.json": {
+      "bytes": 16709,
+      "sha256": "49e2b6e395f959f077f1e992b338919c0d4a9732fc6e613995e06557f843500c"
+    }
+  }
+}

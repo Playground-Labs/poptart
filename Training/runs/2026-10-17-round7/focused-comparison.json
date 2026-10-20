@@ -1,0 +1,358 @@
+{
+  "releaseQualified": false,
+  "groups": {
+    "gold": {
+      "baseline": {
+        "count": 12,
+        "acceptedPlans": 9,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 12,
+            "passed": 6
+          },
+          "meaningPreservation": {
+            "applicable": 12,
+            "passed": 7
+          },
+          "vocabularyPreservation": {
+            "applicable": 2,
+            "passed": 2
+          },
+          "contextFit": {
+            "applicable": 12,
+            "passed": 12
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 6
+      },
+      "candidate": {
+        "count": 12,
+        "acceptedPlans": 11,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 12,
+            "passed": 6
+          },
+          "meaningPreservation": {
+            "applicable": 12,
+            "passed": 8
+          },
+          "vocabularyPreservation": {
+            "applicable": 2,
+            "passed": 2
+          },
+          "contextFit": {
+            "applicable": 12,
+            "passed": 11
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 5
+      },
+      "improved": [],
+      "regressed": [
+        "gold-006"
+      ]
+    },
+    "adversarial": {
+      "baseline": {
+        "count": 11,
+        "acceptedPlans": 1,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "meaningPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "adversarialSafe": {
+            "applicable": 11,
+            "passed": 10
+          }
+        }
+      },
+      "candidate": {
+        "count": 11,
+        "acceptedPlans": 5,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "meaningPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "adversarialSafe": {
+            "applicable": 11,
+            "passed": 6
+          }
+        }
+      }
+    },
+    "originalHoldout": {
+      "baseline": {
+        "count": 8,
+        "acceptedPlans": 8,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 8,
+            "passed": 5
+          },
+          "meaningPreservation": {
+            "applicable": 8,
+            "passed": 7
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 8,
+            "passed": 8
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 5
+      },
+      "candidate": {
+        "count": 8,
+        "acceptedPlans": 8,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 8,
+            "passed": 5
+          },
+          "meaningPreservation": {
+            "applicable": 8,
+            "passed": 7
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 8,
+            "passed": 8
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 5
+      },
+      "improved": [],
+      "regressed": []
+    },
+    "round2Holdout": {
+      "baseline": {
+        "count": 12,
+        "acceptedPlans": 11,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 12,
+            "passed": 9
+          },
+          "meaningPreservation": {
+            "applicable": 12,
+            "passed": 10
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 12,
+            "passed": 12
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 9
+      },
+      "candidate": {
+        "count": 12,
+        "acceptedPlans": 12,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 12,
+            "passed": 10
+          },
+          "meaningPreservation": {
+            "applicable": 12,
+            "passed": 11
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 12,
+            "passed": 12
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 10
+      },
+      "improved": [
+        "round2-correction-013"
+      ],
+      "regressed": []
+    },
+    "round3Holdout": {
+      "baseline": {
+        "count": 8,
+        "acceptedPlans": 7,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 8,
+            "passed": 4
+          },
+          "meaningPreservation": {
+            "applicable": 8,
+            "passed": 5
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 8,
+            "passed": 8
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 4
+      },
+      "candidate": {
+        "count": 8,
+        "acceptedPlans": 8,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 8,
+            "passed": 4
+          },
+          "meaningPreservation": {
+            "applicable": 8,
+            "passed": 5
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 8,
+            "passed": 8
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 4
+      },
+      "improved": [],
+      "regressed": []
+    },
+    "round6Holdout": {
+      "baseline": {
+        "count": 12,
+        "acceptedPlans": 10,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 12,
+            "passed": 7
+          },
+          "meaningPreservation": {
+            "applicable": 12,
+            "passed": 10
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 12,
+            "passed": 12
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 7
+      },
+      "candidate": {
+        "count": 12,
+        "acceptedPlans": 12,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 12,
+            "passed": 8
+          },
+          "meaningPreservation": {
+            "applicable": 12,
+            "passed": 9
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 12,
+            "passed": 12
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 8
+      },
+      "improved": [
+        "round6-unseen-001",
+        "round6-unseen-002"
+      ],
+      "regressed": [
+        "round6-unseen-007"
+      ]
+    }
+  }
+}

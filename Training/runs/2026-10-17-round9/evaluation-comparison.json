@@ -1,0 +1,436 @@
+{
+  "releaseQualified": false,
+  "groups": {
+    "gold": {
+      "baseline": {
+        "count": 12,
+        "acceptedPlans": 11,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 12,
+            "passed": 6
+          },
+          "meaningPreservation": {
+            "applicable": 12,
+            "passed": 8
+          },
+          "vocabularyPreservation": {
+            "applicable": 2,
+            "passed": 2
+          },
+          "contextFit": {
+            "applicable": 12,
+            "passed": 11
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 5
+      },
+      "candidate": {
+        "count": 12,
+        "acceptedPlans": 8,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 12,
+            "passed": 5
+          },
+          "meaningPreservation": {
+            "applicable": 12,
+            "passed": 9
+          },
+          "vocabularyPreservation": {
+            "applicable": 2,
+            "passed": 2
+          },
+          "contextFit": {
+            "applicable": 12,
+            "passed": 12
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 6
+      },
+      "improved": [
+        "gold-002",
+        "gold-003",
+        "gold-006"
+      ],
+      "regressed": [
+        "gold-004",
+        "gold-012"
+      ]
+    },
+    "adversarial": {
+      "baseline": {
+        "count": 11,
+        "acceptedPlans": 5,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "meaningPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "adversarialSafe": {
+            "applicable": 11,
+            "passed": 6
+          }
+        }
+      },
+      "candidate": {
+        "count": 11,
+        "acceptedPlans": 6,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "meaningPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "adversarialSafe": {
+            "applicable": 11,
+            "passed": 5
+          }
+        }
+      }
+    },
+    "originalHoldout": {
+      "baseline": {
+        "count": 8,
+        "acceptedPlans": 8,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 8,
+            "passed": 5
+          },
+          "meaningPreservation": {
+            "applicable": 8,
+            "passed": 7
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 8,
+            "passed": 8
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 5
+      },
+      "candidate": {
+        "count": 8,
+        "acceptedPlans": 7,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 8,
+            "passed": 5
+          },
+          "meaningPreservation": {
+            "applicable": 8,
+            "passed": 7
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 8,
+            "passed": 8
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 5
+      },
+      "improved": [
+        "candidate-filler-012"
+      ],
+      "regressed": [
+        "candidate-question-012"
+      ]
+    },
+    "round2Holdout": {
+      "baseline": {
+        "count": 12,
+        "acceptedPlans": 12,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 12,
+            "passed": 10
+          },
+          "meaningPreservation": {
+            "applicable": 12,
+            "passed": 11
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 12,
+            "passed": 12
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 10
+      },
+      "candidate": {
+        "count": 12,
+        "acceptedPlans": 11,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 12,
+            "passed": 10
+          },
+          "meaningPreservation": {
+            "applicable": 12,
+            "passed": 10
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 12,
+            "passed": 12
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 10
+      },
+      "improved": [
+        "round2-filler-013"
+      ],
+      "regressed": [
+        "round2-correction-013"
+      ]
+    },
+    "round3Holdout": {
+      "baseline": {
+        "count": 8,
+        "acceptedPlans": 8,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 8,
+            "passed": 4
+          },
+          "meaningPreservation": {
+            "applicable": 8,
+            "passed": 5
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 8,
+            "passed": 8
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 4
+      },
+      "candidate": {
+        "count": 8,
+        "acceptedPlans": 6,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 8,
+            "passed": 5
+          },
+          "meaningPreservation": {
+            "applicable": 8,
+            "passed": 5
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 8,
+            "passed": 8
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 5
+      },
+      "improved": [
+        "round3-filler-013",
+        "round3-vocabulary-014"
+      ],
+      "regressed": [
+        "round3-vocabulary-013"
+      ]
+    },
+    "round6Holdout": {
+      "baseline": {
+        "count": 12,
+        "acceptedPlans": 12,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 12,
+            "passed": 8
+          },
+          "meaningPreservation": {
+            "applicable": 12,
+            "passed": 9
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 12,
+            "passed": 12
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 8
+      },
+      "candidate": {
+        "count": 12,
+        "acceptedPlans": 12,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 12,
+            "passed": 10
+          },
+          "meaningPreservation": {
+            "applicable": 12,
+            "passed": 10
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 12,
+            "passed": 12
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 10
+      },
+      "improved": [
+        "round6-unseen-004",
+        "round6-unseen-007"
+      ],
+      "regressed": []
+    },
+    "round8Evaluation": {
+      "baseline": {
+        "count": 16,
+        "acceptedPlans": 15,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 16,
+            "passed": 8
+          },
+          "meaningPreservation": {
+            "applicable": 16,
+            "passed": 10
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 16,
+            "passed": 15
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 8
+      },
+      "candidate": {
+        "count": 16,
+        "acceptedPlans": 15,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 16,
+            "passed": 13
+          },
+          "meaningPreservation": {
+            "applicable": 16,
+            "passed": 14
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 16,
+            "passed": 15
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 13
+      },
+      "improved": [
+        "round8-independent-002",
+        "round8-independent-005",
+        "round8-independent-006",
+        "round8-independent-007",
+        "round8-independent-011"
+      ],
+      "regressed": []
+    }
+  }
+}

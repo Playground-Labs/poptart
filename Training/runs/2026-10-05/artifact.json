@@ -1,0 +1,42 @@
+{
+  "adapterSHA256": "80b92976918b0a62a8a91ce30c3a7c90a5c955e8e8c48ed22efac18eab8066a4",
+  "baseModel": "Qwen/Qwen3.5-0.8B",
+  "baseRevision": "2fc06364715b967f1860aea9cf38778875588b17",
+  "baseWeightsSHA256": "04b1c301231dd422b8860db31311ab2721511346a32cb1e079c4c4e5f1fe4696",
+  "candidateLocalPath": ".context/cleanup-model/candidate-4bit",
+  "candidateWeightsBytes": 424026782,
+  "candidateWeightsSHA256": "4e53d28e9dcd5a4c5c31a888e7e8b7a36113a04cdd6c57492daf078d4a32ed9a",
+  "evaluationDate": "2026-10-16",
+  "finalValidationLoss": 0.086,
+  "initialValidationLoss": 1.362,
+  "iterations": 100,
+  "quantization": {
+    "bits": 4,
+    "group_size": 64,
+    "mode": "affine"
+  },
+  "releaseQualified": false,
+  "seed": 20260824,
+  "testRecords": 8,
+  "trainingDate": "2026-10-05",
+  "trainingInputsSHA256": {
+    "Training/data/corpus.jsonl": "49b86ed34ccb0adb5f055205db7a58f7f20c6c34cfcdfdd78ddd252c377dcf71",
+    "Training/generated/mlx/test.jsonl": "2a6a7782f14b3b114ba9f08c8b9042c5177e2f73e2084675c75f660f052b5e60",
+    "Training/generated/mlx/train.jsonl": "60f95bbf854cdc52338a559fd3aa0ea03ab8b04a35f89ff694058904f115c6f2",
+    "Training/generated/mlx/valid.jsonl": "62b81af53e610cc9ea67fd479d84359e4a1e89e40677d96d0680762f2e4350c7",
+    "Training/runs/2026-10-05/requirements.txt": "4a327df56ac0987b04e97bdca54ebcb96382f4c957bd2c292f78f515902ca848",
+    "Training/runs/2026-10-05/training-config.json": "6860a8776e5b39a30f7ce204a113a96d5642a75670811c6feda9bbce57b96a23"
+  },
+  "trainingRecords": 72,
+  "validationRecords": 9,
+  "validationSourceSHA256": {
+    "Evals/editplan.py": "ac21a58022146a2eb40c9ec154100c32d64825a31fc73a4050fc962309191b8b",
+    "Packages/Cleanup/Sources/Cleanup/EditPlanValidator.swift": "7356e87323540e17decaf17ff0d66c1525ca6a18843bdadb8d10bf4c9624ad70"
+  },
+  "verification": {
+    "fullSwiftTestSuite": "Blocked: installed command-line toolchain has no Testing module; native core guard executable passed.",
+    "pythonToolingTests": 17,
+    "swiftURLAcceptedControls": 2,
+    "swiftURLRejectedMutations": 10
+  }
+}

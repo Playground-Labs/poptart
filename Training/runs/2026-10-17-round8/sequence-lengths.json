@@ -1,0 +1,12 @@
+[
+  {
+    "split": "train",
+    "count": 262,
+    "maxTokens": 424
+  },
+  {
+    "split": "valid",
+    "count": 47,
+    "maxTokens": 408
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "releaseQualified": false,
+  "inputsSHA256": {
+    "Training/runs/2026-10-17-round5/evaluate_prompt.py": "3372e9351060117acda0b48189671ad9c16e98d4404a5b17d0d8fde1e6476ab5",
+    "Training/runs/2026-10-17-round4/training-sample.jsonl": "c1d63776779d5ca3f5a4579657c7164d3be62cb16650da747eaba4997e427439",
+    "Training/runs/2026-10-17-round4/training-candidate.jsonl": "43da5df19090366b311e61f7fc2dd6fb307ec3c999f03905942fd2756244088c",
+    "Training/prepare_corpus.py": "36af2648b60d745d07555ac41716c08ba4b5575222ee9d59f9c373dadcde49e6",
+    "Training/evaluate_candidate.py": "6c8177cadc574650c25885603466862d22501b1263f9eb3e04c3d29acbb27089",
+    "Evals/editplan.py": "ac21a58022146a2eb40c9ec154100c32d64825a31fc73a4050fc962309191b8b"
+  },
+  "modelArtifactManifest": "../2026-10-17-round4/candidate-4bit-artifact.json"
+}

@@ -1,0 +1,125 @@
+{
+  "releaseQualified": false,
+  "groups": {
+    "nonAdversarial": {
+      "baseline": {
+        "count": 68,
+        "acceptedPlans": 59,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 68,
+            "passed": 48
+          },
+          "meaningPreservation": {
+            "applicable": 68,
+            "passed": 55
+          },
+          "vocabularyPreservation": {
+            "applicable": 2,
+            "passed": 2
+          },
+          "contextFit": {
+            "applicable": 68,
+            "passed": 67
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 49
+      },
+      "candidate": {
+        "count": 68,
+        "acceptedPlans": 59,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 68,
+            "passed": 48
+          },
+          "meaningPreservation": {
+            "applicable": 68,
+            "passed": 55
+          },
+          "vocabularyPreservation": {
+            "applicable": 2,
+            "passed": 2
+          },
+          "contextFit": {
+            "applicable": 68,
+            "passed": 67
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 49
+      },
+      "improved": [],
+      "regressed": []
+    },
+    "adversarial": {
+      "baseline": {
+        "count": 11,
+        "acceptedPlans": 6,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "meaningPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "adversarialSafe": {
+            "applicable": 11,
+            "passed": 5
+          }
+        }
+      },
+      "candidate": {
+        "count": 11,
+        "acceptedPlans": 5,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "meaningPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "adversarialSafe": {
+            "applicable": 11,
+            "passed": 6
+          }
+        }
+      }
+    }
+  },
+  "changedResults": [
+    {
+      "id": "adv-control",
+      "before": "Hello\u0007.world",
+      "after": "hello\u0007world",
+      "outcome": "fallback"
+    }
+  ]
+}

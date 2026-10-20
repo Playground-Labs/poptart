@@ -1,0 +1,15 @@
+{
+  "sha256": {
+    "Training/data/corpus.jsonl": "342c32e3776fd74e80b0460c1efebc7872ecb695398bf42401a5c073bd005655",
+    "Training/generated/mlx/train.jsonl": "42147490871165b06ac73e5e39770671862ca36b7fb95b8dfb688e0586f8a183",
+    "Training/generated/mlx/valid.jsonl": "fd4e5c1ad3780af2440087e29c781ac260d55e34b7089caeea3fc1869a69bfb5",
+    "Training/runs/2026-10-18-full-epoch/validation.jsonl": "02e6c76186981fc3cd3a9be0288471d8317b42ad7931043db6c1d23ffdb32138",
+    "Training/runs/2026-10-18-full-epoch/protocol.json": "a21e8bcffd8bae54e411fec0a9ced2f579bf76f7d7f6e74dcd4e35ea59542864",
+    "Training/runs/2026-10-18-full-epoch/training-config.yaml": "e9e02b8c90ef1ef81e794b96965d38679df3e17855b7b69ff673d4c2b65bb143",
+    ".context/cleanup-round8/adapters/0000200_adapters.safetensors": "f75d163a8da01e2a6f54064e3fc51bd6c0399e0fdc62c5896dfc6dc5b593f849",
+    "Training/runs/2026-10-18-full-epoch/score.py": "e40d4eaff7ea782053ef6c147a47babb8b5b9606796a6ec33efe1f04fc974de0",
+    "Training/runs/2026-10-18-full-epoch/evaluate_checkpoints.sh": "c89872359bdc397ad68f64071e2b5d674f3c31960fd23d93f4405ea46da89992",
+    "Training/runs/2026-10-17-round9/step-200.jsonl": "a864a176f7328babab50bd30655cf82e8dc328b871511a3dccce7ba8c7996e8d"
+  },
+  "baselineReuse": "No validation transcript contains non-whitespace control characters; the only intervening validator change cannot affect these saved baseline plans."
+}

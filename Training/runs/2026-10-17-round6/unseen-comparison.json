@@ -1,0 +1,67 @@
+{
+  "releaseQualified": false,
+  "groups": {
+    "unseen": {
+      "baseline": {
+        "count": 12,
+        "acceptedPlans": 6,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 12,
+            "passed": 4
+          },
+          "meaningPreservation": {
+            "applicable": 12,
+            "passed": 7
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 12,
+            "passed": 12
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 4
+      },
+      "candidate": {
+        "count": 12,
+        "acceptedPlans": 10,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 12,
+            "passed": 7
+          },
+          "meaningPreservation": {
+            "applicable": 12,
+            "passed": 10
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 12,
+            "passed": 12
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 7
+      },
+      "improved": [
+        "round6-unseen-003",
+        "round6-unseen-006",
+        "round6-unseen-007"
+      ],
+      "regressed": []
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "trainingRecords": 262,
+  "batchSize": 1,
+  "uniqueExamplesAfter200Steps": 200,
+  "uniqueExamplesAfter262Steps": 262,
+  "scope": "Installed MLX batch iterator exercised with tagged synthetic records; proves first-pass coverage, not historical real-example IDs."
+}

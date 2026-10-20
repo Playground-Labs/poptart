@@ -1,0 +1,68 @@
+{
+  "releaseQualified": false,
+  "validationCount": 47,
+  "ranking": [
+    {
+      "additionalSteps": 200,
+      "loggedValidationLoss": 0.034,
+      "exactOutput": 38,
+      "acceptedPlans": 42,
+      "improved": [
+        "round2-filler-012",
+        "round2-repetition-012",
+        "round3-vocabulary-011",
+        "round3-vocabulary-012",
+        "round8-capital-011",
+        "round8-leading_um-011",
+        "round8-leading_uh-011",
+        "round8-repetition-011",
+        "round8-capital-012",
+        "round8-leading_um-012",
+        "round8-leading_uh-012",
+        "round8-repetition-012",
+        "round8-vocabulary-012"
+      ],
+      "regressed": [
+        "round3-command-011"
+      ]
+    },
+    {
+      "additionalSteps": 100,
+      "loggedValidationLoss": 0.031,
+      "exactOutput": 31,
+      "acceptedPlans": 35,
+      "improved": [
+        "candidate-repetition-011",
+        "round2-question-012",
+        "round2-repetition-012",
+        "round8-capital-011",
+        "round8-leading_um-011",
+        "round8-leading_uh-011",
+        "round8-repetition-011",
+        "round8-capital-012",
+        "round8-leading_um-012",
+        "round8-leading_uh-012",
+        "round8-repetition-012"
+      ],
+      "regressed": [
+        "valid-002",
+        "candidate-context-011",
+        "candidate-vocabulary-007",
+        "round2-correction-011",
+        "round8-new_sentence-011",
+        "round8-new_sentence-012"
+      ]
+    },
+    {
+      "additionalSteps": 0,
+      "loggedValidationLoss": 0.031,
+      "exactOutput": 26,
+      "acceptedPlans": 45,
+      "improved": [],
+      "regressed": []
+    }
+  ],
+  "outputSelectedAdditionalSteps": 200,
+  "originalLossSelectedAdditionalSteps": 0,
+  "interpretation": "Diagnostic ranking on validation only; separate dimensions and regressions require review. This does not change the original run selection or qualify a release."
+}

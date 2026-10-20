@@ -1,0 +1,12 @@
+{
+  "releaseQualified": false,
+  "criterion": "lowest logged expanded-validation loss including baseline; ties favor fewer additional steps",
+  "losses": {
+    "0": 0.031,
+    "100": 0.031,
+    "200": 0.034
+  },
+  "selectedAdditionalSteps": 0,
+  "selectedModel": ".context/cleanup-round7/candidate-4bit",
+  "decision": "Reject continuation; no new export. Losses are logged to three decimal places."
+}

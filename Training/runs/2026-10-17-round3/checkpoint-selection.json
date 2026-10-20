@@ -1,0 +1,8 @@
+{
+  "validationLosses": {
+    "100": 0.074,
+    "200": 0.059
+  },
+  "selectedStep": 200,
+  "evaluationInspected": false
+}

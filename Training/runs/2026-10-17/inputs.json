@@ -1,0 +1,28 @@
+{
+  "baseRevision": "2fc06364715b967f1860aea9cf38778875588b17",
+  "newHoldoutRecords": 12,
+  "originalHoldoutRecords": 8,
+  "releaseQualified": false,
+  "selectionRule": "Choose the lower validation loss at step 100 or 200; ties use step 100. Select before inspecting either checkpoint on evaluation sets.",
+  "sha256": {
+    "Evals/editplan.py": "ac21a58022146a2eb40c9ec154100c32d64825a31fc73a4050fc962309191b8b",
+    "Evals/fixtures/adversarial.jsonl": "1a03fd7105a837ff1c8218bd6afe5b7ddc6dd3b2dc6b34f3d5e8242dfab5666b",
+    "Evals/fixtures/gold.jsonl": "aefb5eb48c1c7ee51b712bcf785371f8db54378b54b95c9d82cb542b2101fb5f",
+    "Evals/run.py": "9240ab48fc4c425e1cf9e75b069b70b9f21cea10294dfff5a326a636f3d5143e",
+    "Packages/Cleanup/Package.resolved": "b4bac9a805ba03fa25c5139632be11e7c5c053d8710f89c736c66e49e0a6578d",
+    "Packages/Cleanup/Sources/Cleanup/EditPlanValidator.swift": "7356e87323540e17decaf17ff0d66c1525ca6a18843bdadb8d10bf4c9624ad70",
+    "Packages/Cleanup/Sources/CleanupEvaluation/CleanupEvaluation.swift": "0f537b6ceb1ff66ca965da2266f293ca2e8c785a34528ee512d265fe47b547ca",
+    "Packages/Cleanup/Sources/CleanupMLX/MLXCleanupModel.swift": "95ad4b71a87fce6b58a006bd82c44fb5cde92a934b87f73e2b4a36a58e2aee58",
+    "Scripts/test_tooling.py": "3e70092c4bf326b3b952385d27d20f6b3c724182f3eb6b8fc25f32edf2db1d81",
+    "Training/compare_swift_candidates.py": "36d10c05fbfc1e595228d20497b431798cd3f763d7080ed376ad8f6c37cedd1e",
+    "Training/config/lora.yaml": "7e1df156a526390a8f6abe8297ae6251b57dc219281e0aea8fc369439bb6dbba",
+    "Training/data/corpus.jsonl": "4401e4c5ab5b54148e768bd4b539cc8624829694d828def9d1acda93e8e9554c",
+    "Training/data/round2-holdout.jsonl": "24fe6f6fffa4247006eb9aa8fa7d662c40ebc70cf75692707a63e30269ccde1d",
+    "Training/generated/mlx/test.jsonl": "2a6a7782f14b3b114ba9f08c8b9042c5177e2f73e2084675c75f660f052b5e60",
+    "Training/generated/mlx/train.jsonl": "c2777561f579258f2db8bef0522de336998fc6b506c26ad770d0837c3957cf9a",
+    "Training/generated/mlx/valid.jsonl": "cbf24f88abb0e06ccc3064ee5c99f58969824451b12cbc72eb5f5bbbd7d2a6cc",
+    "Training/prepare_corpus.py": "36af2648b60d745d07555ac41716c08ba4b5575222ee9d59f9c373dadcde49e6"
+  },
+  "trainingRecords": 132,
+  "validationRecords": 21
+}

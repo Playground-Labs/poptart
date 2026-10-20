@@ -1,0 +1,16 @@
+Trainable parameters: 0.479% (3.608M/752.392M)
+Starting training..., iters: 100
+Iter 1: Val loss 1.362, Val took 2.774s
+Iter 10: Train loss 0.479, Learning Rate 1.000e-05, It/sec 0.212, Tokens/sec 10.040, Trained Tokens 474, Peak mem 4.293 GB
+Iter 20: Train loss 0.261, Learning Rate 1.000e-05, It/sec 0.351, Tokens/sec 17.490, Trained Tokens 973, Peak mem 4.653 GB
+Iter 30: Train loss 0.104, Learning Rate 1.000e-05, It/sec 0.413, Tokens/sec 21.451, Trained Tokens 1492, Peak mem 4.653 GB
+Iter 40: Train loss 0.104, Learning Rate 1.000e-05, It/sec 0.433, Tokens/sec 21.748, Trained Tokens 1994, Peak mem 4.653 GB
+Iter 50: Train loss 0.092, Learning Rate 1.000e-05, It/sec 0.446, Tokens/sec 20.738, Trained Tokens 2459, Peak mem 4.653 GB
+Iter 60: Train loss 0.085, Learning Rate 1.000e-05, It/sec 0.447, Tokens/sec 18.536, Trained Tokens 2874, Peak mem 4.653 GB
+Iter 70: Train loss 0.071, Learning Rate 1.000e-05, It/sec 0.441, Tokens/sec 22.078, Trained Tokens 3375, Peak mem 4.653 GB
+Iter 80: Train loss 0.051, Learning Rate 1.000e-05, It/sec 0.416, Tokens/sec 21.370, Trained Tokens 3889, Peak mem 4.653 GB
+Iter 90: Train loss 0.037, Learning Rate 1.000e-05, It/sec 0.448, Tokens/sec 20.049, Trained Tokens 4337, Peak mem 4.653 GB
+Iter 100: Val loss 0.086, Val took 1.350s
+Iter 100: Train loss 0.042, Learning Rate 1.000e-05, It/sec 0.446, Tokens/sec 20.248, Trained Tokens 4791, Peak mem 4.653 GB
+Iter 100: Saved adapter weights to .context/cleanup-model/aligned-adapters/adapters.safetensors and .context/cleanup-model/aligned-adapters/0000100_adapters.safetensors.
+Saved final weights to .context/cleanup-model/aligned-adapters/adapters.safetensors.

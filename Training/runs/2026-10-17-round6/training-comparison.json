@@ -1,0 +1,15 @@
+{
+  "releaseQualified": false,
+  "baselineExact": 17,
+  "candidateExact": 24,
+  "improved": [
+    "candidate-vocabulary-006",
+    "round2-filler-002",
+    "round2-repetition-006",
+    "round2-correction-003",
+    "round3-unchanged_capital-002",
+    "round3-unchanged_capital-009",
+    "round3-vocabulary-003"
+  ],
+  "regressed": []
+}
