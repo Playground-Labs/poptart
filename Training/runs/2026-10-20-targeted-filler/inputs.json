@@ -1,0 +1,16 @@
+{
+  "Training/runs/2026-10-20-targeted-filler/new-examples.jsonl": "fad1283830d67941e08d2d5a17ecd0d536066fa21268b49985d3cc7290b39ea2",
+  "Training/runs/2026-10-20-targeted-filler/training.jsonl": "9a65c4a7bb466a49a7eb5c66b3cd53e61aec7e49b6cb12488bcdb6fd0928bf4c",
+  "Training/runs/2026-10-20-targeted-filler/validation.jsonl": "cf8d98c639cfd37c01ae882b385ced5476e9c3995014e012f20f99b6ab53cbc9",
+  "Training/runs/2026-10-20-targeted-filler/fresh-evaluation.jsonl": "205d9caa071c99b90bede883b679fad25d484b8a7aa3316d885dc7b4613cf3e2",
+  "Training/runs/2026-10-20-targeted-filler/mlx/train.jsonl": "45532b0eb38c720bccc55de99b0147066ca1eec66808034b483f3d34d1359474",
+  "Training/runs/2026-10-20-targeted-filler/mlx/valid.jsonl": "75fff2bcccad0c1ca4f21404911ff1eb8f5bc183fabeb2ce712b406c6c780e65",
+  "Training/runs/2026-10-20-targeted-filler/protocol.json": "077d7b72d5d3c6a5d747b3b4942ce49a2ccf7f0cf9e63d379ba91fa2c07653f1",
+  "Training/runs/2026-10-20-targeted-filler/training-config.yaml": "c1467ee84b416908103f3233ecb7069061c9c3507af0a39f4b13600368874032",
+  "Training/runs/2026-10-20-targeted-filler/prepare.py": "41708aea383dec1ea783caaf526e1e56cf7e3b731545847d7a4efb9c4dd78252",
+  ".context/cleanup-round8/adapters/0000200_adapters.safetensors": "f75d163a8da01e2a6f54064e3fc51bd6c0399e0fdc62c5896dfc6dc5b593f849",
+  "Training/runs/2026-10-20-targeted-filler/score.py": "73892a4f8a75e7f36033c25af1ff4c00234e4e1132e042ab3f850084eb42c375",
+  "Training/runs/2026-10-20-targeted-filler/evaluate.sh": "f5abd203485822c388df06f74b540d101435b56f06ec3d38a30000e89cf290ab",
+  "Training/runs/2026-10-20-targeted-filler/failure-analysis.json": "752afb5fa9c209ef713ce76484c5cade940d0b3071b16f976d63e51581023cf2",
+  "Training/runs/2026-10-20-targeted-filler/token-lengths.json": "4cd0fba48df2306c4ac5c63c1d6eb12bd070188e16811e43c1863137c6eebcbe"
+}

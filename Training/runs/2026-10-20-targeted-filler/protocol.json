@@ -1,0 +1,19 @@
+{
+  "releaseQualified": false,
+  "hypothesis": "Paired trailing-filler and plain sentences teach deletion category/bounds and terminal punctuation without inserting before filler. Rehearsal and half learning rate aim to reduce forgetting.",
+  "steps": 80,
+  "trainingRows": 80,
+  "newTrainingRows": 48,
+  "rehearsalRows": 32,
+  "validationRows": 55,
+  "freshEvaluationRows": 16,
+  "checkpointSteps": [
+    0,
+    40,
+    80
+  ],
+  "selection": "Eligible only if existing validation exact output >=38/47; highest total exact on 55 validation, ties prefer fewer added steps. Baseline included.",
+  "postSelection": "Evaluate only validation winner on existing79 and fresh16, paired baseline. Retain experiment only with non-adversarial exact >=49/68, fresh exact >=baseline and no newly accepted unsafe adversarial edit; review individual regressions. No release qualification.",
+  "startingAdapter": ".context/cleanup-round8/adapters/0000200_adapters.safetensors",
+  "startingExport": ".context/cleanup-round9/step-200/candidate-4bit"
+}

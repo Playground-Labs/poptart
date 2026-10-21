@@ -1,0 +1,27 @@
+{
+  "releaseQualified": false,
+  "candidates": [
+    {
+      "steps": 0,
+      "existingExact": 38,
+      "freshExact": 4,
+      "totalExact": 42,
+      "eligible": true
+    },
+    {
+      "steps": 40,
+      "existingExact": 34,
+      "freshExact": 6,
+      "totalExact": 40,
+      "eligible": false
+    },
+    {
+      "steps": 80,
+      "existingExact": 36,
+      "freshExact": 8,
+      "totalExact": 44,
+      "eligible": false
+    }
+  ],
+  "selectedSteps": 0
+}

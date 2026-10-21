@@ -1,0 +1,42 @@
+{
+    "adapter_path": ".context/cleanup-targeted/adapters",
+    "batch_size": 1,
+    "clear_cache_threshold": 0,
+    "config": "Training/runs/2026-10-20-targeted-filler/training-config.yaml",
+    "data": "Training/runs/2026-10-20-targeted-filler/mlx",
+    "fine_tune_type": "lora",
+    "grad_accumulation_steps": 1,
+    "grad_checkpoint": false,
+    "iters": 80,
+    "learning_rate": 5e-06,
+    "lora_parameters": {
+        "rank": 8,
+        "dropout": 0.0,
+        "scale": 20.0
+    },
+    "lr_schedule": null,
+    "mask_prompt": true,
+    "max_seq_length": 512,
+    "model": ".context/cleanup-model/base",
+    "num_layers": 16,
+    "optimizer": "adam",
+    "optimizer_config": {
+        "adam": {},
+        "adamw": {},
+        "muon": {},
+        "sgd": {},
+        "adafactor": {}
+    },
+    "project_name": null,
+    "report_to": null,
+    "resume_adapter_file": ".context/cleanup-round8/adapters/0000200_adapters.safetensors",
+    "save_every": 40,
+    "seed": 20260824,
+    "steps_per_eval": 40,
+    "steps_per_report": 10,
+    "test": false,
+    "test_batches": 500,
+    "train": true,
+    "trust_remote_code": false,
+    "val_batches": -1
+}

@@ -1,0 +1,434 @@
+[
+  {
+    "id": "valid-001",
+    "classification": "missed sentence-boundary cleanup",
+    "raw": "we tested it, the results look right",
+    "expected": "We tested it. The results look right.",
+    "actual": "We tested it, the results look right.",
+    "plan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "We",
+          "s": 0
+        },
+        {
+          "c": "punctuation",
+          "e": 8,
+          "r": ".",
+          "s": 8
+        }
+      ],
+      "v": 1
+    },
+    "goldPlan": {
+      "v": 1,
+      "e": [
+        {
+          "s": 0,
+          "e": 1,
+          "r": "We",
+          "c": "capitalization"
+        },
+        {
+          "s": 3,
+          "e": 4,
+          "r": ".",
+          "c": "punctuation"
+        },
+        {
+          "s": 4,
+          "e": 5,
+          "r": "The",
+          "c": "capitalization"
+        },
+        {
+          "s": 8,
+          "e": 8,
+          "r": ".",
+          "c": "punctuation"
+        }
+      ]
+    },
+    "rejection": null
+  },
+  {
+    "id": "candidate-repetition-011",
+    "classification": "empty repetition deletion span",
+    "raw": "the package arrived arrived earlier than expected",
+    "expected": "The package arrived earlier than expected.",
+    "actual": "the package arrived arrived earlier than expected",
+    "plan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "The",
+          "s": 0
+        },
+        {
+          "c": "repetition",
+          "e": 3,
+          "r": "",
+          "s": 3
+        },
+        {
+          "c": "punctuation",
+          "e": 7,
+          "r": ".",
+          "s": 7
+        }
+      ],
+      "v": 1
+    },
+    "goldPlan": {
+      "v": 1,
+      "e": [
+        {
+          "s": 0,
+          "e": 1,
+          "r": "The",
+          "c": "capitalization"
+        },
+        {
+          "s": 3,
+          "e": 4,
+          "r": "",
+          "c": "repetition"
+        },
+        {
+          "s": 7,
+          "e": 7,
+          "r": ".",
+          "c": "punctuation"
+        }
+      ]
+    },
+    "rejection": "unsafeCategory (edit 1 changes nothing)"
+  },
+  {
+    "id": "round2-question-012",
+    "classification": "incorrect terminal punctuation decision",
+    "raw": "has the gardener finished trimming the hedge",
+    "expected": "Has the gardener finished trimming the hedge?",
+    "actual": "Has the gardener finished trimming the hedge.",
+    "plan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "Has",
+          "s": 0
+        },
+        {
+          "c": "punctuation",
+          "e": 7,
+          "r": ".",
+          "s": 7
+        }
+      ],
+      "v": 1
+    },
+    "goldPlan": {
+      "v": 1,
+      "e": [
+        {
+          "s": 0,
+          "e": 1,
+          "r": "Has",
+          "c": "capitalization"
+        },
+        {
+          "s": 7,
+          "e": 7,
+          "r": "?",
+          "c": "punctuation"
+        }
+      ]
+    },
+    "rejection": null
+  },
+  {
+    "id": "round2-filler-011",
+    "classification": "missed internal filler deletion",
+    "raw": "I can um bring a spare pair of gloves",
+    "expected": "I can bring a spare pair of gloves.",
+    "actual": "I can um bring a spare pair of gloves.",
+    "plan": {
+      "e": [
+        {
+          "c": "punctuation",
+          "e": 9,
+          "r": ".",
+          "s": 9
+        }
+      ],
+      "v": 1
+    },
+    "goldPlan": {
+      "v": 1,
+      "e": [
+        {
+          "s": 2,
+          "e": 3,
+          "r": "",
+          "c": "filler"
+        },
+        {
+          "s": 9,
+          "e": 9,
+          "r": ".",
+          "c": "punctuation"
+        }
+      ]
+    },
+    "rejection": null
+  },
+  {
+    "id": "round3-command-011",
+    "classification": "trailing filler deletion labeled punctuation",
+    "raw": "lock the garden shed uh",
+    "expected": "Lock the garden shed.",
+    "actual": "lock the garden shed uh",
+    "plan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "Lock",
+          "s": 0
+        },
+        {
+          "c": "punctuation",
+          "e": 5,
+          "r": "",
+          "s": 4
+        }
+      ],
+      "v": 1
+    },
+    "goldPlan": {
+      "v": 1,
+      "e": [
+        {
+          "s": 0,
+          "e": 1,
+          "r": "Lock",
+          "c": "capitalization"
+        },
+        {
+          "s": 4,
+          "e": 5,
+          "r": "",
+          "c": "filler"
+        },
+        {
+          "s": 5,
+          "e": 5,
+          "r": ".",
+          "c": "punctuation"
+        }
+      ]
+    },
+    "rejection": "unsafeCategory (edit 1: punctuation edit touches non-punctuation)"
+  },
+  {
+    "id": "round3-command-012",
+    "classification": "empty trailing filler deletion span/category",
+    "raw": "collect the empty mugs from the kitchen um",
+    "expected": "Collect the empty mugs from the kitchen.",
+    "actual": "collect the empty mugs from the kitchen um",
+    "plan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "Collect",
+          "s": 0
+        },
+        {
+          "c": "punctuation",
+          "e": 7,
+          "r": "",
+          "s": 7
+        }
+      ],
+      "v": 1
+    },
+    "goldPlan": {
+      "v": 1,
+      "e": [
+        {
+          "s": 0,
+          "e": 1,
+          "r": "Collect",
+          "c": "capitalization"
+        },
+        {
+          "s": 7,
+          "e": 8,
+          "r": "",
+          "c": "filler"
+        },
+        {
+          "s": 8,
+          "e": 8,
+          "r": ".",
+          "c": "punctuation"
+        }
+      ]
+    },
+    "rejection": "unsafeCategory (edit 1 changes nothing)"
+  },
+  {
+    "id": "round8-trailing-011",
+    "classification": "period inserted before retained trailing filler",
+    "raw": "the geologist recorded the temperature near the crater um",
+    "expected": "The geologist recorded the temperature near the crater.",
+    "actual": "The geologist recorded the temperature near the crater .um",
+    "plan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "The",
+          "s": 0
+        },
+        {
+          "c": "punctuation",
+          "e": 8,
+          "r": ".",
+          "s": 8
+        }
+      ],
+      "v": 1
+    },
+    "goldPlan": {
+      "v": 1,
+      "e": [
+        {
+          "s": 0,
+          "e": 1,
+          "r": "The",
+          "c": "capitalization"
+        },
+        {
+          "s": 8,
+          "e": 9,
+          "r": "",
+          "c": "filler"
+        },
+        {
+          "s": 9,
+          "e": 9,
+          "r": ".",
+          "c": "punctuation"
+        }
+      ]
+    },
+    "rejection": null
+  },
+  {
+    "id": "round8-trailing-012",
+    "classification": "empty trailing filler deletion span/category",
+    "raw": "we reserved the smallest cabin overlooking the valley um",
+    "expected": "We reserved the smallest cabin overlooking the valley.",
+    "actual": "we reserved the smallest cabin overlooking the valley um",
+    "plan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "We",
+          "s": 0
+        },
+        {
+          "c": "punctuation",
+          "e": 8,
+          "r": "",
+          "s": 8
+        }
+      ],
+      "v": 1
+    },
+    "goldPlan": {
+      "v": 1,
+      "e": [
+        {
+          "s": 0,
+          "e": 1,
+          "r": "We",
+          "c": "capitalization"
+        },
+        {
+          "s": 8,
+          "e": 9,
+          "r": "",
+          "c": "filler"
+        },
+        {
+          "s": 9,
+          "e": 9,
+          "r": ".",
+          "c": "punctuation"
+        }
+      ]
+    },
+    "rejection": "unsafeCategory (edit 1 changes nothing)"
+  },
+  {
+    "id": "round8-vocabulary-011",
+    "classification": "incorrect vocabulary span",
+    "raw": "send the mint hollow proposal to the review committee tomorrow",
+    "expected": "Send the Minthollow proposal to the review committee tomorrow.",
+    "actual": "send the mint hollow proposal to the review committee tomorrow",
+    "plan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "Send",
+          "s": 0
+        },
+        {
+          "c": "vocabulary",
+          "e": 5,
+          "r": "Minthollow",
+          "s": 4
+        },
+        {
+          "c": "punctuation",
+          "e": 10,
+          "r": ".",
+          "s": 10
+        }
+      ],
+      "v": 1
+    },
+    "goldPlan": {
+      "v": 1,
+      "e": [
+        {
+          "s": 0,
+          "e": 1,
+          "r": "Send",
+          "c": "capitalization"
+        },
+        {
+          "s": 2,
+          "e": 4,
+          "r": "Minthollow",
+          "c": "vocabulary"
+        },
+        {
+          "s": 10,
+          "e": 10,
+          "r": ".",
+          "c": "punctuation"
+        }
+      ]
+    },
+    "rejection": "unsafeCategory (edit 1: vocabulary edit changes more than spelling)"
+  }
+]

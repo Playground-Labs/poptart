@@ -1,0 +1,23 @@
+{
+  "releaseQualified": false,
+  "trainingExitCode": 0,
+  "nativeEvaluationProcessExitCodes": [
+    0,
+    0,
+    0
+  ],
+  "nativeRecordsPerRun": 55,
+  "frozenInputHashesMatch": true,
+  "tokenizerAndLicenseHashesMatch": true,
+  "selectedAdditionalSteps": 0,
+  "freshEvaluationUsed": false,
+  "broader79CaseEvaluationUsed": false,
+  "rehearsalRowsWithCategory": {
+    "capitalization": 22,
+    "punctuation": 29,
+    "filler": 6,
+    "repetition": 7,
+    "vocabulary": 3
+  },
+  "decision": "Reject both new checkpoints; retain baseline. No new adversarial run because no candidate passed validation."
+}

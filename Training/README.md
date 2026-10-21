@@ -282,3 +282,11 @@ existing 38/47 exact validation outputs, with four improvements and four
 regressions. The predeclared tie-break retains the existing experimental model;
 no additional evaluation or release promotion was warranted. See the
 [full-pass report](runs/2026-10-18-full-epoch/README.md).
+
+## Targeted trailing-filler continuation
+
+An 80-step continuation with paired trailing-filler examples improved fresh
+validation from 4/8 to 8/8, but reduced existing validation from 38/47 to 36/47.
+Both checkpoints failed the predeclared retention criterion and were rejected.
+The prior model remains selected. [The report](runs/2026-10-20-targeted-filler/README.md)
+records the failure analysis, isolated data, regression review, and unused evaluation set.

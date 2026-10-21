@@ -1,0 +1,10 @@
+{
+  "train": {
+    "count": 80,
+    "maxTokens": 396
+  },
+  "valid": {
+    "count": 55,
+    "maxTokens": 408
+  }
+}
