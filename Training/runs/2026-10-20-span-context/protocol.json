@@ -1,0 +1,18 @@
+{
+  "releaseQualified": false,
+  "model": ".context/cleanup-balanced/step-80/candidate-4bit",
+  "purpose": "diagnostic only; no training or model promotion",
+  "arms": [
+    "baseline",
+    "boundary",
+    "context"
+  ],
+  "cases": 24,
+  "hypotheses": [
+    "Explicit exclusive-end/terminal-boundary instructions reduce off-by-one errors.",
+    "A learned index6 bias persists despite instructions and varies with sentence length.",
+    "Explicit cursor-context instructions reduce inappropriate capitalization."
+  ],
+  "selection": "A suffix is promising only with higher total exact, zero baseline-correct regressions, and improvement in its targeted group. No production change or combined suffix from this small diagnostic; broader qualification requires a separate frozen protocol.",
+  "stop": "One pass per arm; no prompt revisions after results."
+}

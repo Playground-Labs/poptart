@@ -1,0 +1,89 @@
+Building for debugging...
+[Computing dependencies]
+[Provisioning 2 / 40]
+warning: missing creator for mutated node: ('/Users/brandonwilcox/conductor/workspaces/poptart/accra/Packages/Cleanup/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+Build complete! (0.66 sec)
+diagnostic-00: cleaned, 623 ms
+diagnostic-01: cleaned, 873 ms
+diagnostic-02: cleaned, 668 ms
+diagnostic-03: cleaned, 941 ms
+diagnostic-04: cleaned, 766 ms
+diagnostic-05: cleaned, 1082 ms
+diagnostic-06: fallback, 1074 ms
+diagnostic-07: cleaned, 1384 ms
+diagnostic-08: cleaned, 1467 ms
+diagnostic-09: fallback, 1043 ms
+diagnostic-10: cleaned, 1085 ms
+diagnostic-11: cleaned, 1475 ms
+diagnostic-12: cleaned, 1076 ms
+diagnostic-13: cleaned, 1431 ms
+diagnostic-14: cleaned, 1158 ms
+diagnostic-15: cleaned, 1206 ms
+diagnostic-16: cleaned, 1176 ms
+diagnostic-17: cleaned, 1184 ms
+diagnostic-18: cleaned, 1174 ms
+diagnostic-19: cleaned, 1208 ms
+diagnostic-20: cleaned, 1222 ms
+diagnostic-21: cleaned, 1190 ms
+diagnostic-22: cleaned, 1168 ms
+diagnostic-23: cleaned, 1175 ms
+Swift Cleanup evaluation wrote 24 records; releaseQualified=false
+Building for debugging...
+[Computing dependencies]
+warning: missing creator for mutated node: ('/Users/brandonwilcox/conductor/workspaces/poptart/accra/Packages/Cleanup/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+Build complete! (0.67 sec)
+diagnostic-00: cleaned, 673 ms
+diagnostic-01: cleaned, 943 ms
+diagnostic-02: cleaned, 731 ms
+diagnostic-03: cleaned, 1025 ms
+diagnostic-04: cleaned, 787 ms
+diagnostic-05: cleaned, 1149 ms
+diagnostic-06: fallback, 1114 ms
+diagnostic-07: cleaned, 1452 ms
+diagnostic-08: cleaned, 1504 ms
+diagnostic-09: fallback, 1108 ms
+diagnostic-10: cleaned, 1129 ms
+diagnostic-11: cleaned, 1505 ms
+diagnostic-12: cleaned, 1199 ms
+diagnostic-13: cleaned, 1497 ms
+diagnostic-14: cleaned, 1193 ms
+diagnostic-15: cleaned, 1199 ms
+diagnostic-16: cleaned, 1211 ms
+diagnostic-17: cleaned, 1215 ms
+diagnostic-18: cleaned, 1221 ms
+diagnostic-19: cleaned, 1226 ms
+diagnostic-20: cleaned, 1235 ms
+diagnostic-21: cleaned, 1195 ms
+diagnostic-22: cleaned, 1395 ms
+diagnostic-23: cleaned, 1274 ms
+Swift Cleanup evaluation wrote 24 records; releaseQualified=false
+Building for debugging...
+[Computing dependencies]
+[1 / 1]
+warning: missing creator for mutated node: ('/Users/brandonwilcox/conductor/workspaces/poptart/accra/Packages/Cleanup/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+Build complete! (0.83 sec)
+diagnostic-00: fallback, 2450 ms
+diagnostic-01: cleaned, 937 ms
+diagnostic-02: cleaned, 703 ms
+diagnostic-03: cleaned, 1076 ms
+diagnostic-04: cleaned, 860 ms
+diagnostic-05: cleaned, 1167 ms
+diagnostic-06: fallback, 1054 ms
+diagnostic-07: cleaned, 1423 ms
+diagnostic-08: cleaned, 1433 ms
+diagnostic-09: fallback, 1091 ms
+diagnostic-10: cleaned, 1100 ms
+diagnostic-11: cleaned, 1466 ms
+diagnostic-12: cleaned, 1124 ms
+diagnostic-13: cleaned, 1473 ms
+diagnostic-14: cleaned, 1164 ms
+diagnostic-15: cleaned, 1150 ms
+diagnostic-16: cleaned, 1150 ms
+diagnostic-17: cleaned, 1154 ms
+diagnostic-18: cleaned, 1167 ms
+diagnostic-19: cleaned, 1212 ms
+diagnostic-20: cleaned, 1181 ms
+diagnostic-21: cleaned, 1197 ms
+diagnostic-22: cleaned, 1174 ms
+diagnostic-23: cleaned, 1201 ms
+Swift Cleanup evaluation wrote 24 records; releaseQualified=false

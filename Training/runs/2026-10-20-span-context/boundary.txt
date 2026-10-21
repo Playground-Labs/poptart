@@ -1,0 +1,1 @@
+ Span s is inclusive and e is exclusive. A single-span deletion uses e=s+1. For N spans indexed 0 through N-1, terminal punctuation must be inserted at s=N,e=N, after the last span, never at N-1.

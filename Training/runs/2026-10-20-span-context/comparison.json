@@ -1,0 +1,199 @@
+{
+  "baseline": {
+    "releaseQualified": false,
+    "groups": {
+      "statement": {
+        "count": 6,
+        "baseline": {
+          "exactOutput": 5
+        },
+        "candidate": {
+          "exactOutput": 5
+        },
+        "regressed": [],
+        "improved": []
+      },
+      "filler": {
+        "count": 4,
+        "baseline": {
+          "exactOutput": 2
+        },
+        "candidate": {
+          "exactOutput": 2
+        },
+        "regressed": [],
+        "improved": []
+      },
+      "repetition": {
+        "count": 4,
+        "baseline": {
+          "exactOutput": 4
+        },
+        "candidate": {
+          "exactOutput": 4
+        },
+        "regressed": [],
+        "improved": []
+      },
+      "context-mid": {
+        "count": 5,
+        "baseline": {
+          "exactOutput": 0
+        },
+        "candidate": {
+          "exactOutput": 0
+        },
+        "regressed": [],
+        "improved": []
+      },
+      "context-new": {
+        "count": 5,
+        "baseline": {
+          "exactOutput": 5
+        },
+        "candidate": {
+          "exactOutput": 5
+        },
+        "regressed": [],
+        "improved": []
+      }
+    },
+    "totalExact": 16,
+    "regressions": [],
+    "promising": false
+  },
+  "boundary": {
+    "releaseQualified": false,
+    "groups": {
+      "statement": {
+        "count": 6,
+        "baseline": {
+          "exactOutput": 5
+        },
+        "candidate": {
+          "exactOutput": 4
+        },
+        "regressed": [
+          "diagnostic-00"
+        ],
+        "improved": []
+      },
+      "filler": {
+        "count": 4,
+        "baseline": {
+          "exactOutput": 2
+        },
+        "candidate": {
+          "exactOutput": 2
+        },
+        "regressed": [],
+        "improved": []
+      },
+      "repetition": {
+        "count": 4,
+        "baseline": {
+          "exactOutput": 4
+        },
+        "candidate": {
+          "exactOutput": 4
+        },
+        "regressed": [],
+        "improved": []
+      },
+      "context-mid": {
+        "count": 5,
+        "baseline": {
+          "exactOutput": 0
+        },
+        "candidate": {
+          "exactOutput": 0
+        },
+        "regressed": [],
+        "improved": []
+      },
+      "context-new": {
+        "count": 5,
+        "baseline": {
+          "exactOutput": 5
+        },
+        "candidate": {
+          "exactOutput": 5
+        },
+        "regressed": [],
+        "improved": []
+      }
+    },
+    "totalExact": 15,
+    "regressions": [
+      "diagnostic-00"
+    ],
+    "promising": false
+  },
+  "context": {
+    "releaseQualified": false,
+    "groups": {
+      "statement": {
+        "count": 6,
+        "baseline": {
+          "exactOutput": 5
+        },
+        "candidate": {
+          "exactOutput": 4
+        },
+        "regressed": [
+          "diagnostic-00"
+        ],
+        "improved": []
+      },
+      "filler": {
+        "count": 4,
+        "baseline": {
+          "exactOutput": 2
+        },
+        "candidate": {
+          "exactOutput": 2
+        },
+        "regressed": [],
+        "improved": []
+      },
+      "repetition": {
+        "count": 4,
+        "baseline": {
+          "exactOutput": 4
+        },
+        "candidate": {
+          "exactOutput": 4
+        },
+        "regressed": [],
+        "improved": []
+      },
+      "context-mid": {
+        "count": 5,
+        "baseline": {
+          "exactOutput": 0
+        },
+        "candidate": {
+          "exactOutput": 0
+        },
+        "regressed": [],
+        "improved": []
+      },
+      "context-new": {
+        "count": 5,
+        "baseline": {
+          "exactOutput": 5
+        },
+        "candidate": {
+          "exactOutput": 5
+        },
+        "regressed": [],
+        "improved": []
+      }
+    },
+    "totalExact": 15,
+    "regressions": [
+      "diagnostic-00"
+    ],
+    "promising": false
+  }
+}

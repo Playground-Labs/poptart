@@ -1,0 +1,17 @@
+{
+  "releaseQualified": false,
+  "decision": "reject both system suffixes",
+  "model": "rejected balanced step80; retained production candidate unchanged",
+  "nativeExitCode": 0,
+  "arms": 3,
+  "recordsPerArm": 24,
+  "defaultCompatibilityCases": 4,
+  "defaultCompatibilityExact": true,
+  "allContextPayloadsVerified": true,
+  "inputHashesVerified": true,
+  "cleanupTests": 23,
+  "rootIntegrationTests": 87,
+  "pythonToolingTests": 26,
+  "scorerControls": "positive improvement, regression rejection, missing-prediction rejection passed",
+  "review": "All 72 generated plans/outputs inspected; both variants regress diagnostic00; all five context pairs identical outputs in all arms."
+}

@@ -1,0 +1,11 @@
+{
+  "boundary.txt": "7bcba267f74b179f683a727ea8f356d180cf5b27d08300b055cb68adfeac7a3c",
+  "replay.py": "437b8b02bdb1e977f1e53d4c7bc36da0ccb405ba6391ddc6a33c1ee3d35c5731",
+  "protocol.json": "1fcfd62eef6cc34c6dc9aa79ebbc2acd07872f85451d26ae85c119c9fa60a79e",
+  "context.txt": "3e391f0f0748aebc949c06d6a547a06f0bf50d51e3b34778b535d429e7b90aed",
+  "prepare.py": "fd67da5a842c20acd9ca27e66bf49f00bb2c5bee52e19d25f9e1d3703ee8ba9a",
+  "fixtures.jsonl": "27b47aacd171b2c6c5c4badc43ca321568075ea72992edcc6f2bce49d1a0f659",
+  "score.py": "b547f7a39ab95ad179d5691ad06ab63cce9996c4d385905df87afc298de61af6",
+  "test_score.py": "1f221c9f368d28d526721ea112eb5beafec7a497409ef4fdcfbdcdd7b430160f",
+  "evaluate.sh": "71b6adde2797f407eb2020f18d58ffe657f5cc47e9ab6a0293292d5098124df6"
+}
