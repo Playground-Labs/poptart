@@ -1,0 +1,12 @@
+{
+  "train": {
+    "count": 100,
+    "max": 480,
+    "total": 41314
+  },
+  "valid": {
+    "count": 67,
+    "max": 481,
+    "total": 27544
+  }
+}

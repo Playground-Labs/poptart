@@ -1,0 +1,9 @@
+{
+  "train.sh": "8da68d07d008b931bc999f258dd37047c4255ba0cbee194a7dbb7fb9cb2f2219",
+  "evaluate.py": "3bfe175a99c224a60c8bdd7047ab8bda8039e43b84c3dd33b0cf0fe3ad7a2000",
+  "score.py": "0279638d254e04f8c1697077b10b4c22c3574aefdbe45625b092aeb1e2ecb114",
+  "test_score.py": "88d055f2d3ee60aa478a3c908a6952497bc4669b04d58020de5d82d501b1cfd3",
+  "export_evaluate.sh": "0d5bc05fa7aef3a4e1567e3f79adbd9f9b03811be0df1a64a275a6db1413b6fb",
+  "token-lengths.json": "1fc90b8108bdb3cb49aa11d5145cfe5038af052f1c4639a4a48c9c4a5d58aa51",
+  "environment.json": "5d0fa9d29510ef2de3b9b1496aff176281502597dd6e29ea641fe89ec3a5c18f"
+}

@@ -1,0 +1,240 @@
+{
+  "releaseQualified": false,
+  "arms": {
+    "retainedBaseline": {
+      "exact": 61,
+      "outcomes": {
+        "cleaned": 79,
+        "fallback": 12
+      },
+      "compiledPlans": 0,
+      "operationsInCompiledPlans": {},
+      "editCategoriesInCompiledPlans": {},
+      "rejections": {
+        "unsafeCategory (edit 1 changes nothing)": 5,
+        "unsafeCategory (edit 1: punctuation edit touches non-punctuation)": 3,
+        "unsafeCategory (edit 1: vocabulary edit changes more than spelling)": 1,
+        "unsafeCategory (edit 0 changes nothing)": 2,
+        "unsafeCategory (edit 1: vocabulary edit does not name a known term)": 1
+      }
+    },
+    "range": {
+      "exact": 71,
+      "outcomes": {
+        "cleaned": 81,
+        "fallback": 10
+      },
+      "compiledPlans": 0,
+      "operationsInCompiledPlans": {},
+      "editCategoriesInCompiledPlans": {},
+      "rejections": {
+        "unsafeCategory (edit 1: punctuation edit touches non-punctuation)": 2,
+        "unsafeCategory (edit 0: filler edit removes non-filler)": 1,
+        "unsafeCategory (edit 1: repetition edit is not a single deleted word)": 1,
+        "unsafeCategory (edit 0 changes nothing)": 3,
+        "unsafeCategory (edit 1: filler edit removes non-filler)": 1,
+        "unsafeCategory (edit 0: punctuation edit touches non-punctuation)": 1,
+        "unsafeCategory (edit 1: repetition edit has no adjacent duplicate)": 1
+      }
+    },
+    "uniform": {
+      "exact": 49,
+      "outcomes": {
+        "cleaned": 74,
+        "fallback": 17
+      },
+      "compiledPlans": 85,
+      "operationsInCompiledPlans": {
+        "edit": 53,
+        "end": 82,
+        "delete": 18
+      },
+      "editCategoriesInCompiledPlans": {
+        "capitalization": 41,
+        "filler": 6,
+        "vocabulary": 4,
+        "repetition": 2
+      },
+      "rejections": {
+        "unsafeCategory (edit 1: repetition edit has no adjacent duplicate)": 2,
+        "unsafeCategory (edit 0 changes nothing)": 5,
+        "unsafeCategory (edit 0: filler edit removes non-filler)": 1,
+        "invalid edit operation keys": 1,
+        "unsafeCategory (edit 1: vocabulary edit changes more than spelling)": 1,
+        "duplicate JSON key": 5,
+        "unsafeCategory (edit 0: repetition edit is not a single deleted word)": 2
+      }
+    },
+    "uniform-fp": {
+      "exact": 53,
+      "outcomes": {
+        "cleaned": 79,
+        "fallback": 12
+      },
+      "compiledPlans": 85,
+      "operationsInCompiledPlans": {
+        "end": 82,
+        "edit": 51,
+        "delete": 17
+      },
+      "editCategoriesInCompiledPlans": {
+        "capitalization": 36,
+        "filler": 8,
+        "vocabulary": 5,
+        "repetition": 2
+      },
+      "rejections": {
+        "unsafeCategory (edit 1: repetition edit has no adjacent duplicate)": 3,
+        "invalid edit operation keys": 4,
+        "duplicate JSON key": 1,
+        "unsafeCategory (edit 0 changes nothing)": 1,
+        "invalid single-token deletion": 1,
+        "unsafeCategory (edit 0: repetition edit is not a single deleted word)": 2
+      }
+    }
+  },
+  "quantizationComparison": {
+    "changedOutputOrOutcome": [
+      {
+        "id": "valid-001",
+        "raw": "we tested it, the results look right",
+        "expected": "We tested it. The results look right.",
+        "fourBit": "We tested it, the results look right.",
+        "fullPrecision": "we tested it, the results look right.",
+        "fourBitOutcome": "cleaned",
+        "fullPrecisionOutcome": "cleaned"
+      },
+      {
+        "id": "round2-statement-012",
+        "raw": "she knows why the alarm sounded last night",
+        "expected": "She knows why the alarm sounded last night.",
+        "fourBit": "She knows why the alarm sounded last night.",
+        "fullPrecision": "she knows why the alarm sounded last night.",
+        "fourBitOutcome": "cleaned",
+        "fullPrecisionOutcome": "cleaned"
+      },
+      {
+        "id": "round3-filler-012",
+        "raw": "uh arrange the spare stools around the stage",
+        "expected": "Arrange the spare stools around the stage.",
+        "fourBit": "uh arrange the spare stools around the stage",
+        "fullPrecision": "arrange the spare stools around the stage.",
+        "fourBitOutcome": "fallback",
+        "fullPrecisionOutcome": "cleaned"
+      },
+      {
+        "id": "round3-unchanged_capital-011",
+        "raw": "I carried the groceries through the back entrance",
+        "expected": "I carried the groceries through the back entrance.",
+        "fourBit": "I carried the groceries through the back entrance",
+        "fullPrecision": "I carried the groceries through the back entrance.",
+        "fourBitOutcome": "fallback",
+        "fullPrecisionOutcome": "cleaned"
+      },
+      {
+        "id": "round3-command-011",
+        "raw": "lock the garden shed uh",
+        "expected": "Lock the garden shed.",
+        "fourBit": "lock the garden shed uh",
+        "fullPrecision": "Lock the garden shed.",
+        "fourBitOutcome": "fallback",
+        "fullPrecisionOutcome": "cleaned"
+      },
+      {
+        "id": "round3-vocabulary-011",
+        "raw": "please add the oak ribbon schedule to the agenda for our meeting",
+        "expected": "Please add the Oakribbon schedule to the agenda for our meeting.",
+        "fourBit": "Please add the oak ribbon schedule to the agenda for our meeting.",
+        "fullPrecision": "Please add the Oakribbon schedule to the agenda for our meeting.",
+        "fourBitOutcome": "cleaned",
+        "fullPrecisionOutcome": "cleaned"
+      },
+      {
+        "id": "round8-statement-012",
+        "raw": "we reserved the smallest cabin overlooking the valley",
+        "expected": "We reserved the smallest cabin overlooking the valley.",
+        "fourBit": "We reserved the smallest cabin overlooking the valley.",
+        "fullPrecision": "we reserved the smallest cabin overlooking the valley.",
+        "fourBitOutcome": "cleaned",
+        "fullPrecisionOutcome": "cleaned"
+      },
+      {
+        "id": "round8-capital-012",
+        "raw": "We reserved the smallest cabin overlooking the valley",
+        "expected": "We reserved the smallest cabin overlooking the valley.",
+        "fourBit": "We reserved the smallest cabin overlooking the valley",
+        "fullPrecision": "We reserved the smallest cabin overlooking the valley.",
+        "fourBitOutcome": "fallback",
+        "fullPrecisionOutcome": "cleaned"
+      },
+      {
+        "id": "round8-leading_uh-012",
+        "raw": "uh we reserved the smallest cabin overlooking the valley",
+        "expected": "We reserved the smallest cabin overlooking the valley.",
+        "fourBit": "uh we reserved the smallest cabin overlooking the valley",
+        "fullPrecision": "we reserved the smallest cabin overlooking the valley.",
+        "fourBitOutcome": "fallback",
+        "fullPrecisionOutcome": "cleaned"
+      },
+      {
+        "id": "round8-vocabulary-011",
+        "raw": "send the mint hollow proposal to the review committee tomorrow",
+        "expected": "Send the Minthollow proposal to the review committee tomorrow.",
+        "fourBit": "send the mint hollow proposal to the review committee tomorrow",
+        "fullPrecision": "Send the Minthollow proposal to the review committee tomorrow.",
+        "fourBitOutcome": "fallback",
+        "fullPrecisionOutcome": "cleaned"
+      },
+      {
+        "id": "targeted-valid-01-plain",
+        "raw": "I stored the spare hinges in a biscuit tin",
+        "expected": "I stored the spare hinges in a biscuit tin.",
+        "fourBit": "I stored the spare hinges in a biscuit tin",
+        "fullPrecision": "I stored the spare hinges in a biscuit tin.",
+        "fourBitOutcome": "fallback",
+        "fullPrecisionOutcome": "cleaned"
+      },
+      {
+        "id": "targeted-valid-02-filler",
+        "raw": "please rinse the measuring jug with warm water um",
+        "expected": "Please rinse the measuring jug with warm water.",
+        "fourBit": "please rinse the measuring jug with warm water.",
+        "fullPrecision": "Please rinse the measuring jug with warm water.",
+        "fourBitOutcome": "cleaned",
+        "fullPrecisionOutcome": "cleaned"
+      },
+      {
+        "id": "diagnostic-07",
+        "raw": "please stack the clean plates uh",
+        "expected": "Please stack the clean plates.",
+        "fourBit": "Please stack the clean plates.",
+        "fullPrecision": "please stack the clean plates uh",
+        "fourBitOutcome": "cleaned",
+        "fullPrecisionOutcome": "fallback"
+      },
+      {
+        "id": "diagnostic-11",
+        "raw": "we put the spare spare key upstairs",
+        "expected": "We put the spare key upstairs.",
+        "fourBit": "We put the spare spare key upstairs.",
+        "fullPrecision": "we put the spare spare key upstairs",
+        "fourBitOutcome": "cleaned",
+        "fullPrecisionOutcome": "fallback"
+      }
+    ],
+    "fullPrecisionOnlyCorrect": [
+      "round3-unchanged_capital-011",
+      "round3-command-011",
+      "round3-vocabulary-011",
+      "round8-capital-012",
+      "round8-vocabulary-011",
+      "targeted-valid-01-plain",
+      "targeted-valid-02-filler"
+    ],
+    "fourBitOnlyCorrect": [
+      "round2-statement-012",
+      "round8-statement-012",
+      "diagnostic-07"
+    ]
+  }
+}

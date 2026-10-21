@@ -1,0 +1,9 @@
+{
+  "releaseQualified": false,
+  "timing": "Added during training, before any uniform inference results. Original selection protocol unchanged.",
+  "purpose": "Separate quantization damage from adaptation failure on the same final checkpoint.",
+  "arm": "uniform-fp",
+  "model": ".context/cleanup-uniform/fused",
+  "evaluation": "Same91 cases, prompt, greedy decoder and128 output tokens. Full precision is diagnostic only and cannot satisfy the4bit requirement.",
+  "decision": "Compare emitted operations, exact outputs and regressions with4bit output; do not select full precision or change the4bit eligibility gate."
+}

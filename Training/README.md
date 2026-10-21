@@ -304,3 +304,9 @@ roundtrip and fail-closed tests in `Training/test_typed_operations.py`. Its v2
 format is not accepted by the app. The [matched comparison](runs/2026-10-20-typed-operations/README.md)
 rejected the trained prototype; do not install those weights as a production
 Cleanup artifact. The retained model and runtime v1 format remain unchanged.
+
+The [uniform-discriminator follow-up](runs/2026-10-20-uniform-operations/README.md)
+restored range-operation coverage but also failed retention: 49/91 exact after
+4-bit export and 53/91 in the full-precision diagnostic, versus 61/91 retained.
+Short schema-migration continuations stop here; a full-task training protocol
+and untouched evaluation data are needed before further training.

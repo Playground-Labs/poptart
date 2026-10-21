@@ -1,0 +1,19 @@
+{
+  "/Users/brandonwilcox/conductor/workspaces/poptart/accra/Training/runs/2026-10-20-uniform-operations/retainedBaseline-predictions.jsonl": "62419e6b5eea7a35501e288980704493d9b92a812cd0bb11bb7c16ccef877dc4",
+  "/Users/brandonwilcox/conductor/workspaces/poptart/accra/Training/runs/2026-10-20-uniform-operations/range-predictions.jsonl": "2a01c06f489cf55cd8dfd55c4dc53d24f8c1927bb0b571547461f4090a3e3b25",
+  "/Users/brandonwilcox/conductor/workspaces/poptart/accra/Training/runs/2026-10-20-uniform-operations/training-config.yaml": "9c9ca75e0fa429a7438e55c60f68af56882d52b80b9283ad90f6e8266ff4cd8a",
+  "/Users/brandonwilcox/conductor/workspaces/poptart/accra/Training/runs/2026-10-20-uniform-operations/training.jsonl": "4260cde932237ba9132e4756e50756b646c514b739c53e8498e029b5a8043f09",
+  "/Users/brandonwilcox/conductor/workspaces/poptart/accra/Training/runs/2026-10-20-uniform-operations/validation.jsonl": "9c804c6812001fd2a2f4b892e52f60dc97954429500d628528bdea4fa1f5a8fe",
+  "/Users/brandonwilcox/conductor/workspaces/poptart/accra/Training/runs/2026-10-20-uniform-operations/evaluation.jsonl": "9752c29dffdfe31a3b850f16cf9143ba661eefe71d7e440ad832b195b7fc7bfe",
+  "/Users/brandonwilcox/conductor/workspaces/poptart/accra/Training/runs/2026-10-20-uniform-operations/protocol.json": "f31d5919a1f845c08c761477ceef4781b433a7bcf6edb1123f85d9e4f02e9db3",
+  "/Users/brandonwilcox/conductor/workspaces/poptart/accra/Training/runs/2026-10-20-uniform-operations/prepare.py": "ec4f2305782bbfdd565b332c822a8dec554983a90ecb5428edd276932a1330ac",
+  "Training/uniform_operations.py": "225317b4576d7cd9c53ed0694c1c935b6b76be8e3cb2d3d230bbc7097aa536b7",
+  "Training/test_uniform_operations.py": "b7f300e02b6959923a1b3be740128e71b1e96f6226ec5beaf177b57820ca5824",
+  "Training/typed_operations.py": "20047faedd2f511459edb37e0103e646a693a39f514db7ff0f33830220a575fa",
+  "Training/prepare_corpus.py": "36af2648b60d745d07555ac41716c08ba4b5575222ee9d59f9c373dadcde49e6",
+  "Training/evaluate_candidate.py": "98565fe5fb1092ff8c4cc2d0cea2c508f945303c7b3d958ff6a4aa9d66638c04",
+  "Evals/editplan.py": "4c1488a09124605e9ad39f77876eaf3f35e1be9d357753bfedb8625778f73cf2",
+  ".context/cleanup-round8/adapters/0000200_adapters.safetensors": "f75d163a8da01e2a6f54064e3fc51bd6c0399e0fdc62c5896dfc6dc5b593f849",
+  ".context/cleanup-uniform/mlx/train.jsonl": "cc54388230d638d3e2d9f72e0f16fa2c0e9c7d2476364a2c6b164209e280ed03",
+  ".context/cleanup-uniform/mlx/valid.jsonl": "4b7c4706193e5c4fc164a49660a70523b33856c56968fd029649e82ecb593209"
+}

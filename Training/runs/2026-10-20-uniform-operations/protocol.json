@@ -1,0 +1,18 @@
+{
+  "releaseQualified": false,
+  "purpose": "One-variable follow-up to hybrid schema operation collapse; every operation now begins with o. No extra data or steps.",
+  "startingAdapter": ".context/cleanup-round8/adapters/0000200_adapters.safetensors",
+  "trainingRows": 100,
+  "lossValidationRows": 67,
+  "evaluationRows": 91,
+  "steps": 100,
+  "learningRate": 1e-05,
+  "seed": 20260824,
+  "checkpointsEvaluated": [
+    100
+  ],
+  "cachedControls": "Exact retainedBaseline/range prediction bytes from 2026-10-20-typed-operations; matched data, adapter, optimizer and runtime. Hybrid29/91 is descriptive reference only.",
+  "selection": "Uniform must improve total exact over BOTH retained and range controls, preserve all correct outputs from each, and improve at least one punctuation/filler/context group over both. Otherwise reject.",
+  "conditionalGate": "If eligible, paired historical79+fresh16 and native compiler parity before any promotion. No app schema change here.",
+  "stop": "One100-step run. No post-result schema/prompt/data/budget revisions. If discriminator change fails, stop short schema-migration continuations and reassess full-task training."
+}

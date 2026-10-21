@@ -1,0 +1,205 @@
+{
+  "releaseQualified": false,
+  "scope": "Python feasibility; native parity and broad safety required before promotion",
+  "arms": {
+    "retainedBaseline": {
+      "totalExact": 61,
+      "groups": {
+        "diagnostic-context-mid": {
+          "count": 5,
+          "exact": 0
+        },
+        "diagnostic-context-new": {
+          "count": 5,
+          "exact": 5
+        },
+        "diagnostic-filler": {
+          "count": 4,
+          "exact": 0
+        },
+        "diagnostic-repetition": {
+          "count": 4,
+          "exact": 2
+        },
+        "diagnostic-statement": {
+          "count": 6,
+          "exact": 6
+        },
+        "existingValidation": {
+          "count": 55,
+          "exact": 42
+        },
+        "newContext": {
+          "count": 12,
+          "exact": 6
+        }
+      }
+    },
+    "range": {
+      "totalExact": 71,
+      "groups": {
+        "diagnostic-context-mid": {
+          "count": 5,
+          "exact": 5
+        },
+        "diagnostic-context-new": {
+          "count": 5,
+          "exact": 0
+        },
+        "diagnostic-filler": {
+          "count": 4,
+          "exact": 2
+        },
+        "diagnostic-repetition": {
+          "count": 4,
+          "exact": 3
+        },
+        "diagnostic-statement": {
+          "count": 6,
+          "exact": 5
+        },
+        "existingValidation": {
+          "count": 55,
+          "exact": 44
+        },
+        "newContext": {
+          "count": 12,
+          "exact": 12
+        }
+      }
+    },
+    "uniform": {
+      "totalExact": 49,
+      "groups": {
+        "diagnostic-context-mid": {
+          "count": 5,
+          "exact": 5
+        },
+        "diagnostic-context-new": {
+          "count": 5,
+          "exact": 0
+        },
+        "diagnostic-filler": {
+          "count": 4,
+          "exact": 2
+        },
+        "diagnostic-repetition": {
+          "count": 4,
+          "exact": 1
+        },
+        "diagnostic-statement": {
+          "count": 6,
+          "exact": 3
+        },
+        "existingValidation": {
+          "count": 55,
+          "exact": 32
+        },
+        "newContext": {
+          "count": 12,
+          "exact": 6
+        }
+      }
+    }
+  },
+  "uniformComparedWith": {
+    "retainedBaseline": {
+      "regressions": [
+        "candidate-question-011",
+        "candidate-filler-011",
+        "round2-question-011",
+        "round3-filler-011",
+        "round3-filler-012",
+        "round3-unchanged_capital-011",
+        "round3-vocabulary-011",
+        "round8-leading_um-011",
+        "round8-leading_uh-011",
+        "round8-repetition-011",
+        "round8-new_sentence-011",
+        "round8-capital-012",
+        "round8-leading_um-012",
+        "round8-leading_uh-012",
+        "round8-new_sentence-012",
+        "targeted-valid-01-plain",
+        "typed-context-valid-00-1",
+        "typed-context-valid-01-1",
+        "typed-context-valid-02-1",
+        "typed-context-valid-03-1",
+        "typed-context-valid-04-1",
+        "typed-context-valid-05-1",
+        "diagnostic-00",
+        "diagnostic-02",
+        "diagnostic-04",
+        "diagnostic-11",
+        "diagnostic-15",
+        "diagnostic-17",
+        "diagnostic-19",
+        "diagnostic-21",
+        "diagnostic-23"
+      ],
+      "improvements": [
+        "round2-filler-011",
+        "round3-command-012",
+        "round8-trailing-011",
+        "round8-trailing-012",
+        "targeted-valid-00-filler",
+        "targeted-valid-03-filler",
+        "typed-context-valid-00-0",
+        "typed-context-valid-01-0",
+        "typed-context-valid-02-0",
+        "typed-context-valid-03-0",
+        "typed-context-valid-04-0",
+        "typed-context-valid-05-0",
+        "diagnostic-07",
+        "diagnostic-08",
+        "diagnostic-14",
+        "diagnostic-16",
+        "diagnostic-18",
+        "diagnostic-20",
+        "diagnostic-22"
+      ]
+    },
+    "range": {
+      "regressions": [
+        "candidate-question-011",
+        "candidate-repetition-011",
+        "round2-question-011",
+        "round3-filler-012",
+        "round3-unchanged_capital-011",
+        "round3-command-011",
+        "round3-vocabulary-011",
+        "round8-leading_um-011",
+        "round8-leading_uh-011",
+        "round8-repetition-011",
+        "round8-new_sentence-011",
+        "round8-leading_um-012",
+        "round8-leading_uh-012",
+        "round8-new_sentence-012",
+        "round8-vocabulary-011",
+        "targeted-valid-01-plain",
+        "targeted-valid-01-filler",
+        "targeted-valid-02-filler",
+        "typed-context-valid-00-1",
+        "typed-context-valid-01-1",
+        "typed-context-valid-02-1",
+        "typed-context-valid-03-1",
+        "typed-context-valid-04-1",
+        "typed-context-valid-05-1",
+        "diagnostic-00",
+        "diagnostic-04",
+        "diagnostic-10",
+        "diagnostic-12"
+      ],
+      "improvements": [
+        "candidate-context-011",
+        "round2-filler-011",
+        "round2-repetition-011",
+        "round8-capital-011",
+        "round8-continuation-011",
+        "targeted-valid-00-filler"
+      ]
+    }
+  },
+  "targetedGroupImprovementOverBoth": false,
+  "uniformEligibleForBroaderEvaluation": false
+}

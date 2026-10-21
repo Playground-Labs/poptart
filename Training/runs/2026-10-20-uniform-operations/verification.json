@@ -1,0 +1,22 @@
+{
+  "releaseQualified": false,
+  "compilerTestsAndTooling": 34,
+  "canonicalTargetRoundtrips": 317,
+  "matchedTargetRoundtrips": 167,
+  "cachedControlsByteIdentical": true,
+  "sameSourceOrderAndUserPayloads": true,
+  "resolvedConfigDifferences": [
+    "config",
+    "data",
+    "adapter_path"
+  ],
+  "scorerControls": "Improvement accepted; no improvement, regression and incomplete predictions rejected.",
+  "trainingExitCode": 0,
+  "exportAndFourBitEvaluationExitCode": 0,
+  "fullPrecisionEvaluationExitCode": 0,
+  "predictionsPerArm": 91,
+  "frozenHashLedgersVerified": true,
+  "exportAssetsMatchBase": true,
+  "selection": "rejected",
+  "broaderAndNativeGate": "not triggered: four-bit candidate ineligible"
+}
