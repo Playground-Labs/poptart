@@ -103,6 +103,49 @@ struct HistoryStoreTests {
     #expect(try await store.records().count == 1)
   }
 
+  @Test("Authenticated history rejects modified metadata and ciphertext", arguments: [false, true])
+  func rejectsTamperedHistory(modifyPayload: Bool) async throws {
+    let fixture = try Fixture()
+    let store = try HistoryStore(directory: fixture.directory, keyProvider: InMemoryKeyProvider())
+    let record = makeRecord(id: 6, createdAt: Date())
+    try await store.save(record)
+    let url = fixture.directory.appendingPathComponent("DictationRecords")
+      .appendingPathComponent(record.id.uuidString).appendingPathExtension("poptartrecord")
+    var stored = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+    if modifyPayload {
+      let encoded = try #require(stored["encryptedPayload"] as? String)
+      var payload = try #require(Data(base64Encoded: encoded))
+      payload[payload.count - 1] ^= 1
+      stored["encryptedPayload"] = payload.base64EncodedString()
+    } else {
+      var metadata = try #require(stored["metadata"] as? [String: Any])
+      metadata["outcome"] = DictationOutcome.cleaned.rawValue
+      stored["metadata"] = metadata
+    }
+    try JSONSerialization.data(withJSONObject: stored).write(to: url)
+
+    await #expect(throws: PersistenceError.unreadableProtectedData) {
+      _ = try await store.records()
+    }
+  }
+
+  @Test("Key deletion makes vocabulary unreadable and reset permits new vocabulary")
+  func vocabularyKeyLossAndReset() async throws {
+    let fixture = try Fixture()
+    let provider = InMemoryKeyProvider()
+    let store = try PersonalVocabularyStore(directory: fixture.directory, keyProvider: provider)
+    try await store.replaceTerms(["PrivateTerm"])
+    try provider.deleteKey()
+
+    await #expect(throws: PersistenceError.unreadableProtectedData) {
+      _ = try await store.terms()
+    }
+    try await store.resetProtectedData()
+    #expect(try await store.terms().isEmpty)
+    try await store.replaceTerms(["ReplacementTerm"])
+    #expect(try await store.terms() == ["ReplacementTerm"])
+  }
+
   @Test("Personal Vocabulary is encrypted and can be replaced or cleared")
   func encryptedVocabulary() async throws {
     let fixture = try Fixture()
