@@ -1,6 +1,6 @@
 # One controlled rehearsal experiment before changing the model approach
 
-Status: proposed, not trained. Issue #3. Keep the round-nine step-200 4-bit model until a replacement passes the gates below. This proposal changes only the selection of 32 rehearsal records; model, prompt, validator, 48 targeted records, training budget, and validation inputs stay fixed.
+Status: completed and rejected. [Results](../Training/runs/2026-10-20-balanced-rehearsal/README.md): step 80 passed validation (51/55) but lost six previously correct historical outputs. The one-run stop rule is now active. The original pre-run proposal follows. Issue #3. Keep the round-nine step-200 4-bit model until a replacement passes the gates below. This proposal changes only the selection of 32 rehearsal records; model, prompt, validator, 48 targeted records, training budget, and validation inputs stay fixed.
 
 ## What the evidence supports
 
@@ -101,4 +101,4 @@ Reuse the existing export/evaluation procedure with **new paths**; do not run th
 
 The fresh 16 were not inferred on in the rejected targeted run. The 55 validation and historical 79 cases are exposed development checks. If this one controlled run fails, stop repeating this recipe and use the resulting error categories to decide whether the edit-plan representation or adaptation strategy needs a separate bounded comparison. Do not automatically change ADR 0039 or migrate frameworks.
 
-Analysis only: no training, model inference, corpus mutation, or runtime change was performed for this proposal. The category selection was checked read-only; the preparation/training commands above have not been executed as an experiment.
+At proposal time, this was analysis only; no training, model inference, corpus mutation, or runtime change had been performed. The category selection was checked read-only; the commands were subsequently executed in the linked completed experiment.

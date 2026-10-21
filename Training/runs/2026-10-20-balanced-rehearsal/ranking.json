@@ -1,0 +1,35 @@
+{
+  "releaseQualified": false,
+  "candidates": [
+    {
+      "steps": 0,
+      "existingExact": 38,
+      "freshExact": 4,
+      "totalExact": 42,
+      "regressions": [],
+      "eligible": true
+    },
+    {
+      "steps": 40,
+      "existingExact": 37,
+      "freshExact": 6,
+      "totalExact": 43,
+      "regressions": [
+        "round2-filler-012",
+        "round3-vocabulary-011",
+        "round3-vocabulary-012",
+        "round8-repetition-012"
+      ],
+      "eligible": false
+    },
+    {
+      "steps": 80,
+      "existingExact": 44,
+      "freshExact": 7,
+      "totalExact": 51,
+      "regressions": [],
+      "eligible": true
+    }
+  ],
+  "selectedSteps": 80
+}

@@ -1,0 +1,13 @@
+{
+  "train": {
+    "count": 80,
+    "max": 407,
+    "min": 298
+  },
+  "valid": {
+    "count": 55,
+    "max": 408,
+    "min": 290
+  },
+  "verificationNote": "Initial check counted BatchEncoding keys (2), corrected during startup to return_dict=False; all actual sequences fit. Training inputs and selection protocol unchanged."
+}

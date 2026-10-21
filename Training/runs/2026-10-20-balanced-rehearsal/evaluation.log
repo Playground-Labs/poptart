@@ -1,0 +1,196 @@
+Building for debugging...
+[Computing dependencies]
+[1 / 1]
+[1 / 53] ComplexModule
+warning: missing creator for mutated node: ('/Users/brandonwilcox/conductor/workspaces/poptart/accra/Packages/Cleanup/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+Build complete! (0.98 sec)
+valid-001: cleaned, 983 ms
+valid-002: cleaned, 1015 ms
+candidate-period-011: cleaned, 977 ms
+candidate-question-011: cleaned, 1000 ms
+candidate-filler-011: cleaned, 1273 ms
+candidate-repetition-011: fallback, 1448 ms
+candidate-noop-011: cleaned, 435 ms
+candidate-context-011: cleaned, 711 ms
+candidate-vocabulary-007: cleaned, 1669 ms
+round2-statement-011: cleaned, 1181 ms
+round2-statement-012: cleaned, 1236 ms
+round2-question-011: cleaned, 1237 ms
+round2-question-012: cleaned, 1203 ms
+round2-filler-011: cleaned, 841 ms
+round2-filler-012: cleaned, 1678 ms
+round2-repetition-011: cleaned, 1620 ms
+round2-repetition-012: cleaned, 1628 ms
+round2-correction-011: cleaned, 1364 ms
+round2-correction-012: cleaned, 1391 ms
+round2-preserve-011: cleaned, 516 ms
+round2-preserve-012: cleaned, 458 ms
+round3-filler-011: cleaned, 1757 ms
+round3-filler-012: cleaned, 1832 ms
+round3-unchanged_capital-011: cleaned, 946 ms
+round3-unchanged_capital-012: cleaned, 935 ms
+round3-command-011: fallback, 1405 ms
+round3-command-012: fallback, 1410 ms
+round3-vocabulary-011: cleaned, 2082 ms
+round3-vocabulary-012: cleaned, 2044 ms
+round8-statement-011: cleaned, 1452 ms
+round8-capital-011: cleaned, 958 ms
+round8-leading_um-011: cleaned, 1880 ms
+round8-leading_uh-011: cleaned, 1887 ms
+round8-trailing-011: cleaned, 1433 ms
+round8-repetition-011: cleaned, 1870 ms
+round8-continuation-011: cleaned, 963 ms
+round8-new_sentence-011: cleaned, 1442 ms
+round8-statement-012: cleaned, 1484 ms
+round8-capital-012: cleaned, 982 ms
+round8-leading_um-012: cleaned, 1916 ms
+round8-leading_uh-012: cleaned, 1888 ms
+round8-trailing-012: fallback, 1433 ms
+round8-repetition-012: cleaned, 1930 ms
+round8-continuation-012: cleaned, 996 ms
+round8-new_sentence-012: cleaned, 1453 ms
+round8-vocabulary-011: fallback, 2284 ms
+round8-vocabulary-012: cleaned, 2193 ms
+targeted-valid-00-plain: cleaned, 1520 ms
+targeted-valid-00-filler: fallback, 1548 ms
+targeted-valid-01-plain: cleaned, 1010 ms
+targeted-valid-01-filler: fallback, 970 ms
+targeted-valid-02-plain: cleaned, 1501 ms
+targeted-valid-02-filler: fallback, 1535 ms
+targeted-valid-03-plain: cleaned, 1561 ms
+targeted-valid-03-filler: fallback, 1566 ms
+Swift Cleanup evaluation wrote 55 records; releaseQualified=false
+Loading pretrained model
+[INFO] Loading
+[INFO] Using dtype: bfloat16
+[INFO] Quantizing
+[INFO] Quantized model with 4.508 bits per weight.
+Building for debugging...
+[Computing dependencies]
+[1 / 1]
+warning: missing creator for mutated node: ('/Users/brandonwilcox/conductor/workspaces/poptart/accra/Packages/Cleanup/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+Build complete! (0.81 sec)
+valid-001: cleaned, 1007 ms
+valid-002: cleaned, 999 ms
+candidate-period-011: cleaned, 978 ms
+candidate-question-011: cleaned, 996 ms
+candidate-filler-011: cleaned, 1278 ms
+candidate-repetition-011: fallback, 1345 ms
+candidate-noop-011: cleaned, 434 ms
+candidate-context-011: cleaned, 714 ms
+candidate-vocabulary-007: cleaned, 1669 ms
+round2-statement-011: cleaned, 1194 ms
+round2-statement-012: cleaned, 1230 ms
+round2-question-011: cleaned, 1234 ms
+round2-question-012: cleaned, 1207 ms
+round2-filler-011: cleaned, 837 ms
+round2-filler-012: cleaned, 1271 ms
+round2-repetition-011: cleaned, 1623 ms
+round2-repetition-012: cleaned, 1636 ms
+round2-correction-011: cleaned, 1383 ms
+round2-correction-012: cleaned, 1387 ms
+round2-preserve-011: cleaned, 510 ms
+round2-preserve-012: cleaned, 455 ms
+round3-filler-011: cleaned, 1748 ms
+round3-filler-012: cleaned, 1788 ms
+round3-unchanged_capital-011: cleaned, 909 ms
+round3-unchanged_capital-012: cleaned, 921 ms
+round3-command-011: cleaned, 1828 ms
+round3-command-012: cleaned, 1865 ms
+round3-vocabulary-011: cleaned, 1530 ms
+round3-vocabulary-012: fallback, 1538 ms
+round8-statement-011: cleaned, 1472 ms
+round8-capital-011: cleaned, 959 ms
+round8-leading_um-011: cleaned, 1873 ms
+round8-leading_uh-011: cleaned, 1927 ms
+round8-trailing-011: fallback, 1460 ms
+round8-repetition-011: cleaned, 1889 ms
+round8-continuation-011: cleaned, 977 ms
+round8-new_sentence-011: cleaned, 1484 ms
+round8-statement-012: cleaned, 1475 ms
+round8-capital-012: cleaned, 1032 ms
+round8-leading_um-012: cleaned, 1917 ms
+round8-leading_uh-012: cleaned, 1884 ms
+round8-trailing-012: fallback, 1871 ms
+round8-repetition-012: fallback, 1912 ms
+round8-continuation-012: cleaned, 972 ms
+round8-new_sentence-012: cleaned, 1464 ms
+round8-vocabulary-011: cleaned, 2157 ms
+round8-vocabulary-012: cleaned, 2200 ms
+targeted-valid-00-plain: cleaned, 1502 ms
+targeted-valid-00-filler: cleaned, 2065 ms
+targeted-valid-01-plain: cleaned, 1010 ms
+targeted-valid-01-filler: fallback, 1504 ms
+targeted-valid-02-plain: cleaned, 1517 ms
+targeted-valid-02-filler: cleaned, 2068 ms
+targeted-valid-03-plain: cleaned, 1621 ms
+targeted-valid-03-filler: fallback, 2100 ms
+Swift Cleanup evaluation wrote 55 records; releaseQualified=false
+Loading pretrained model
+[INFO] Loading
+[INFO] Using dtype: bfloat16
+[INFO] Quantizing
+[INFO] Quantized model with 4.508 bits per weight.
+Building for debugging...
+[Computing dependencies]
+[Provisioning 2 / 40]
+[1 / 1]
+warning: missing creator for mutated node: ('/Users/brandonwilcox/conductor/workspaces/poptart/accra/Packages/Cleanup/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+Build complete! (0.67 sec)
+valid-001: cleaned, 1013 ms
+valid-002: cleaned, 982 ms
+candidate-period-011: cleaned, 986 ms
+candidate-question-011: cleaned, 999 ms
+candidate-filler-011: cleaned, 1295 ms
+candidate-repetition-011: cleaned, 1351 ms
+candidate-noop-011: cleaned, 427 ms
+candidate-context-011: cleaned, 716 ms
+candidate-vocabulary-007: cleaned, 1650 ms
+round2-statement-011: cleaned, 1190 ms
+round2-statement-012: cleaned, 1199 ms
+round2-question-011: cleaned, 1218 ms
+round2-question-012: cleaned, 1197 ms
+round2-filler-011: fallback, 1626 ms
+round2-filler-012: cleaned, 1624 ms
+round2-repetition-011: cleaned, 1616 ms
+round2-repetition-012: cleaned, 1680 ms
+round2-correction-011: cleaned, 1414 ms
+round2-correction-012: cleaned, 1358 ms
+round2-preserve-011: cleaned, 514 ms
+round2-preserve-012: cleaned, 474 ms
+round3-filler-011: cleaned, 1764 ms
+round3-filler-012: cleaned, 1760 ms
+round3-unchanged_capital-011: cleaned, 928 ms
+round3-unchanged_capital-012: cleaned, 942 ms
+round3-command-011: cleaned, 1825 ms
+round3-command-012: cleaned, 1822 ms
+round3-vocabulary-011: cleaned, 2028 ms
+round3-vocabulary-012: cleaned, 2106 ms
+round8-statement-011: cleaned, 1459 ms
+round8-capital-011: cleaned, 982 ms
+round8-leading_um-011: cleaned, 1904 ms
+round8-leading_uh-011: cleaned, 1899 ms
+round8-trailing-011: cleaned, 1976 ms
+round8-repetition-011: cleaned, 1922 ms
+round8-continuation-011: cleaned, 973 ms
+round8-new_sentence-011: cleaned, 1469 ms
+round8-statement-012: cleaned, 1445 ms
+round8-capital-012: cleaned, 968 ms
+round8-leading_um-012: cleaned, 1902 ms
+round8-leading_uh-012: cleaned, 1890 ms
+round8-trailing-012: cleaned, 1882 ms
+round8-repetition-012: cleaned, 2068 ms
+round8-continuation-012: cleaned, 1024 ms
+round8-new_sentence-012: cleaned, 1557 ms
+round8-vocabulary-011: cleaned, 2314 ms
+round8-vocabulary-012: cleaned, 2151 ms
+targeted-valid-00-plain: cleaned, 1514 ms
+targeted-valid-00-filler: cleaned, 2118 ms
+targeted-valid-01-plain: cleaned, 1120 ms
+targeted-valid-01-filler: fallback, 1506 ms
+targeted-valid-02-plain: cleaned, 1548 ms
+targeted-valid-02-filler: cleaned, 1963 ms
+targeted-valid-03-plain: cleaned, 1526 ms
+targeted-valid-03-filler: cleaned, 2022 ms
+Swift Cleanup evaluation wrote 55 records; releaseQualified=false
+{"releaseQualified": false, "candidates": [{"steps": 0, "existingExact": 38, "freshExact": 4, "totalExact": 42, "regressions": [], "eligible": true}, {"steps": 40, "existingExact": 37, "freshExact": 6, "totalExact": 43, "regressions": ["round2-filler-012", "round3-vocabulary-011", "round3-vocabulary-012", "round8-repetition-012"], "eligible": false}, {"steps": 80, "existingExact": 44, "freshExact": 7, "totalExact": 51, "regressions": [], "eligible": true}], "selectedSteps": 80}

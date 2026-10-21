@@ -1,0 +1,48 @@
+{
+  "vocabulary": [
+    "candidate-vocabulary-006",
+    "round8-vocabulary-004",
+    "round3-vocabulary-004",
+    "candidate-vocabulary-004",
+    "round8-vocabulary-005",
+    "round8-vocabulary-010",
+    "round8-vocabulary-001",
+    "round3-vocabulary-007",
+    "round3-vocabulary-009",
+    "round8-vocabulary-003",
+    "candidate-vocabulary-001",
+    "round8-vocabulary-007",
+    "round8-vocabulary-002",
+    "round3-vocabulary-001",
+    "round3-vocabulary-005",
+    "candidate-vocabulary-002"
+  ],
+  "internal-filler": [
+    "round2-filler-003",
+    "round2-filler-004",
+    "round2-filler-007",
+    "round2-filler-008"
+  ],
+  "repetition": [
+    "round8-repetition-008",
+    "round8-repetition-003",
+    "round8-repetition-001",
+    "round8-repetition-009"
+  ],
+  "empty": [
+    "round2-preserve-005",
+    "candidate-noop-001"
+  ],
+  "question": [
+    "round2-question-006",
+    "candidate-question-003"
+  ],
+  "reserved": [
+    "round2-correction-004",
+    "round2-correction-008"
+  ],
+  "context": [
+    "round8-new_sentence-007",
+    "candidate-context-002"
+  ]
+}

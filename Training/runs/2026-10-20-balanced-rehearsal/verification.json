@@ -1,0 +1,19 @@
+{
+  "releaseQualified": false,
+  "scoringControls": "Historical regressions rejected; synthetic retention-positive checkpoint selected",
+  "toolingTests": 26,
+  "resolvedTrainingConfigChanges": [
+    "config",
+    "data",
+    "adapter_path"
+  ],
+  "tokenCountCorrection": "Initial check counted tokenizer result keys; corrected during startup. Actual max training407/validation408. No data or protocol change.",
+  "trainingExitCode": 0,
+  "validationPipelineExitCode": 0,
+  "validationRecordsPerModel": 55,
+  "tokenizerTemplateLicenseMatch": true,
+  "postSelectionScoringControls": "Reject unchanged results; accept synthetic fresh improvement with complete retention; reject a previously correct historical-output regression.",
+  "postSelectionPipelineExitCode": 0,
+  "postSelectionRecordsPerModel": 95,
+  "adversarialOutputsAndOutcomesUnchanged": true
+}

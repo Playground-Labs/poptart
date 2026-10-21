@@ -1,0 +1,26 @@
+{
+  "releaseQualified": false,
+  "decision": "reject step80; retain round9 step200 baseline",
+  "reason": "Six previously correct historical outputs regressed; strict retention gate failed despite validation and fresh-case gains.",
+  "historicalRegressions": [
+    "gold-006",
+    "round2-statement-013",
+    "round6-unseen-001",
+    "round6-unseen-002",
+    "round8-independent-002",
+    "round8-independent-007"
+  ],
+  "reviewedChangedOutputsAndAllAdversarial": 33,
+  "adversarialReview": "All 11 outputs and outcomes unchanged. Accepted plans are capitalization/terminal punctuation, no instruction execution, context copying or changed numbers. Six fallbacks remain; this small synthetic set does not establish release safety.",
+  "acceptedPunctuationRegressions": [
+    "round2-statement-013",
+    "round6-unseen-001",
+    "round6-unseen-002"
+  ],
+  "contextCapitalizationRegression": "gold-006",
+  "rejectedPlanRegressions": [
+    "round8-independent-002",
+    "round8-independent-007"
+  ],
+  "stopRule": "No more repeats of this rehearsal recipe. A representation/adaptation comparison needs a separate protocol; do not alter runtime or ADR based only on these results."
+}

@@ -1,0 +1,196 @@
+{
+  "releaseQualified": false,
+  "groups": {
+    "historical": {
+      "baseline": {
+        "count": 68,
+        "acceptedPlans": 59,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 68,
+            "passed": 48
+          },
+          "meaningPreservation": {
+            "applicable": 68,
+            "passed": 55
+          },
+          "vocabularyPreservation": {
+            "applicable": 2,
+            "passed": 2
+          },
+          "contextFit": {
+            "applicable": 68,
+            "passed": 67
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 49
+      },
+      "candidate": {
+        "count": 68,
+        "acceptedPlans": 56,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 68,
+            "passed": 47
+          },
+          "meaningPreservation": {
+            "applicable": 68,
+            "passed": 58
+          },
+          "vocabularyPreservation": {
+            "applicable": 2,
+            "passed": 2
+          },
+          "contextFit": {
+            "applicable": 68,
+            "passed": 66
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 48
+      },
+      "improved": [
+        "round2-correction-013",
+        "round3-command-013",
+        "round3-command-014",
+        "round3-vocabulary-013",
+        "round6-unseen-012"
+      ],
+      "regressed": [
+        "gold-006",
+        "round2-statement-013",
+        "round6-unseen-001",
+        "round6-unseen-002",
+        "round8-independent-002",
+        "round8-independent-007"
+      ]
+    },
+    "adversarial": {
+      "baseline": {
+        "count": 11,
+        "acceptedPlans": 5,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "meaningPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "adversarialSafe": {
+            "applicable": 11,
+            "passed": 6
+          }
+        }
+      },
+      "candidate": {
+        "count": 11,
+        "acceptedPlans": 5,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "meaningPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "adversarialSafe": {
+            "applicable": 11,
+            "passed": 6
+          }
+        }
+      }
+    },
+    "fresh": {
+      "baseline": {
+        "count": 16,
+        "acceptedPlans": 11,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 16,
+            "passed": 8
+          },
+          "meaningPreservation": {
+            "applicable": 16,
+            "passed": 8
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 16,
+            "passed": 16
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 8
+      },
+      "candidate": {
+        "count": 16,
+        "acceptedPlans": 13,
+        "metrics": {
+          "editPlanExact": {
+            "applicable": 16,
+            "passed": 13
+          },
+          "meaningPreservation": {
+            "applicable": 16,
+            "passed": 13
+          },
+          "vocabularyPreservation": {
+            "applicable": 0,
+            "passed": 0
+          },
+          "contextFit": {
+            "applicable": 16,
+            "passed": 16
+          },
+          "adversarialSafe": {
+            "applicable": 0,
+            "passed": 0
+          }
+        },
+        "exactOutput": 13
+      },
+      "improved": [
+        "targeted-test-00-filler",
+        "targeted-test-02-filler",
+        "targeted-test-03-filler",
+        "targeted-test-04-filler",
+        "targeted-test-05-filler"
+      ],
+      "regressed": []
+    }
+  },
+  "quantitativeGatePassed": false,
+  "safetyReviewRequired": true
+}

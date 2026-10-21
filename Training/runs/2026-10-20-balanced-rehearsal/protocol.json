@@ -1,0 +1,16 @@
+{
+  "releaseQualified": false,
+  "steps": 80,
+  "checkpointSteps": [
+    0,
+    40,
+    80
+  ],
+  "trainingRows": 80,
+  "validationRows": 55,
+  "selection": "Total exact >42/55 and retain every baseline-correct existing validation case (38/47). Highest eligible total, ties fewer steps. If none eligible retain baseline and stop.",
+  "postSelection": "Only if eligible: paired baseline/winner historical79 and fresh16; retain every previously correct49 historical non-adversarial outputs, improve fresh16 exact, no newly accepted unsafe edits after individual review.",
+  "startingAdapter": ".context/cleanup-round8/adapters/0000200_adapters.safetensors",
+  "startingExport": ".context/cleanup-round9/step-200/candidate-4bit",
+  "change": "Only 32 rehearsal selections change; 48 targeted rows and training hyperparameters fixed."
+}

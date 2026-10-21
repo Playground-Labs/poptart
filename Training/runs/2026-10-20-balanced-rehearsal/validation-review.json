@@ -1,0 +1,400 @@
+[
+  {
+    "id": "valid-001",
+    "raw": "we tested it, the results look right",
+    "expected": "We tested it. The results look right.",
+    "baselineOutput": "We tested it, the results look right.",
+    "candidateOutput": "We tested it, the results look right.",
+    "candidateOutcome": "cleaned",
+    "candidatePlan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "We",
+          "s": 0
+        },
+        {
+          "c": "punctuation",
+          "e": 8,
+          "r": ".",
+          "s": 8
+        }
+      ],
+      "v": 1
+    },
+    "candidateRejection": null
+  },
+  {
+    "id": "candidate-repetition-011",
+    "raw": "the package arrived arrived earlier than expected",
+    "expected": "The package arrived earlier than expected.",
+    "baselineOutput": "the package arrived arrived earlier than expected",
+    "candidateOutput": "The package arrived earlier than expected.",
+    "candidateOutcome": "cleaned",
+    "candidatePlan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "The",
+          "s": 0
+        },
+        {
+          "c": "repetition",
+          "e": 3,
+          "r": "",
+          "s": 2
+        },
+        {
+          "c": "punctuation",
+          "e": 7,
+          "r": ".",
+          "s": 7
+        }
+      ],
+      "v": 1
+    },
+    "candidateRejection": null
+  },
+  {
+    "id": "round2-question-012",
+    "raw": "has the gardener finished trimming the hedge",
+    "expected": "Has the gardener finished trimming the hedge?",
+    "baselineOutput": "Has the gardener finished trimming the hedge.",
+    "candidateOutput": "Has the gardener finished trimming the hedge.",
+    "candidateOutcome": "cleaned",
+    "candidatePlan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "Has",
+          "s": 0
+        },
+        {
+          "c": "punctuation",
+          "e": 7,
+          "r": ".",
+          "s": 7
+        }
+      ],
+      "v": 1
+    },
+    "candidateRejection": null
+  },
+  {
+    "id": "round2-filler-011",
+    "raw": "I can um bring a spare pair of gloves",
+    "expected": "I can bring a spare pair of gloves.",
+    "baselineOutput": "I can um bring a spare pair of gloves.",
+    "candidateOutput": "I can um bring a spare pair of gloves",
+    "candidateOutcome": "fallback",
+    "candidatePlan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "I",
+          "s": 0
+        },
+        {
+          "c": "filler",
+          "e": 3,
+          "r": "",
+          "s": 2
+        },
+        {
+          "c": "punctuation",
+          "e": 9,
+          "r": ".",
+          "s": 9
+        }
+      ],
+      "v": 1
+    },
+    "candidateRejection": "unsafeEditPlan"
+  },
+  {
+    "id": "round3-command-011",
+    "raw": "lock the garden shed uh",
+    "expected": "Lock the garden shed.",
+    "baselineOutput": "lock the garden shed uh",
+    "candidateOutput": "Lock the garden shed.",
+    "candidateOutcome": "cleaned",
+    "candidatePlan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "Lock",
+          "s": 0
+        },
+        {
+          "c": "filler",
+          "e": 5,
+          "r": "",
+          "s": 4
+        },
+        {
+          "c": "punctuation",
+          "e": 5,
+          "r": ".",
+          "s": 5
+        }
+      ],
+      "v": 1
+    },
+    "candidateRejection": null
+  },
+  {
+    "id": "round3-command-012",
+    "raw": "collect the empty mugs from the kitchen um",
+    "expected": "Collect the empty mugs from the kitchen.",
+    "baselineOutput": "collect the empty mugs from the kitchen um",
+    "candidateOutput": "Collect the empty mugs from the kitchen.",
+    "candidateOutcome": "cleaned",
+    "candidatePlan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "Collect",
+          "s": 0
+        },
+        {
+          "c": "filler",
+          "e": 8,
+          "r": "",
+          "s": 7
+        },
+        {
+          "c": "punctuation",
+          "e": 8,
+          "r": ".",
+          "s": 8
+        }
+      ],
+      "v": 1
+    },
+    "candidateRejection": null
+  },
+  {
+    "id": "round8-trailing-011",
+    "raw": "the geologist recorded the temperature near the crater um",
+    "expected": "The geologist recorded the temperature near the crater.",
+    "baselineOutput": "The geologist recorded the temperature near the crater .um",
+    "candidateOutput": "The geologist recorded the temperature near the crater.",
+    "candidateOutcome": "cleaned",
+    "candidatePlan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "The",
+          "s": 0
+        },
+        {
+          "c": "filler",
+          "e": 9,
+          "r": "",
+          "s": 8
+        },
+        {
+          "c": "punctuation",
+          "e": 9,
+          "r": ".",
+          "s": 9
+        }
+      ],
+      "v": 1
+    },
+    "candidateRejection": null
+  },
+  {
+    "id": "round8-trailing-012",
+    "raw": "we reserved the smallest cabin overlooking the valley um",
+    "expected": "We reserved the smallest cabin overlooking the valley.",
+    "baselineOutput": "we reserved the smallest cabin overlooking the valley um",
+    "candidateOutput": "We reserved the smallest cabin overlooking the valley.",
+    "candidateOutcome": "cleaned",
+    "candidatePlan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "We",
+          "s": 0
+        },
+        {
+          "c": "filler",
+          "e": 9,
+          "r": "",
+          "s": 8
+        },
+        {
+          "c": "punctuation",
+          "e": 9,
+          "r": ".",
+          "s": 9
+        }
+      ],
+      "v": 1
+    },
+    "candidateRejection": null
+  },
+  {
+    "id": "round8-vocabulary-011",
+    "raw": "send the mint hollow proposal to the review committee tomorrow",
+    "expected": "Send the Minthollow proposal to the review committee tomorrow.",
+    "baselineOutput": "send the mint hollow proposal to the review committee tomorrow",
+    "candidateOutput": "Send the Minthollow proposal to the review committee tomorrow.",
+    "candidateOutcome": "cleaned",
+    "candidatePlan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "Send",
+          "s": 0
+        },
+        {
+          "c": "vocabulary",
+          "e": 4,
+          "r": "Minthollow",
+          "s": 2
+        },
+        {
+          "c": "punctuation",
+          "e": 10,
+          "r": ".",
+          "s": 10
+        }
+      ],
+      "v": 1
+    },
+    "candidateRejection": null
+  },
+  {
+    "id": "targeted-valid-00-filler",
+    "raw": "the beekeeper inspected each frame before replacing the lid um",
+    "expected": "The beekeeper inspected each frame before replacing the lid.",
+    "baselineOutput": "the beekeeper inspected each frame before replacing the lid um",
+    "candidateOutput": "The beekeeper inspected each frame before replacing the lid.",
+    "candidateOutcome": "cleaned",
+    "candidatePlan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "The",
+          "s": 0
+        },
+        {
+          "c": "filler",
+          "e": 10,
+          "r": "",
+          "s": 9
+        },
+        {
+          "c": "punctuation",
+          "e": 10,
+          "r": ".",
+          "s": 10
+        }
+      ],
+      "v": 1
+    },
+    "candidateRejection": null
+  },
+  {
+    "id": "targeted-valid-01-filler",
+    "raw": "I stored the spare hinges in a biscuit tin uh",
+    "expected": "I stored the spare hinges in a biscuit tin.",
+    "baselineOutput": "I stored the spare hinges in a biscuit tin uh",
+    "candidateOutput": "I stored the spare hinges in a biscuit tin uh",
+    "candidateOutcome": "fallback",
+    "candidatePlan": {
+      "e": [
+        {
+          "c": "filler",
+          "e": 9,
+          "r": "",
+          "s": 9
+        },
+        {
+          "c": "punctuation",
+          "e": 10,
+          "r": ".",
+          "s": 10
+        }
+      ],
+      "v": 1
+    },
+    "candidateRejection": "unsafeEditPlan"
+  },
+  {
+    "id": "targeted-valid-02-filler",
+    "raw": "please rinse the measuring jug with warm water um",
+    "expected": "Please rinse the measuring jug with warm water.",
+    "baselineOutput": "please rinse the measuring jug with warm water um",
+    "candidateOutput": "Please rinse the measuring jug with warm water.",
+    "candidateOutcome": "cleaned",
+    "candidatePlan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "Please",
+          "s": 0
+        },
+        {
+          "c": "filler",
+          "e": 9,
+          "r": "",
+          "s": 8
+        },
+        {
+          "c": "punctuation",
+          "e": 9,
+          "r": ".",
+          "s": 9
+        }
+      ],
+      "v": 1
+    },
+    "candidateRejection": null
+  },
+  {
+    "id": "targeted-valid-03-filler",
+    "raw": "we spotted a heron beside the flooded meadow uh",
+    "expected": "We spotted a heron beside the flooded meadow.",
+    "baselineOutput": "we spotted a heron beside the flooded meadow uh",
+    "candidateOutput": "We spotted a heron beside the flooded meadow.",
+    "candidateOutcome": "cleaned",
+    "candidatePlan": {
+      "e": [
+        {
+          "c": "capitalization",
+          "e": 1,
+          "r": "We",
+          "s": 0
+        },
+        {
+          "c": "filler",
+          "e": 9,
+          "r": "",
+          "s": 8
+        },
+        {
+          "c": "punctuation",
+          "e": 9,
+          "r": ".",
+          "s": 9
+        }
+      ],
+      "v": 1
+    },
+    "candidateRejection": null
+  }
+]
