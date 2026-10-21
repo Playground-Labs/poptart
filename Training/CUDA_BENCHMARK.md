@@ -1,6 +1,6 @@
 # Optional CUDA throughput pilot
 
-No cloud resource is provisioned by this script. It has not yet run on NVIDIA hardware.
+No cloud resource is provisioned by this script. The first NVIDIA result is documented below; it did not show a speed advantage.
 For the speed-first pilot, use one RTX 5090 (32 GB), subject to availability and price.
 Runpod listed $1.19/hour on 2026-10-18, plus storage. A 4090 is a fallback option. A $5 pilot budget is a
 reasonable ceiling to test compatibility and throughput, not a measured cost estimate.
@@ -43,3 +43,10 @@ Sources: [Runpod pricing](https://www.runpod.io/pricing),
 [MLX CUDA support](https://github.com/ml-explore/mlx/discussions/2422).
 
 CUDA 13 driver requirements: [MLX 0.32.3 installation documentation](https://github.com/ml-explore/mlx/blob/v0.32.3/docs/src/install.rst).
+
+## Measured RTX 5090 result
+
+The [2026-10-20 pilot](runs/2026-10-20-cuda-pilot/README.md) completed with
+`MLX_USE_CUDA_GRAPHS=0` but showed no speed advantage over local training.
+Default graph capture failed with cache thrashing. Do not assume this recipe
+accelerates training; use the report before renting hardware for longer runs.

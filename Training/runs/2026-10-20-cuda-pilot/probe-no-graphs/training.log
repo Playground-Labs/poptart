@@ -1,0 +1,15 @@
+Loading configuration file Training/runs/2026-10-18-full-epoch/training-config.yaml
+Loading pretrained model
+Loading datasets
+Training
+Loading fine-tuned weights from .context/cleanup-round8/adapters/0000200_adapters.safetensors
+Trainable parameters: 0.479% (3.608M/752.392M)
+Starting training..., iters: 20
+Calculating loss...:   0%|          | 0/1 [00:00<?, ?it/s]Calculating loss...: 100%|██████████| 1/1 [00:01<00:00,  1.43s/it]Calculating loss...: 100%|██████████| 1/1 [00:01<00:00,  1.44s/it]
+Iter 1: Val loss 0.000, Val took 1.444s
+Iter 10: Train loss 0.007, Learning Rate 1.000e-05, It/sec 0.118, Tokens/sec 6.196, Trained Tokens 523, Peak mem 14.992 GB
+Calculating loss...:   0%|          | 0/1 [00:00<?, ?it/s]Calculating loss...: 100%|██████████| 1/1 [00:00<00:00,  1.03it/s]Calculating loss...: 100%|██████████| 1/1 [00:00<00:00,  1.03it/s]
+Iter 20: Val loss 0.089, Val took 0.974s
+Iter 20: Train loss 0.030, Learning Rate 1.000e-05, It/sec 0.309, Tokens/sec 15.896, Trained Tokens 1037, Peak mem 14.992 GB
+Iter 20: Saved adapter weights to /workspace/poptart/probe-no-graphs/adapters/adapters.safetensors and /workspace/poptart/probe-no-graphs/adapters/0000020_adapters.safetensors.
+Saved final weights to /workspace/poptart/probe-no-graphs/adapters/adapters.safetensors.

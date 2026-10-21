@@ -1,0 +1,13 @@
+Loading pretrained model
+[INFO] Loading
+[INFO] Using dtype: bfloat16
+[INFO] Quantizing
+[INFO] Quantized model with 4.508 bits per weight.
+Building for debugging...
+[Computing dependencies]
+[Provisioning 2 / 40]
+[1 / 1]
+[1 / 30] HuggingFace
+warning: missing creator for mutated node: ('/Users/brandonwilcox/conductor/workspaces/poptart/accra/Packages/Cleanup/.build/out/Products/Debug/mlx-swift_Cmlx.bundle/Contents/MacOS')
+Build complete! (2.10 sec)
+Swift MLX shutdown regression passed: 3 clean process exits

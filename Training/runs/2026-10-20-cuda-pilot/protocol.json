@@ -1,0 +1,18 @@
+{
+  "recordedAt": "2026-10-21T01:28:18.975496+00:00",
+  "steps": 20,
+  "purpose": "CUDA compatibility and throughput probe; not quality or release qualification",
+  "localReferenceIterationsPerSecond": [
+    0.35,
+    0.45
+  ],
+  "selection": "Report second ten-step interval separately from setup/warmup; do not promote probe adapters",
+  "sha256": {
+    ".context/cleanup-runpod-pilot.tar": "50a6cee4cd02bfceb71afd54bb9d163e3de1a6a3fc30ae860c84e7f3bc980d4f",
+    "Training/benchmark_cuda.sh": "7044b3e659dd102e6192342f2f4dc031c5cd99c62282196adcf7bfa2c18fd499",
+    "Training/runs/2026-10-18-full-epoch/training-config.yaml": "e9e02b8c90ef1ef81e794b96965d38679df3e17855b7b69ff673d4c2b65bb143",
+    "Training/generated/mlx/train.jsonl": "42147490871165b06ac73e5e39770671862ca36b7fb95b8dfb688e0586f8a183",
+    "Training/generated/mlx/valid.jsonl": "fd4e5c1ad3780af2440087e29c781ac260d55e34b7089caeea3fc1869a69bfb5",
+    ".context/cleanup-round8/adapters/0000200_adapters.safetensors": "f75d163a8da01e2a6f54064e3fc51bd6c0399e0fdc62c5896dfc6dc5b593f849"
+  }
+}

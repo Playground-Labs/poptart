@@ -1,0 +1,10 @@
+Loading configuration file Training/runs/2026-10-18-full-epoch/training-config.yaml
+Loading pretrained model
+Loading datasets
+Training
+Loading fine-tuned weights from .context/cleanup-round8/adapters/0000200_adapters.safetensors
+Trainable parameters: 0.479% (3.608M/752.392M)
+Starting training..., iters: 20
+Calculating loss...:   0%|          | 0/1 [00:00<?, ?it/s]Calculating loss...: 100%|██████████| 1/1 [00:01<00:00,  1.65s/it]Calculating loss...: 100%|██████████| 1/1 [00:01<00:00,  1.65s/it]
+Iter 1: Val loss 0.000, Val took 1.657s
+Terminated

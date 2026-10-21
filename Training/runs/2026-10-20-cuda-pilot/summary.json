@@ -1,0 +1,36 @@
+{
+  "releaseQualified": false,
+  "gpu": "RTX 5090",
+  "mlx": "0.32.3",
+  "mlxLM": "0.31.3",
+  "cudaPackage": "mlx-cuda-12==0.32.3",
+  "default": {
+    "exit": 1,
+    "seconds": 245,
+    "failure": "CUDA graph cache thrashing at capacity 400"
+  },
+  "cache2048": {
+    "exit": 143,
+    "seconds": 159,
+    "decision": "Stopped after no ten-step report; throughput unmeasured"
+  },
+  "graphsDisabled": {
+    "exit": 0,
+    "seconds": 129,
+    "steps": 20,
+    "firstIntervalIterationsPerSecond": 0.118,
+    "secondIntervalIterationsPerSecond": 0.309,
+    "mlxPeakMemoryGB": 14.992
+  },
+  "localReferenceIterationsPerSecond": [
+    0.35,
+    0.45
+  ],
+  "adapterSHA256": "ea49f802544c5523c4ed80e735aa11644c60dae3b0985d5f9204c95652a55269",
+  "decision": "No longer training run: no demonstrated throughput advantage. Probe adapter is not a quality-selected candidate.",
+  "macTransfer": {
+    "fuseAndAffine4BitExportExit": 0,
+    "swiftRealModelCleanProcessExits": 3,
+    "qualityQualified": false
+  }
+}
