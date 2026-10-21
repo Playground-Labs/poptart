@@ -145,6 +145,12 @@ swift run --package-path Packages/Cleanup CleanupEvaluation \
 python3 Training/test_swift_runtime.py .context/cleanup-model/candidate-4bit
 ```
 
+For a diagnostic prompt comparison, append a fourth positional argument naming a
+local UTF-8 system-instruction suffix file. The evaluator uses it for both token
+counting and generation and records the complete `systemInstruction` in every
+prediction. Omitting the file preserves the normal prompt; the app does not expose
+this override. Freeze the suffix and comparison criteria before inference.
+
 To evaluate all development cases, concatenate the gold and adversarial JSONL
 files with the `split == "test"` records from `Training/data/corpus.jsonl` into a
 new fixture file. The runner records generated plans, actual prompts, outcomes,

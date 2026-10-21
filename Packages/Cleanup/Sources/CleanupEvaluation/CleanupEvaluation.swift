@@ -8,8 +8,8 @@ import Foundation
 struct CleanupEvaluation {
   static func main() async throws {
     let args = CommandLine.arguments
-    guard args.count == 4 else {
-      throw EvaluationError.invalid("usage: CleanupEvaluation LOCAL_MODEL FIXTURES_JSONL NEW_OUTPUT_JSONL")
+    guard args.count == 4 || args.count == 5 else {
+      throw EvaluationError.invalid("usage: CleanupEvaluation LOCAL_MODEL FIXTURES_JSONL NEW_OUTPUT_JSONL [SYSTEM_SUFFIX_FILE]")
     }
     let output = URL(fileURLWithPath: args[3])
     guard !FileManager.default.fileExists(atPath: output.path) else {
@@ -24,7 +24,8 @@ struct CleanupEvaluation {
       ] })
     else { throw EvaluationError.invalid("require unique, nonempty, authored synthetic fixtures") }
 
-    let model = try RecordingModel(directory: URL(fileURLWithPath: args[1]))
+    let systemSuffix = args.count == 5 ? try String(contentsOfFile: args[4], encoding: .utf8) : ""
+    let model = try RecordingModel(directory: URL(fileURLWithPath: args[1]), systemSuffix: systemSuffix)
     try await model.prepare()
     let clock = UptimeClock()
     let engine = CleanupEngine(
@@ -58,7 +59,8 @@ struct CleanupEvaluation {
       let row = Prediction(
         id: fixture.id, output: text, outcome: outcome, rejection: reason,
         elapsedMilliseconds: elapsed, editPlan: plan, generated: captured.generated,
-        prompt: captured.prompt, inputTokens: captured.inputTokens, releaseQualified: false
+        prompt: captured.prompt, inputTokens: captured.inputTokens, releaseQualified: false,
+        systemInstruction: CleanupPrompt.cleanupSystemInstruction + systemSuffix
       )
       let encoder = JSONEncoder()
       encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
@@ -126,6 +128,7 @@ private struct Prediction: Encodable {
   let prompt: String
   let inputTokens: Int
   let releaseQualified: Bool
+  let systemInstruction: String
 }
 
 private struct UptimeClock: MonotonicClock {
@@ -136,12 +139,14 @@ private struct UptimeClock: MonotonicClock {
 
 private actor RecordingModel: CleanupModelBoundary {
   private let model: MLXCleanupModel
+  private let systemSuffix: String
   private var generation = UUID()
   private var generated = ""
   private var prompt = ""
   private var inputTokens = 0
 
-  init(directory: URL) throws(CleanupModelError) {
+  init(directory: URL, systemSuffix: String) throws(CleanupModelError) {
+    self.systemSuffix = systemSuffix
     model = try MLXCleanupModel(modelDirectory: directory)
   }
   func prepare() async throws { try await model.prepare() }
@@ -150,13 +155,19 @@ private actor RecordingModel: CleanupModelBoundary {
   func snapshot() -> (generated: String, prompt: String, inputTokens: Int) {
     (generated, prompt, inputTokens)
   }
+  // Diagnostic-only: the app and its production prompt do not use this override.
+  private func transformed(_ request: CleanupModelRequest) -> CleanupModelRequest {
+    .init(systemInstruction: request.systemInstruction + systemSuffix, prompt: request.prompt,
+          enableThinking: request.enableThinking, maximumOutputTokens: request.maximumOutputTokens,
+          stopMarker: request.stopMarker)
+  }
   func tokenCount(for request: CleanupModelRequest) async throws(CleanupModelError) -> Int {
     prompt = request.prompt
-    inputTokens = try await model.tokenCount(for: request)
+    inputTokens = try await model.tokenCount(for: transformed(request))
     return inputTokens
   }
   func generate(_ request: CleanupModelRequest) async throws(CleanupModelError) -> AsyncStream<String> {
-    let upstream = try await model.generate(request)
+    let upstream = try await model.generate(transformed(request))
     let current = generation
     return AsyncStream { continuation in
       let task = Task {
