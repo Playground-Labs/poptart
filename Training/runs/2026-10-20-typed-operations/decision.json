@@ -1,0 +1,38 @@
+{
+  "releaseQualified": false,
+  "decision": "Reject typed format adaptation; retain round9 step200 model and v1 app schema. Range arm is a control, not promoted.",
+  "trainingOperations": {
+    "range:capitalization": 74,
+    "range:vocabulary": 16,
+    "end": 98,
+    "delete": 32
+  },
+  "typedEmittedOperations": {
+    "end": 88,
+    "delete": 16
+  },
+  "typedOutputShapes": {
+    "endOnly": 72,
+    "empty": 3,
+    "other": 16
+  },
+  "typedValidCompiledPlans": 91,
+  "rangeRegressionsVsRetained": [
+    "candidate-filler-011",
+    "candidate-context-011",
+    "round2-repetition-011",
+    "round3-filler-011",
+    "round8-capital-011",
+    "round8-continuation-011",
+    "round8-capital-012",
+    "diagnostic-02",
+    "diagnostic-11",
+    "diagnostic-15",
+    "diagnostic-17",
+    "diagnostic-19",
+    "diagnostic-21",
+    "diagnostic-23"
+  ],
+  "changedCases": 82,
+  "conditionalBroaderEvaluation": "Not run: typed failed the predeclared eligibility gate. No native v2 integration or historical/adversarial promotion assessment warranted."
+}

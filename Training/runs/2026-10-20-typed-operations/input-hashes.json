@@ -1,0 +1,19 @@
+{
+  "Training/runs/2026-10-20-typed-operations/training-config.yaml": "9c9ca75e0fa429a7438e55c60f68af56882d52b80b9283ad90f6e8266ff4cd8a",
+  "Training/runs/2026-10-20-typed-operations/training.jsonl": "4260cde932237ba9132e4756e50756b646c514b739c53e8498e029b5a8043f09",
+  "Training/runs/2026-10-20-typed-operations/validation.jsonl": "9c804c6812001fd2a2f4b892e52f60dc97954429500d628528bdea4fa1f5a8fe",
+  "Training/runs/2026-10-20-typed-operations/new-context.jsonl": "43843ad59dd10bd373b152d1ab5d77a94dddb526e357da0275c2b8b512f3555d",
+  "Training/runs/2026-10-20-typed-operations/evaluation.jsonl": "9752c29dffdfe31a3b850f16cf9143ba661eefe71d7e440ad832b195b7fc7bfe",
+  "Training/runs/2026-10-20-typed-operations/protocol.json": "b4867d3714bc27e051b379678e1c7e14790e466584623c46bda349585bbacb17",
+  "Training/runs/2026-10-20-typed-operations/prepare.py": "9414fabcc8b54b1025750ddb08ec4f2ee08926fb608ffb2be1c36c0d0e28d800",
+  "Training/typed_operations.py": "20047faedd2f511459edb37e0103e646a693a39f514db7ff0f33830220a575fa",
+  "Training/test_typed_operations.py": "f8afc159725b5f0658be7455c9d517ad75caa0685047bba618eac32a0f3be558",
+  "Training/prepare_corpus.py": "36af2648b60d745d07555ac41716c08ba4b5575222ee9d59f9c373dadcde49e6",
+  "Evals/editplan.py": "4c1488a09124605e9ad39f77876eaf3f35e1be9d357753bfedb8625778f73cf2",
+  ".context/cleanup-round8/adapters/0000200_adapters.safetensors": "f75d163a8da01e2a6f54064e3fc51bd6c0399e0fdc62c5896dfc6dc5b593f849",
+  ".context/cleanup-typed/range/mlx/train.jsonl": "ca940ec39343b884997546d481e07b9600c2478ffc4afa66eeeea07ff1625b46",
+  ".context/cleanup-typed/range/mlx/valid.jsonl": "0e7263f37566cc07c62db9d86d8e6180fafebae3383e7f6af043994f718de8ce",
+  ".context/cleanup-typed/typed/mlx/train.jsonl": "425d09102a149858fd725db21a5ec611552662711f5deeed3235317bbd8dfef6",
+  ".context/cleanup-typed/typed/mlx/valid.jsonl": "5dc174bee81099a6b7cd1fd6ad614d5dbc762c04e4d9403e4e705cd2d9671cd1",
+  "Training/runs/2026-10-20-typed-operations/token-lengths.json": "1eca6fe6f11fbb74f9b673d9a07dfb2368931572a03e789be0a732eef0d8e54c"
+}

@@ -1,0 +1,132 @@
+{
+  "releaseQualified": false,
+  "descriptiveOnly": true,
+  "armStats": {
+    "retainedBaseline": {
+      "accepted": 79,
+      "meanOutputTokens": 44.714285714285715
+    },
+    "range": {
+      "accepted": 81,
+      "meanOutputTokens": 44.42857142857143
+    },
+    "typed": {
+      "accepted": 91,
+      "meanOutputTokens": 22.021978021978022
+    }
+  },
+  "typedDeletions": [
+    {
+      "id": "round2-filler-011",
+      "category": "filler",
+      "sourceToken": "um",
+      "expected": "I can bring a spare pair of gloves.",
+      "output": "I can bring a spare pair of gloves."
+    },
+    {
+      "id": "round2-filler-012",
+      "category": "filler",
+      "sourceToken": "uh",
+      "expected": "We need a larger pot for the fern.",
+      "output": "we need a larger pot for the fern."
+    },
+    {
+      "id": "round3-filler-011",
+      "category": "filler",
+      "sourceToken": "um",
+      "expected": "Leave the watering can near the greenhouse.",
+      "output": "leave the watering can near the greenhouse."
+    },
+    {
+      "id": "round3-filler-012",
+      "category": "filler",
+      "sourceToken": "uh",
+      "expected": "Arrange the spare stools around the stage.",
+      "output": "arrange the spare stools around the stage."
+    },
+    {
+      "id": "round3-command-011",
+      "category": "filler",
+      "sourceToken": "uh",
+      "expected": "Lock the garden shed.",
+      "output": "lock the garden shed."
+    },
+    {
+      "id": "round8-leading_um-011",
+      "category": "filler",
+      "sourceToken": "um",
+      "expected": "The geologist recorded the temperature near the crater.",
+      "output": "the geologist recorded the temperature near the crater."
+    },
+    {
+      "id": "round8-leading_uh-011",
+      "category": "filler",
+      "sourceToken": "uh",
+      "expected": "The geologist recorded the temperature near the crater.",
+      "output": "the geologist recorded the temperature near the crater."
+    },
+    {
+      "id": "round8-leading_um-012",
+      "category": "filler",
+      "sourceToken": "um",
+      "expected": "We reserved the smallest cabin overlooking the valley.",
+      "output": "we reserved the smallest cabin overlooking the valley."
+    },
+    {
+      "id": "round8-leading_uh-012",
+      "category": "filler",
+      "sourceToken": "uh",
+      "expected": "We reserved the smallest cabin overlooking the valley.",
+      "output": "we reserved the smallest cabin overlooking the valley."
+    },
+    {
+      "id": "targeted-valid-01-filler",
+      "category": "filler",
+      "sourceToken": "uh",
+      "expected": "I stored the spare hinges in a biscuit tin.",
+      "output": "I stored the spare hinges in a biscuit tin."
+    },
+    {
+      "id": "targeted-valid-02-filler",
+      "category": "filler",
+      "sourceToken": "um",
+      "expected": "Please rinse the measuring jug with warm water.",
+      "output": "please rinse the measuring jug with warm water."
+    },
+    {
+      "id": "targeted-valid-03-filler",
+      "category": "filler",
+      "sourceToken": "uh",
+      "expected": "We spotted a heron beside the flooded meadow.",
+      "output": "we spotted a heron beside the flooded meadow."
+    },
+    {
+      "id": "diagnostic-06",
+      "category": "filler",
+      "sourceToken": "um",
+      "expected": "I found the missing kite.",
+      "output": "I found the missing kite."
+    },
+    {
+      "id": "diagnostic-07",
+      "category": "filler",
+      "sourceToken": "uh",
+      "expected": "Please stack the clean plates.",
+      "output": "please stack the clean plates."
+    },
+    {
+      "id": "diagnostic-08",
+      "category": "filler",
+      "sourceToken": "um",
+      "expected": "We cleaned the narrow hallway.",
+      "output": "we cleaned the narrow hallway."
+    },
+    {
+      "id": "diagnostic-09",
+      "category": "filler",
+      "sourceToken": "uh",
+      "expected": "I carried the empty basket.",
+      "output": "I carried the empty basket."
+    }
+  ]
+}

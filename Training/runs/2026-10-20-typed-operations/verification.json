@@ -1,0 +1,29 @@
+{
+  "releaseQualified": false,
+  "compilerCanonicalRoundtrips": 317,
+  "matchedTargetRoundtrips": 167,
+  "unitTests": 30,
+  "scorerControls": "Positive improvement accepted; lack of improvement, regression and incomplete predictions rejected.",
+  "runtimeScope": "Python MLX feasibility; application and native decoder unchanged.",
+  "runtimeVersions": {
+    "mlx": "0.32.3",
+    "mlx-lm": "0.31.3",
+    "transformers": "5.18.0",
+    "tokenizers": "0.23.2"
+  },
+  "hardware": "Apple M3 Pro",
+  "inputHashesVerifiedAfterTraining": true,
+  "trainingPipelineExitCode": 0,
+  "resolvedConfigDifferences": [
+    "data",
+    "adapter_path"
+  ],
+  "baselinePriorNative55Differences": [],
+  "matchedSourceOrderAndPayloads": true,
+  "exportTokenizerTemplateLicenseMatch": true,
+  "exportAndEvaluationPipelineExitCode": 0,
+  "evaluationArms": 3,
+  "recordsPerArm": 91,
+  "typedEligibleForBroaderEvaluation": false,
+  "conditionalBroaderGate": "Not triggered; typed failed eligibility. No native v2 or adversarial qualification claimed."
+}

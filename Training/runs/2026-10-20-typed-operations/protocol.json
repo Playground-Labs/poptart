@@ -1,0 +1,22 @@
+{
+  "releaseQualified": false,
+  "purpose": "Matched incremental feasibility comparison; starting adapter already favors range syntax. Not an equal from-scratch architecture comparison.",
+  "startingAdapter": ".context/cleanup-round8/adapters/0000200_adapters.safetensors",
+  "trainingRows": 100,
+  "validationLossRows": 67,
+  "evaluationRows": 91,
+  "steps": 100,
+  "learningRate": 1e-05,
+  "seed": 20260824,
+  "checkpointsEvaluated": [
+    100
+  ],
+  "arms": [
+    "retainedBaseline",
+    "range",
+    "typed"
+  ],
+  "selection": "Typed must improve total exact over both retained baseline and matched range arm, preserve every correct output from either comparator, and improve at least one punctuation/filler/context diagnostic group. Otherwise reject and stop.",
+  "conditionalGate": "Only if selected: evaluate historical79+fresh16 with paired baseline, preserve all baseline-correct ordinary outputs and review changed/adversarial outputs. Native compiler/runtime parity required before any promotion.",
+  "stop": "One100-step run per trained arm; no prompt, budget or data revisions after results. No app or ADR changes."
+}

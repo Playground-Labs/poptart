@@ -296,3 +296,11 @@ validation from 4/8 to 8/8, but reduced existing validation from 38/47 to 36/47.
 Both checkpoints failed the predeclared retention criterion and were rejected.
 The prior model remains selected. [The report](runs/2026-10-20-targeted-filler/README.md)
 records the failure analysis, isolated data, regression review, and unused evaluation set.
+
+## Typed-operation prototype
+
+`Training/typed_operations.py` is an isolated Python compiler experiment, with
+roundtrip and fail-closed tests in `Training/test_typed_operations.py`. Its v2
+format is not accepted by the app. The [matched comparison](runs/2026-10-20-typed-operations/README.md)
+rejected the trained prototype; do not install those weights as a production
+Cleanup artifact. The retained model and runtime v1 format remain unchanged.

@@ -1,0 +1,26 @@
+{
+  "range": {
+    "train": {
+      "count": 100,
+      "max": 407,
+      "total": 34365
+    },
+    "valid": {
+      "count": 67,
+      "max": 408,
+      "total": 22878
+    }
+  },
+  "typed": {
+    "train": {
+      "count": 100,
+      "max": 468,
+      "total": 40554
+    },
+    "valid": {
+      "count": 67,
+      "max": 469,
+      "total": 27056
+    }
+  }
+}
