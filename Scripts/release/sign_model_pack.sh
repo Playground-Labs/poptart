@@ -17,9 +17,9 @@ import json, sys
 value=json.load(open(sys.argv[1]))
 if value.get("exampleOnly") or not isinstance(value.get("cleanupTokenCeiling"), int) or isinstance(value.get("cleanupTokenCeiling"), bool) or value.get("cleanupTokenCeiling") <= 0: raise SystemExit("refusing to sign example or unmeasured manifest")
 artifacts=value.get("artifacts", [])
-if {a.get("role") for a in artifacts}!={"recognition","cleanup"}: raise SystemExit("manifest must contain exactly recognition and cleanup roles")
+if len(artifacts)!=2 or {a.get("role") for a in artifacts}!={"recognition","cleanup"}: raise SystemExit("manifest must contain exactly recognition and cleanup roles")
 for artifact in artifacts:
-    if not isinstance(artifact.get("byteSize"), int) or artifact["byteSize"] <= 0: raise SystemExit("artifact byteSize is required")
+    if type(artifact.get("byteSize")) is not int or artifact["byteSize"] <= 0: raise SystemExit("artifact byteSize is required")
     digest=artifact.get("sha256", "")
     if len(digest)!=64 or any(c not in "0123456789abcdef" for c in digest): raise SystemExit("artifact sha256 is required")
 PY
